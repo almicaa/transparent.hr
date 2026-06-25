@@ -21,7 +21,7 @@ function cleanSalary(s: string | null): string | null {
 export default function JobCard({ job }: { job: Job }) {
   const sourceLabel = job.source || "unknown"
   const salaryDisplay = job.salary_shown
-    ? cleanSalary(job.salary_text) || (job.salary_min ? `${job.salary_min} - ${job.salary_max}` : "Plaća")
+    ? cleanSalary(job.salary_text) || (job.salary_min ? `${job.salary_min} - ${job.salary_max}` : null)
     : null
 
   return (
