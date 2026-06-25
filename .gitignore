@@ -1,0 +1,18 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# SQLite data (local dev only — production uses Neon Postgres)
+backend/jobs.db
+
+# Env files
+.env
+*.env.local
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+
+# OS
+.DS_Store

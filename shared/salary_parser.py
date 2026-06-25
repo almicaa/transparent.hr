@@ -1,0 +1,92 @@
+"""EUR-only salary parsing engine, shared between scrapers and backend.
+
+Used so both ingestion (scraper/) and any backend re-parsing rely on
+identical salary_min/salary_max/currency semantics.
+"""
+
+import re
+
+CURRENCY = "EUR"
+
+
+def parse_salary(text: str) -> tuple[float | None, float | None]:
+    """Parse a free-text salary snippet into (salary_min, salary_max)."""
+    if not text:
+        return None, None
+    clean = text.replace(".", "").replace(",", ".")
+    # Croatian salary text groups thousands with a space ("1 450 €") — strip
+    # all whitespace so digit groups merge before extracting numbers.
+    clean = re.sub(r"\s+", "", clean)
+    numbers = re.findall(r"\d+(?:\.\d+)?", clean)
+    nums = [float(n) for n in numbers if float(n) > 100]
+    if len(nums) >= 2:
+        return min(nums[:2]), max(nums[:2])
+    elif len(nums) == 1:
+        return nums[0], nums[0]
+    return None, None
+
+
+def clean_salary_snippet(text: str | None) -> str | None:
+    """Trim a raw scraped salary snippet down to just the salary phrase.
+
+    Scraped detail-page snippets often run on into unrelated sentences
+    (e.g. "od 1 200 € neto. - Tematski parkovi ... (8.000 m²)..."), which
+    would otherwise feed a second, unrelated number into parse_salary.
+    """
+    if not text:
+        return text
+    t = str(text)
+    t = re.sub(r"<[^>]*>", "", t)
+    t = re.sub(r"&[^;\s]+;", "", t)
+
+    m = re.search(r"-\s*Tražimo", t, re.IGNORECASE)
+    if m:
+        t = t[: m.start()].strip()
+
+    dot_idx = t.find(". ")
+    if dot_idx != -1:
+        after = t[dot_idx + 2 : dot_idx + 3]
+        if after and not after.isdigit():
+            t = t[:dot_idx].strip()
+
+    return t.rstrip(". \t").strip()
+
+
+def parse_salary_basis(text: str | None) -> str | None:
+    """Detect whether a salary snippet states neto or bruto. None if unstated."""
+    if not text:
+        return None
+    if re.search(r"(?i)\bneto\b", text):
+        return "neto"
+    if re.search(r"(?i)\bbruto\b", text):
+        return "bruto"
+    return None
+
+
+def parse_salary_type(text: str | None, salary_min: float | None, salary_max: float | None) -> str | None:
+    """Classify a salary as one of: range, fixed, from, above.
+
+    - "above": an explicit "X+" ceiling-less floor (e.g. "3000+ EUR")
+    - "range": two distinct numbers ("od 1500 do 2000 EUR")
+    - "from": Croatian listings phrase a single floor as "od X EUR" — a stated
+      minimum, not a fixed amount
+    - "fixed": a single number with no "od" prefix — an exact stated amount
+    """
+    if salary_min is None:
+        return None
+    if text and re.search(r"\d\s*\+", text):
+        return "above"
+    if salary_min != salary_max:
+        return "range"
+    if text and re.match(r"(?i)^\s*od\b", text):
+        return "from"
+    return "fixed"
+
+
+def is_valid_salary(text: str) -> bool:
+    """A salary snippet only counts if it has a number with an explicit currency."""
+    if not text:
+        return False
+    if not re.search(r"\d", text):
+        return False
+    return bool(re.search(r"\d+\s*(EUR|€|HRK|kn)", text, re.IGNORECASE))

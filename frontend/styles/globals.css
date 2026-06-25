@@ -1,0 +1,130 @@
+:root{
+  --max-width: 1180px;
+  --primary: #1D9E9E;
+  --dark: #085050;
+
+  /* White/neutral dominate — teal is an accent only, used for salary,
+     links, buttons and the logo, not as a background color. Page bg is a
+     hair off-white so white cards have something to sit on top of. */
+  --page-bg: #fafbfa;
+  --card-bg: #ffffff;
+  --border: #e7e9e8;
+  --badge-bg: #f1f3f2;
+
+  --salary-highlight: #085050;
+  --salary-bg: #E1F5EE;
+  --salary-text: #ffffff;
+
+  /* Notion-style neutral grays — never pure black */
+  --text: #2b2f2e;
+  --text-secondary: #6b7470;
+  --muted: #6b7470;
+}
+
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{font-family:var(--font-inter),ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;line-height:1.5;margin:0;background:var(--page-bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.container{max-width:var(--max-width);margin:0 auto;padding:0 20px}
+.page-content{padding:24px 20px}
+a{color:var(--dark)}
+
+/* Logo */
+.logo{display:inline-flex;align-items:center;gap:8px;color:var(--text);text-decoration:none}
+.logo__wordmark{font-size:18px;font-weight:600;letter-spacing:-0.01em;color:#000}
+
+/* Header / Footer */
+.site-nav{border-bottom:1px solid var(--border);background:var(--card-bg)}
+.site-nav__inner{display:flex;align-items:center;justify-content:space-between;padding:14px 20px}
+.site-nav__brand{text-decoration:none}
+.site-nav__links{display:flex;gap:20px}
+.site-nav__links a{text-decoration:none;color:var(--text-secondary);font-weight:600;font-size:14px}
+.site-nav__links a:hover{color:var(--dark)}
+
+.site-footer{border-top:1px solid var(--border);margin-top:40px}
+.site-footer__inner{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px 20px;color:var(--text-secondary);text-align:center}
+
+main .site-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}
+main .title-block h1{margin:0;font-size:24px;color:var(--dark)}
+main .title-block p{margin:4px 0 0;color:var(--text-secondary)}
+
+.stats{display:flex;gap:12px;align-items:flex-start;margin-bottom:16px}
+.stat{background:var(--card-bg);padding:14px;border-radius:10px;box-shadow:0 4px 14px rgba(8,80,80,0.08);min-width:140px;border:1px solid var(--border)}
+.stat__value{font-size:20px;font-weight:700;color:var(--dark)}
+.stat__value--sm{font-size:14px;font-weight:600}
+.stat--clickable{cursor:pointer;user-select:none}
+.stat__breakdown{list-style:none;margin:8px 0 0;padding:0;text-align:left;font-size:13px;color:var(--text-secondary)}
+.stat__breakdown li{padding:2px 0}
+
+.meta{color:var(--text-secondary);font-size:0.9rem}
+
+/* /jobs layout: sidebar filters + content */
+.jobs-layout{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
+.filters{display:flex;flex-direction:column;gap:12px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:16px;position:sticky;top:20px}
+.filters__title{margin:0 0 4px;font-size:14px;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:0.04em}
+.filters select,.filters input{padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);width:100%;font-size:14px}
+.filters select:focus,.filters input:focus{outline:2px solid var(--primary)}
+
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+
+.job{background:var(--card-bg);padding:18px;border-radius:12px;box-shadow:0 4px 14px rgba(8,80,80,0.06);border:1px solid var(--border);display:flex;flex-direction:column;gap:8px;text-align:left;transition:box-shadow .15s ease,transform .15s ease}
+.job:hover{box-shadow:0 8px 22px rgba(8,80,80,0.12);transform:translateY(-1px)}
+.job__main{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.job__title{margin:0;font-size:17px;font-weight:700;word-break:break-word}
+.job__title a{color:var(--text);text-decoration:none}
+.job__title a:hover{color:var(--dark)}
+.job__company{color:var(--text-secondary);font-size:13px}
+.job__location{color:var(--text-secondary);font-size:13px}
+.job__salary{margin-top:6px;color:var(--salary-highlight);font-size:20px;font-weight:800;background:var(--salary-bg);padding:8px 12px;border-radius:8px;display:inline-block;letter-spacing:-0.01em}
+.job__footer{margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.job__description{color:var(--text-secondary);font-size:13px}
+
+.badge{display:inline-block;background:var(--badge-bg);color:var(--text-secondary);padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.source-badge{background:var(--badge-bg);color:var(--text-secondary)}
+.actions a{margin-left:12px;text-decoration:none;color:var(--primary);font-weight:600}
+.pagination{display:flex;gap:8px;align-items:center;margin-top:20px}
+.pagination button{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card-bg);cursor:pointer;color:var(--text)}
+.pagination button:disabled{opacity:0.5;cursor:default}
+
+.hero{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;padding:60px 0;overflow:hidden}
+.hero h1{font-size:40px;margin:0;color:var(--dark);position:relative}
+.hero__lead{color:var(--text-secondary);font-size:18px;max-width:520px;position:relative}
+.hero>.stats,.hero>.market-estimate,.hero>.cta{position:relative}
+.hero-illustration{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:min(100%,700px);height:auto;z-index:0;pointer-events:none}
+
+.home-section{padding:48px 0;border-top:1px solid var(--border)}
+.home-section h2{font-size:22px;margin:0 0 20px;color:var(--text)}
+.home-section__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.home-section__header h2{margin:0}
+.home-section__header a{font-weight:600;font-size:14px;text-decoration:none}
+
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feature-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:20px}
+.feature-card h3{margin:8px 0;font-size:16px;color:var(--text)}
+.feature-card p{margin:0}
+.feature-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;background:var(--salary-bg)}
+
+@media (max-width:900px){
+  .features-grid{grid-template-columns:1fr}
+}
+.cta{display:inline-block;margin-top:8px;padding:12px 26px;background:var(--dark);color:#fff;border-radius:8px;text-decoration:none;font-weight:700}
+.cta:hover{background:#063e3e}
+
+.market-estimate{max-width:480px;text-align:left}
+.market-estimate ul{list-style:none;margin:6px 0 0;padding:0}
+.market-estimate li{padding:2px 0;font-size:14px}
+
+.job-detail{display:flex;flex-direction:column;gap:8px;max-width:720px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:24px}
+.job-detail h1{margin:12px 0 0;font-size:24px;color:var(--text)}
+.job-detail__company{color:var(--text-secondary)}
+.job-detail__location{color:var(--text-secondary)}
+.job-detail__salary{margin-top:8px;display:inline-block;color:var(--salary-text);font-weight:800;font-size:24px;background:var(--salary-highlight);padding:12px 18px;border-radius:10px}
+.job-detail__description{margin-top:8px;white-space:pre-wrap;color:var(--text-secondary)}
+
+@media (max-width:900px){
+  .jobs-layout{grid-template-columns:1fr}
+  .filters{position:static}
+  .grid{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  main .site-header{flex-direction:column;align-items:flex-start}
+}
