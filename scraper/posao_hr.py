@@ -50,6 +50,12 @@ async def scrape_posao(max_pages=None, max_jobs=None):
     log_id = base.start_scrape_log(conn, "posao")
     total_saved = 0
     processed = 0
+    consecutive_known = 0
+    caught_up = False
+    # Listings are newest-first, so once we've seen this many already-saved
+    # ads in a row, the rest of the feed is stuff we already have — stop
+    # instead of re-checking pages we've already fully covered.
+    CAUGHT_UP_THRESHOLD = 25
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -120,6 +126,16 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                     if external_id in seen:
                         continue
                     seen.add(external_id)
+
+                    if base.job_exists(conn, external_id):
+                        consecutive_known += 1
+                        processed += 1
+                        if consecutive_known >= CAUGHT_UP_THRESHOLD:
+                            print(f"  ↳ {consecutive_known} oglasa zaredom već u bazi — prekidam (caught up).")
+                            caught_up = True
+                            break
+                        continue
+                    consecutive_known = 0
 
                     # Card markup is <a><strong>Title</strong><span class="location_system">City</span>
                     # <span class="location_system date_system">N dana do isteka</span>
@@ -256,6 +272,9 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                 except Exception as e:
                     print("  Greška pri parsiranju kandidata:", e)
                     continue
+
+            if caught_up:
+                break
 
             try:
                 next_btn = await page.query_selector("a[rel='next'], a:has-text('Sljedeća'), button:has-text('Sljedeća')")

@@ -210,6 +210,14 @@ async def get_listing_page_count(page) -> int | None:
     return None
 
 
+def job_exists(conn: sqlite3.Connection, external_id: str) -> bool:
+    """Cheap dedup check — lets a scraper skip the expensive detail-page visit
+    for ads it has already saved, instead of just relying on INSERT OR IGNORE
+    after doing all that work anyway."""
+    row = conn.execute("SELECT 1 FROM jobs WHERE external_id = ? LIMIT 1", (external_id,)).fetchone()
+    return row is not None
+
+
 def save_market_stat(conn: sqlite3.Connection, source: str, total_pages: int, salary_pages: int) -> float | None:
     """Store a page-count-based estimate of the share of ads with a visible salary.
 
