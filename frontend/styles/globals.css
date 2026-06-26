@@ -81,7 +81,7 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .filters select,.filters input{padding:10px 12px;border:none;border-radius:8px;background:var(--badge-bg);color:var(--text);font-size:14px}
 .filters select:focus,.filters input:focus{outline:2px solid var(--primary)}
 .filters .search{flex:2 1 220px;min-width:180px}
-.filters select{flex:1 1 150px}
+.filters select{flex:1 1 150px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
 

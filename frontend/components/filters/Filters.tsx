@@ -2,6 +2,12 @@ import { useMemo } from "react"
 import { JobFilters } from "../../lib/types"
 import { isForeignLocation, matchCountry } from "../../lib/location"
 
+const MAX_OPTION_LENGTH = 40
+
+function truncate(text: string): string {
+  return text.length > MAX_OPTION_LENGTH ? text.slice(0, MAX_OPTION_LENGTH - 1).trimEnd() + "…" : text
+}
+
 interface FiltersProps {
   filters: JobFilters
   setFilters: (updater: (f: JobFilters) => JobFilters) => void
@@ -62,8 +68,8 @@ export default function Filters({ filters, setFilters, setPage, cities, categori
       >
         <option value="all">{locationLabel}</option>
         {locationOptions.map((c) => (
-          <option key={c} value={c}>
-            {c}
+          <option key={c} value={c} title={c}>
+            {truncate(c)}
           </option>
         ))}
       </select>
