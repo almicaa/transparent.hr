@@ -2,6 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getJob } from "../../../lib/api"
 import { buildJobPostingJsonLd, jobDescription, SITE_URL } from "../../../lib/seo"
+import { SOURCE_LABELS } from "../../../lib/sourceLabels"
 import type { Metadata } from "next"
 
 export const dynamic = "force-dynamic"
@@ -55,7 +56,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
       {job.description ? <p className="job-detail__description">{job.description}</p> : null}
 
-      <div className="badge source-badge">{job.source}</div>
+      <div className="badge source-badge">{SOURCE_LABELS[job.source || ""] || job.source}</div>
 
       {job.url ? (
         <p>

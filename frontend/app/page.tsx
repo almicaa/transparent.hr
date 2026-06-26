@@ -1,9 +1,8 @@
 import Link from "next/link"
-import { getJobs, getStats } from "../lib/api"
+import { getJobs } from "../lib/api"
 import JobCard from "../components/job/JobCard"
 import HeroIllustration from "../components/ui/HeroIllustration"
 import { ArrowIcon, CheckIcon, EuroIcon, LayersIcon } from "../components/ui/icons"
-import { SOURCE_LABELS } from "../lib/sourceLabels"
 
 export const dynamic = "force-dynamic"
 
@@ -26,45 +25,19 @@ const FEATURES = [
 ]
 
 export default async function HomePage() {
-  const [stats, featured] = await Promise.all([
-    getStats(),
-    getJobs({ sort: "salary_desc", salary_shown: "yes", per_page: 4 }).catch(() => null),
-  ])
-  const estimates = stats?.market_estimates ?? []
+  const featured = await getJobs({ sort: "salary_desc", salary_shown: "yes", per_page: 4 }).catch(() => null)
   const featuredJobs = featured?.jobs ?? []
 
   return (
     <main>
       <section className="hero">
         <HeroIllustration />
-        <h1>Transparent.hr</h1>
-        <p className="hero__lead">Pronađi posao u Hrvatskoj s vidljivom plaćom u EUR.</p>
-
-        <div className="stats">
-          <div className="stat">
-            <div className="stat__value">{stats?.salary_shown ?? "-"}</div>
-            <div className="meta">Oglasa s plaćom u bazi</div>
-          </div>
-          <Link href="/izvori" className="stat">
-            <div className="stat__value">{stats?.sources?.length ?? "-"}</div>
-            <div className="meta meta--link">
-              Broj portala <ArrowIcon />
-            </div>
-          </Link>
-        </div>
-
-        {estimates.length > 0 ? (
-          <div className="market-estimate">
-            <p className="meta">Procjena udjela oglasa s plaćom po portalu:</p>
-            <ul>
-              {estimates.map((e) => (
-                <li key={e.source}>
-                  {SOURCE_LABELS[e.source] || e.source}: <strong>~{e.estimated_pct}%</strong>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+        <h1>Plaća prvo. Prijava poslije.</h1>
+        <p className="hero__lead">Filtrirali smo sve ostale. Ostalo je ono što vrijedi tvoje vrijeme.</p>
+        <p className="hero__punch">
+          <span className="hero__strike">"Po dogovoru"</span> nije odgovor. Transparentnost nije luksuz.{" "}
+          <strong>Samo stvarne brojke.</strong>
+        </p>
 
         <Link className="cta" href="/jobs">
           Pogledaj oglase <ArrowIcon />

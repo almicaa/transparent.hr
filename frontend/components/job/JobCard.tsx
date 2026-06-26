@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Job } from "../../lib/types"
+import { SOURCE_LABELS } from "../../lib/sourceLabels"
 
 function cleanSalary(s: string | null): string | null {
   if (!s) return s
@@ -19,7 +20,7 @@ function cleanSalary(s: string | null): string | null {
 }
 
 export default function JobCard({ job }: { job: Job }) {
-  const sourceLabel = job.source || "unknown"
+  const sourceLabel = SOURCE_LABELS[job.source || ""] || job.source || "unknown"
   const salaryDisplay = job.salary_shown
     ? cleanSalary(job.salary_text) || (job.salary_min ? `${job.salary_min} - ${job.salary_max}` : null)
     : null
