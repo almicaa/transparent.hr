@@ -240,7 +240,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                         ua = base.get_ua()
                         ctx2 = await browser.new_context(user_agent=ua, viewport={"width": 1200, "height": 900})
                         p2 = await ctx2.new_page()
-                        await base.retry_with_backoff(p2.goto, url_full, wait_until="networkidle", timeout=20000)
+                        await base.retry_with_backoff(p2.goto, url_full, wait_until="networkidle", timeout=30000)
                         det_sal = None
                         content = await p2.content()
                         # \b boundaries so this only matches the standalone word "Plaća"
