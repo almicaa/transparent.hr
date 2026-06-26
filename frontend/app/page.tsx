@@ -1,6 +1,5 @@
 import Link from "next/link"
-import { getJobs } from "../lib/api"
-import JobCard from "../components/job/JobCard"
+import JobBrowser from "../components/job/JobBrowser"
 import HeroIllustration from "../components/ui/HeroIllustration"
 import { ArrowIcon, CheckIcon, EuroIcon, LayersIcon } from "../components/ui/icons"
 
@@ -24,10 +23,7 @@ const FEATURES = [
   },
 ]
 
-export default async function HomePage() {
-  const featured = await getJobs({ sort: "salary_desc", salary_shown: "yes", per_page: 4 }).catch(() => null)
-  const featuredJobs = featured?.jobs ?? []
-
+export default function HomePage() {
   return (
     <main>
       <section className="hero">
@@ -46,21 +42,9 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      {featuredJobs.length > 0 ? (
-        <section className="home-section">
-          <div className="home-section__header">
-            <h2>Istaknute objave</h2>
-            <Link href="/jobs" className="link-with-icon">
-              Svi oglasi <ArrowIcon />
-            </Link>
-          </div>
-          <div className="grid">
-            {featuredJobs.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <section className="home-section">
+        <JobBrowser />
+      </section>
 
       <section className="home-section">
         <h2>Zašto transparent.hr</h2>
