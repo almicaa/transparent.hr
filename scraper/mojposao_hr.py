@@ -174,12 +174,20 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
                         await base.sleep_jitter()
                         continue
 
-                    all_links = await card.query_selector_all("a[href]")
-                    for lnk in all_links:
-                        lnk_href = await lnk.get_attribute("href") or ""
-                        if "/posao/" not in lnk_href and "/poslodavac/" in lnk_href:
-                            job["company"] = (await lnk.inner_text()).strip()
-                            break
+                    # Prefer the clean Nuxt payload fields (same one used for salary)
+                    # over guessing at card CSS classes.
+                    if nuxt and nuxt.get("organization"):
+                        job["company"] = nuxt["organization"]
+                    if nuxt and nuxt.get("location"):
+                        job["location"] = nuxt["location"]
+
+                    if not job.get("company"):
+                        all_links = await card.query_selector_all("a[href]")
+                        for lnk in all_links:
+                            lnk_href = await lnk.get_attribute("href") or ""
+                            if "/posao/" not in lnk_href and "/poslodavac/" in lnk_href:
+                                job["company"] = (await lnk.inner_text()).strip()
+                                break
                     if not job.get("company"):
                         company_el = await card.query_selector(
                             "[class*='employer'], [class*='company'], [data-test*='employer'], [data-test*='company']"
@@ -187,9 +195,10 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
                         if company_el:
                             job["company"] = (await company_el.inner_text()).strip()
 
-                    loc_el = await card.query_selector("[class*='location'], [data-test*='location'], [class*='city']")
-                    if loc_el:
-                        job["location"] = (await loc_el.inner_text()).strip()
+                    if not job.get("location"):
+                        loc_el = await card.query_selector("[class*='location'], [data-test*='location'], [class*='city']")
+                        if loc_el:
+                            job["location"] = (await loc_el.inner_text()).strip()
 
                     type_el = await card.query_selector("[class*='type'], [data-test*='type'], [class*='employment']")
                     if type_el:

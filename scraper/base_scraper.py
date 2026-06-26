@@ -331,11 +331,23 @@ def extract_nuxt_payload(content: str) -> dict | None:
         if isinstance(salary_raw, dict):
             salary = {k: resolve(v) for k, v in salary_raw.items()}
 
+        location_raw = resolve_key("location")
+        location = None
+        if isinstance(location_raw, dict):
+            location = resolve(location_raw.get("summary"))
+
+        org_raw = resolve_key("organization")
+        organization = None
+        if isinstance(org_raw, dict):
+            organization = resolve(org_raw.get("name"))
+
         return {
             "title": resolve_key("title"),
             "description": resolve_key("description"),
             "benefits": resolve_key("benefits"),
             "salary": salary,
+            "location": location,
+            "organization": organization,
         }
     except Exception:
         return None
