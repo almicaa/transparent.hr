@@ -93,7 +93,9 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .job__title a:hover{color:var(--dark)}
 .job__company{color:var(--text-secondary);font-size:13px;overflow-wrap:break-word}
 .job__location{color:var(--text-secondary);font-size:13px;overflow-wrap:break-word}
-.job__salary{margin-top:6px;color:var(--salary-highlight);font-size:20px;font-weight:800;background:var(--salary-bg);padding:8px 12px;border-radius:8px;display:inline-block;letter-spacing:-0.01em}
+.job__salary{margin-top:6px;color:var(--salary-highlight);font-size:20px;font-weight:800;padding:8px 12px;border-radius:8px;display:inline-block;letter-spacing:-0.01em;position:relative;isolation:isolate}
+.job__salary::before{content:'';position:absolute;inset:0;background:var(--salary-bg);border-radius:8px;transform:rotate(-2deg);z-index:-2}
+.job__salary::after{content:'';position:absolute;border:2px solid var(--primary);border-radius:8px;bottom:4px;left:4px;width:calc(100% - 1px);height:calc(100% - 1px);transform:rotate(-2deg);z-index:-3}
 .job__footer{margin-top:8px}
 .job__description{color:var(--text-secondary);font-size:13px}
 .job__corner-link{position:absolute;right:18px;bottom:14px;text-decoration:none;color:var(--primary);font-weight:600;font-size:14px}
@@ -128,10 +130,11 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 @media (max-width:900px){
   .features-grid{grid-template-columns:1fr}
 }
-.cta{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:12px 26px;background:var(--dark);color:#fff;border-radius:8px;text-decoration:none;font-weight:700;position:relative;transform:rotate(-2deg);transition:transform .15s ease}
-.cta::after{content:'';position:absolute;border:2px solid var(--primary);border-radius:8px;bottom:5px;left:5px;width:calc(100% - 1px);height:calc(100% - 1px);transition:bottom .15s ease,left .15s ease}
-.cta:hover{transform:rotate(-1deg)}
-.cta:hover::after{bottom:2px;left:2px}
+.cta{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:12px 26px;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;position:relative;isolation:isolate}
+.cta::before{content:'';position:absolute;inset:0;background:var(--dark);border-radius:8px;transform:rotate(-2deg);z-index:-2;transition:transform .15s ease}
+.cta::after{content:'';position:absolute;border:2px solid var(--primary);border-radius:8px;bottom:5px;left:5px;width:calc(100% - 1px);height:calc(100% - 1px);transform:rotate(-2deg);z-index:-3;transition:transform .15s ease,bottom .15s ease,left .15s ease}
+.cta:hover::before{transform:rotate(-1deg)}
+.cta:hover::after{bottom:2px;left:2px;transform:rotate(-1deg)}
 
 .market-estimate{max-width:480px;text-align:left}
 .market-estimate ul{list-style:none;margin:6px 0 0;padding:0}
