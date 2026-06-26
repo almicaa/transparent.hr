@@ -7,6 +7,7 @@ is set — critical for scrapers running on a schedule against production.
 
 import random
 import asyncio
+import json
 import os
 import re
 import sys
@@ -298,6 +299,46 @@ def save_market_stat(conn: Connection, source: str, total_pages: int, salary_pag
     )
     conn.commit()
     return pct
+
+
+def extract_nuxt_payload(content: str) -> dict | None:
+    """Parse mojposao.hr's Nuxt SSR hydration payload (devalue-encoded JSON)
+    into a flat dict with resolved field values.
+
+    Scraping the raw HTML for salary mentions is unreliable on mojposao —
+    every page has a sitewide "Osvoji 500€!" referral banner that false-
+    positives as a salary match. The clean job description/benefits text
+    lives in a <script type="application/json"> hydration payload instead,
+    where each field value is an integer index into a flat top-level array
+    (Nuxt's "devalue" format). The job entity itself is consistently at
+    array index 4 across job detail pages.
+    """
+    m = re.search(r'<script type="application/json"[^>]*>(.*?)</script>', content, re.DOTALL)
+    if not m:
+        return None
+    try:
+        data = json.loads(m.group(1))
+        job = data[4]
+
+        def resolve(idx):
+            return data[idx] if isinstance(idx, int) and idx < len(data) else idx
+
+        def resolve_key(key):
+            return resolve(job.get(key))
+
+        salary_raw = resolve_key("salary")
+        salary = None
+        if isinstance(salary_raw, dict):
+            salary = {k: resolve(v) for k, v in salary_raw.items()}
+
+        return {
+            "title": resolve_key("title"),
+            "description": resolve_key("description"),
+            "benefits": resolve_key("benefits"),
+            "salary": salary,
+        }
+    except Exception:
+        return None
 
 
 def parse_days_to_expiry(text_: str | None) -> int | None:

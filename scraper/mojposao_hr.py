@@ -13,10 +13,13 @@ try:
 except Exception:
     import base_scraper as base
 
-SEARCH_URL = "https://www.mojposao.hr/pretraga-poslova"
+SEARCH_URL = "https://www.mojposao.hr/pretraga-poslova?sortBy=adtype"
 
 
 async def scrape_jobs(max_pages=2, max_jobs=None):
+    """max_pages here means "max scroll batches" — mojposao's listing is
+    infinite-scroll (a "Učitaj još poslova" load-more pattern), not classic
+    ?page=N pagination."""
     base.init_db()
     try:
         base.check_robots("https://www.mojposao.hr")
@@ -29,6 +32,11 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
     new_jobs = []
     total_saved = 0
     processed = 0
+    consecutive_known = 0
+    caught_up = False
+    # Listing order isn't guaranteed strictly newest-first like posao.hr, so
+    # this threshold is more conservative than posao_hr.py's.
+    CAUGHT_UP_THRESHOLD = 40
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -38,81 +46,117 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
         )
         page = await context.new_page()
 
-        page_num = 1
+        print(f"\n--- {SEARCH_URL} ---")
+        try:
+            await page.goto(SEARCH_URL, wait_until="networkidle", timeout=30000)
+            await page.wait_for_selector("div.job-card", timeout=10000)
+        except Exception as e:
+            print(f"Greška pri učitavanju: {e}")
+            await browser.close()
+            base.finish_scrape_log(conn, log_id, jobs_found=0, jobs_saved=0, status="error", error_message=str(e))
+            conn.close()
+            return new_jobs
+
+        await page.wait_for_timeout(1500)
+
+        seen_ids = set()
+        scroll_round = 0
+
         while True:
-            if max_pages and page_num > max_pages:
+            if max_pages and scroll_round >= max_pages:
+                print("Dosegnut max_pages (scroll batches).")
                 break
             if max_jobs and processed >= max_jobs:
                 break
-
-            url = f"{SEARCH_URL}?page={page_num}" if page_num > 1 else SEARCH_URL
-            print(f"\n--- Stranica {page_num}: {url} ---")
-
-            try:
-                await page.goto(url, wait_until="networkidle", timeout=30000)
-            except Exception as e:
-                print(f"Greška pri učitavanju: {e}")
+            if caught_up:
                 break
-
-            try:
-                await page.wait_for_selector("div.job-card", timeout=10000)
-            except Exception:
-                print("Nema job-card elemenata na ovoj stranici.")
-                break
-
-            await page.wait_for_timeout(1500)
 
             job_cards = await page.query_selector_all("div.job-card")
-            print(f"Pronađeno {len(job_cards)} oglasa")
+            print(f"Ukupno učitano kartica: {len(job_cards)} (novih za obraditi: {len(job_cards) - len(seen_ids)})")
 
-            if not job_cards:
-                break
-
+            found_new = False
             for card in job_cards:
                 if max_jobs and processed >= max_jobs:
                     break
                 try:
-                    job = {}
-
                     link_el = await card.query_selector("a[href*='/posao/']")
                     if not link_el:
                         continue
                     href = await link_el.get_attribute("href")
-                    job["url"] = f"https://www.mojposao.hr{href}" if not href.startswith("http") else href
                     match = re.search(r"/posao/([^/]+)/", href)
-                    job["external_id"] = match.group(1) if match else href
+                    external_id = match.group(1) if match else href
+
+                    if external_id in seen_ids:
+                        continue
+                    seen_ids.add(external_id)
+                    found_new = True
+
+                    job = {}
+                    job["url"] = f"https://www.mojposao.hr{href}" if not href.startswith("http") else href
+                    job["external_id"] = external_id
 
                     job["title"] = (await link_el.inner_text()).strip()
                     if not job["title"]:
                         continue
 
-                    # MojPosao hides salary on the list — open the detail page to get it
+                    if base.job_exists(conn, external_id):
+                        consecutive_known += 1
+                        processed += 1
+                        if consecutive_known >= CAUGHT_UP_THRESHOLD:
+                            print(f"  ↳ {consecutive_known} oglasa zaredom već u bazi — prekidam (caught up).")
+                            caught_up = True
+                            break
+                        continue
+                    consecutive_known = 0
+
+                    # MojPosao hides salary on the list — open the detail page to get it.
+                    # Scraping raw HTML is unreliable (every page has a sitewide "Osvoji
+                    # 500€!" referral banner that false-positives as a salary). The Nuxt
+                    # hydration payload has clean description/benefits text instead.
                     ua = base.get_ua()
                     ctx = await browser.new_context(user_agent=ua, viewport={"width": 1280, "height": 900})
                     detail_page = await ctx.new_page()
                     try:
                         await base.retry_with_backoff(detail_page.goto, job["url"], wait_until="networkidle", timeout=20000)
-                        salary_text = None
-                        sal_el = await detail_page.query_selector(
-                            "span.with_salary, .with_salary, [class*='salary'], [data-test*='salary'], text=Plaća"
-                        )
                         body = await detail_page.content()
-                        if sal_el:
-                            candidate = (await sal_el.inner_text()).strip()
-                            if base.is_valid_salary(candidate) or re.search(r"(?i)^Pla[ćc]a:\s*\d", candidate):
-                                salary_text = candidate
+                        salary_text = None
+                        salary_min = salary_max = None
+
+                        nuxt = base.extract_nuxt_payload(body)
+                        if nuxt:
+                            sal = nuxt.get("salary")
+                            if isinstance(sal, dict) and sal.get("from"):
+                                # Structured field — exact numbers, no text parsing needed.
+                                salary_min = float(sal["from"])
+                                salary_max = float(sal.get("to") or sal["from"])
+                                currency = str(sal.get("currency") or "eur").upper()
+                                tax_label = {"gross": "bruto", "net": "neto"}.get(str(sal.get("tax") or "").lower())
+                                amount = (
+                                    f"{int(salary_min)} {currency}"
+                                    if salary_min == salary_max
+                                    else f"od {int(salary_min)} do {int(salary_max)} {currency}"
+                                )
+                                salary_text = f"{amount} {tax_label}".strip() if tax_label else amount
                             else:
-                                m = re.search(r"(?i)(Pla[ćc]a:\s*[^<]{0,120})", body)
-                                if m and base.is_valid_salary(m.group(1)):
-                                    salary_text = m.group(1).strip()
-                        else:
+                                combined = "\n".join(filter(None, [nuxt.get("description"), nuxt.get("benefits")]))
+                                for line in combined.splitlines():
+                                    line = line.strip().lstrip("-•").strip()
+                                    if re.search(r"(?i)pla[ćc]a|salary", line) and base.is_valid_salary(line):
+                                        salary_text = line
+                                        break
+
+                        if not salary_text:
+                            # Fallback for pages without the Nuxt payload (layout changes etc.)
                             m = re.search(r"(?i)(Pla[ćc]a:\s*[^<]{0,120})", body)
                             if m and base.is_valid_salary(m.group(1)):
                                 salary_text = m.group(1).strip()
 
                         salary_text = base.clean_salary_snippet(salary_text)
                         job["salary_text"] = salary_text
-                        if salary_text and (base.is_valid_salary(salary_text) or re.search(r"(?i)^Pla[ćc]a:\s*\d", salary_text)):
+                        if salary_min is not None:
+                            job["salary_min"], job["salary_max"] = salary_min, salary_max
+                            job["salary_shown"] = True
+                        elif salary_text and base.is_valid_salary(salary_text):
                             job["salary_min"], job["salary_max"] = base.parse_salary(salary_text)
                             job["salary_shown"] = True
                         else:
@@ -169,15 +213,18 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
                     print(f"  Greška: {e}")
                     continue
 
-            next_btn = await page.query_selector("a[rel='next'], [aria-label='Next'], [data-test='pagination-next'], .pagination__next")
-            if not next_btn:
-                next_btn = await page.query_selector("a:has-text('Sljedeća'), button:has-text('Sljedeća')")
-            if not next_btn:
-                print("Nema više stranica.")
+            if caught_up:
                 break
 
-            page_num += 1
-            await asyncio.sleep(1.5)
+            prev_count = len(job_cards)
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await page.wait_for_timeout(2000)
+            new_count = len(await page.query_selector_all("div.job-card"))
+            scroll_round += 1
+
+            if new_count <= prev_count and not found_new:
+                print("Nema više oglasa za učitati (scroll ne dodaje nove).")
+                break
 
         await browser.close()
 
