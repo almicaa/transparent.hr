@@ -46,6 +46,14 @@ a{color:var(--dark)}
 
 .site-footer{box-shadow:0 -2px 10px rgba(8,80,80,0.05);margin-top:40px;padding-block:10px}
 .site-footer__inner{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding-inline:20px;padding-block:10px;color:var(--text-secondary);text-align:center}
+.footer__legal-links{display:flex;gap:16px}
+.footer__legal-links a{font-size:13px;color:var(--text-secondary);text-decoration:none}
+.footer__legal-links a:hover{color:var(--dark);text-decoration:underline}
+
+.legal{max-width:680px;margin:0 auto;padding:20px 0;text-align:left}
+.legal h1{font-size:28px;color:var(--dark);margin-bottom:4px}
+.legal h2{font-size:18px;color:var(--text);margin:28px 0 8px}
+.legal p{color:var(--text-secondary);line-height:1.6}
 
 main .site-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}
 main .title-block h1{margin:0;font-size:24px;color:var(--dark)}
