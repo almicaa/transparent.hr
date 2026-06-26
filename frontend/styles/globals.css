@@ -62,6 +62,9 @@ a.stat:hover{border-color:rgba(8,80,80,0.4)}
 .sources-list__count{font-size:14px;color:var(--text-secondary)}
 
 .meta{color:var(--text-secondary);font-size:0.9rem}
+.meta--link{display:inline-flex;align-items:center;gap:5px}
+.arrow-icon{flex-shrink:0;transition:transform .15s ease}
+.stat:hover .arrow-icon,.cta:hover .arrow-icon,.link-with-icon:hover .arrow-icon{transform:translateX(2px)}
 
 /* /jobs layout: sidebar filters + content */
 .jobs-layout{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
@@ -102,6 +105,7 @@ a.stat:hover{border-color:rgba(8,80,80,0.4)}
 .home-section__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
 .home-section__header h2{margin:0}
 .home-section__header a{font-weight:600;font-size:14px;text-decoration:none}
+.link-with-icon{display:inline-flex;align-items:center;gap:5px;color:var(--dark)}
 
 .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .feature-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:20px}
@@ -112,7 +116,7 @@ a.stat:hover{border-color:rgba(8,80,80,0.4)}
 @media (max-width:900px){
   .features-grid{grid-template-columns:1fr}
 }
-.cta{display:inline-block;margin-top:8px;padding:12px 26px;background:var(--dark);color:#fff;border-radius:8px;text-decoration:none;font-weight:700}
+.cta{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:12px 26px;background:var(--dark);color:#fff;border-radius:8px;text-decoration:none;font-weight:700}
 .cta:hover{background:#063e3e}
 
 .market-estimate{max-width:480px;text-align:left}

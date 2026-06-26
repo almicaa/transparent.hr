@@ -2,7 +2,7 @@ import Link from "next/link"
 import { getJobs, getStats } from "../lib/api"
 import JobCard from "../components/job/JobCard"
 import HeroIllustration from "../components/ui/HeroIllustration"
-import { CheckIcon, EuroIcon, LayersIcon } from "../components/ui/icons"
+import { ArrowIcon, CheckIcon, EuroIcon, LayersIcon } from "../components/ui/icons"
 import { SOURCE_LABELS } from "../lib/sourceLabels"
 
 export const dynamic = "force-dynamic"
@@ -47,7 +47,9 @@ export default async function HomePage() {
           </div>
           <Link href="/izvori" className="stat">
             <div className="stat__value">{stats?.sources?.length ?? "-"}</div>
-            <div className="meta">Broj portala →</div>
+            <div className="meta meta--link">
+              Broj portala <ArrowIcon />
+            </div>
           </Link>
         </div>
 
@@ -65,7 +67,7 @@ export default async function HomePage() {
         ) : null}
 
         <Link className="cta" href="/jobs">
-          Pogledaj oglase →
+          Pogledaj oglase <ArrowIcon />
         </Link>
       </section>
 
@@ -73,7 +75,9 @@ export default async function HomePage() {
         <section className="home-section">
           <div className="home-section__header">
             <h2>Istaknute objave</h2>
-            <Link href="/jobs">Svi oglasi →</Link>
+            <Link href="/jobs" className="link-with-icon">
+              Svi oglasi <ArrowIcon />
+            </Link>
           </div>
           <div className="grid">
             {featuredJobs.map((job) => (
