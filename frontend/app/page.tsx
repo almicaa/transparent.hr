@@ -28,8 +28,8 @@ export default function HomePage() {
     <main>
       <section className="hero">
         <HeroIllustration />
-        <h1>Plaća prvo. Prijava poslije.</h1>
-        <p className="hero__lead">Filtrirali smo sve ostale. Ostalo je ono što vrijedi tvoje vrijeme.</p>
+        <h1>Vrijeme je za ne gubiti više vrijeme</h1>
+        <p className="hero__lead">na oglase bez navedene plaće.</p>
 
         <Link className="cta" href="/jobs">
           Pogledaj oglase <ArrowIcon />

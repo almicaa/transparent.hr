@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="site-footer">
       <div className="container site-footer__inner">
         <Logo size={20} />
-        <span className="meta">© {new Date().getFullYear()} transparent.hr — poslovi s vidljivom plaćom u Hrvatskoj.</span>
+        <span className="meta">© {new Date().getFullYear()} transparent.hr — Vrijeme je ne gubiti vrijeme.</span>
       </div>
     </footer>
   )
