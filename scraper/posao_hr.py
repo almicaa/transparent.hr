@@ -263,12 +263,19 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                             if base.is_valid_salary(det_sal):
                                 job["salary_text"] = det_sal
                                 job["salary_min"], job["salary_max"] = base.parse_salary(det_sal)
-                        job["salary_shown"] = True
                         await p2.close()
                         await ctx2.close()
                         await base.sleep_jitter()
                     except Exception:
-                        job["salary_shown"] = True
+                        pass
+
+                    # Only ever mark/save a job as salary_shown when we actually have
+                    # extracted text — being from the salary-filtered feed isn't enough
+                    # proof on its own (detail-page extraction can fail).
+                    job["salary_shown"] = bool(job.get("salary_text")) and base.is_valid_salary(job["salary_text"])
+                    if not job["salary_shown"]:
+                        processed += 1
+                        continue
 
                     if base.save_job(conn, job, "posao"):
                         total_saved += 1
