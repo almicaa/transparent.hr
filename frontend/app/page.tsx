@@ -8,18 +8,18 @@ export const dynamic = "force-dynamic"
 
 const FEATURES = [
   {
-    title: "Samo plaća u EUR",
-    text: "Svaki oglas koji vidiš već otkriva iznos — nema pogađanja, nema 'po dogovoru'.",
+    title: "Samo oglasi koji pričaju.",
+    text: "Svaki oglas ovdje ima broj. Jer \"po dogovoru\" nije odgovor.",
     Icon: EuroIcon,
   },
   {
-    title: "Sakupljeno s više portala",
-    text: "Provjeravamo oglase s hrvatskih job portala i izdvajamo samo one koji prikazuju plaću.",
+    title: "Skupljeno s cijele scene.",
+    text: "Posao.hr, MojPosao i ostali — mi filtriramo, ti biraš.",
     Icon: LayersIcon,
   },
   {
-    title: "Bez registracije",
-    text: "Pretraži, filtriraj po gradu i kategoriji, klikni na originalni oglas. Gotovo.",
+    title: "Otvori, filtriraj, apliciraj.",
+    text: "Bez registracije. Bez newslettera. Bez ičega suvišnog.",
     Icon: CheckIcon,
   },
 ]
