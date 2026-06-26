@@ -76,7 +76,7 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
 
-.job{background:var(--card-bg);padding:18px;border-radius:12px;box-shadow:0 4px 14px rgba(8,80,80,0.08);display:flex;flex-direction:column;gap:8px;text-align:left;transition:box-shadow .15s ease,transform .15s ease}
+.job{position:relative;background:var(--card-bg);padding:18px;padding-bottom:48px;border-radius:12px;box-shadow:0 4px 14px rgba(8,80,80,0.08);display:flex;flex-direction:column;gap:8px;text-align:left;transition:box-shadow .15s ease,transform .15s ease}
 .job:hover{box-shadow:0 8px 22px rgba(8,80,80,0.12);transform:translateY(-1px)}
 .job__main{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .job__title{margin:0;font-size:17px;font-weight:700;word-break:break-word}
@@ -85,12 +85,13 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .job__company{color:var(--text-secondary);font-size:13px}
 .job__location{color:var(--text-secondary);font-size:13px}
 .job__salary{margin-top:6px;color:var(--salary-highlight);font-size:20px;font-weight:800;background:var(--salary-bg);padding:8px 12px;border-radius:8px;display:inline-block;letter-spacing:-0.01em}
-.job__footer{margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.job__footer{margin-top:8px}
 .job__description{color:var(--text-secondary);font-size:13px}
+.job__corner-link{position:absolute;right:18px;bottom:14px;text-decoration:none;color:var(--primary);font-weight:600;font-size:14px}
+.job__corner-link:hover{color:var(--dark)}
 
 .badge{display:inline-block;background:var(--badge-bg);color:var(--text-secondary);padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600}
 .source-badge{background:var(--badge-bg);color:var(--text-secondary)}
-.actions a{margin-left:12px;text-decoration:none;color:var(--primary);font-weight:600}
 .pagination{display:flex;gap:8px;align-items:center;margin-top:20px}
 .pagination button{padding:8px 14px;border-radius:8px;border:none;background:var(--card-bg);box-shadow:0 2px 8px rgba(8,80,80,0.08);cursor:pointer;color:var(--text)}
 .pagination button:disabled{opacity:0.5;cursor:default}
@@ -162,9 +163,6 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 
   .job-detail{padding:16px}
   .job-detail__salary{font-size:20px;padding:10px 14px}
-
-  .job__footer{flex-direction:column;align-items:flex-start;gap:6px}
-  .actions a{margin-left:0}
 
   .pagination{flex-wrap:wrap;justify-content:center}
 }

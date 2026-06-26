@@ -6,7 +6,7 @@ import JobCard from "./JobCard"
 import { getFilters, getJobs } from "../../lib/api"
 import { Job, JobFilters } from "../../lib/types"
 
-const PER_PAGE = 21
+const PER_PAGE = 20
 
 export default function JobBrowser() {
   const [jobs, setJobs] = useState<Job[]>([])

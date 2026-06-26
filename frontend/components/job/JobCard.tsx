@@ -41,10 +41,11 @@ export default function JobCard({ job }: { job: Job }) {
         <div className="job__description">
           {job.description ? job.description.slice(0, 160) + (job.description.length > 160 ? "..." : "") : ""}
         </div>
-        <div className="actions">
-          <Link href={`/jobs/${job.id}`}>Detalji</Link>
-        </div>
       </div>
+
+      <Link href={`/jobs/${job.id}`} className="job__corner-link">
+        Detalji
+      </Link>
     </article>
   )
 }
