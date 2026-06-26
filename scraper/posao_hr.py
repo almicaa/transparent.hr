@@ -47,6 +47,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
     conn = base.get_connection()
     base.register_source(conn, "posao", "posao.hr", "https://www.posao.hr")
     log_id = base.start_scrape_log(conn, "posao")
+    new_jobs = []
     total_saved = 0
     processed = 0
     consecutive_known = 0
@@ -271,6 +272,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
 
                     if base.save_job(conn, job, "posao"):
                         total_saved += 1
+                        new_jobs.append({"title": job.get("title"), "url": job.get("url"), "salary_text": job.get("salary_text")})
                         print(f"  ✓ {job['title'][:60]} | {'💰 ' + (job.get('salary_text') or '') if job.get('salary_shown') else '❌ plaća skrivena'}")
 
                     processed += 1
@@ -302,7 +304,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
     base.finish_scrape_log(conn, log_id, jobs_found=processed, jobs_saved=total_saved, status="success")
     conn.close()
     print(f"\n✅ Gotovo! Ukupno novih oglasa: {total_saved}")
-    return total_saved
+    return new_jobs
 
 
 if __name__ == "__main__":

@@ -26,6 +26,7 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
     conn = base.get_connection()
     base.register_source(conn, "mojposao", "mojposao.hr", "https://www.mojposao.hr")
     log_id = base.start_scrape_log(conn, "mojposao")
+    new_jobs = []
     total_saved = 0
     processed = 0
 
@@ -158,6 +159,7 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
 
                     if base.save_job(conn, job, "mojposao"):
                         total_saved += 1
+                        new_jobs.append({"title": job.get("title"), "url": job.get("url"), "salary_text": job.get("salary_text")})
                         print(f"  ✓ {job['title'][:50]} | 💰 {job.get('salary_text')}")
 
                     processed += 1
@@ -186,7 +188,7 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
     base.finish_scrape_log(conn, log_id, jobs_found=processed, jobs_saved=total_saved, status="success")
     conn.close()
     print(f"\n✅ Gotovo! Ukupno novih oglasa: {total_saved}")
-    return total_saved
+    return new_jobs
 
 
 if __name__ == "__main__":
