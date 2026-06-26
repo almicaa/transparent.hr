@@ -66,12 +66,13 @@ a.stat:hover{border-color:rgba(8,80,80,0.4)}
 .arrow-icon{flex-shrink:0;transition:transform .15s ease}
 .stat:hover .arrow-icon,.cta:hover .arrow-icon,.link-with-icon:hover .arrow-icon{transform:translateX(2px)}
 
-/* /jobs layout: sidebar filters + content */
-.jobs-layout{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
-.filters{display:flex;flex-direction:column;gap:12px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:16px;position:sticky;top:20px}
-.filters__title{margin:0 0 4px;font-size:14px;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:0.04em}
-.filters select,.filters input{padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);width:100%;font-size:14px}
-.filters select:focus,.filters input:focus{outline:2px solid var(--primary)}
+/* Job browser: full-width filter bar above the grid */
+.job-browser{width:100%}
+.filters{display:flex;flex-wrap:wrap;gap:10px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:0 4px 14px rgba(8,80,80,0.05)}
+.filters select,.filters input{padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:14px}
+.filters select:focus,.filters input:focus{outline:2px solid var(--primary);border-color:var(--primary)}
+.filters .search{flex:2 1 220px;min-width:180px}
+.filters select{flex:1 1 150px}
 
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
 

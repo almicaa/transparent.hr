@@ -14,6 +14,7 @@ export interface GetJobsParams {
   source?: string
   company?: string
   search?: string
+  region?: "hr" | "foreign"
   sort?: "newest" | "salary_desc" | "salary_asc"
 }
 

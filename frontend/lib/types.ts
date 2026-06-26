@@ -64,4 +64,5 @@ export interface JobFilters {
   category: string
   source: string
   search: string
+  region: string
 }

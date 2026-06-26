@@ -1,10 +1,25 @@
 from datetime import date
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.job import Job
 from app.models.market_stat import MarketStat
+
+# No structured country field is scraped — location is free text (e.g.
+# "Zagreb" vs "Höchstadt a. d. Aisch, Njemačka"). Foreign ads are flagged by
+# matching well-known country names, since that's how they actually show up
+# in the data; anything else defaults to "hr" (the common case).
+FOREIGN_LOCATION_KEYWORDS = [
+    "austrija", "austria", "njemačka", "germany", "deutschland",
+    "švicarska", "switzerland", "italija", "italy", "francuska", "france",
+    "nizozemska", "netherlands", "holland", "belgija", "belgium",
+    "mađarska", "hungary", "irska", "ireland", "švedska", "sweden",
+    "norveška", "norway", "danska", "denmark", "velika britanija",
+    "united kingdom", "england", "poljska", "poland", "češka", "czech",
+    "grčka", "greece", "španjolska", "spain", "malta", "cipar", "cyprus",
+    "kanada", "canada", "australija", "australia", "slovenija", "slovenia",
+]
 
 
 class JobRepository:
@@ -23,6 +38,7 @@ class JobRepository:
         source: str | None = None,
         company: str | None = None,
         search: str | None = None,
+        region: str | None = None,
         sort: str = "newest",
         page: int = 1,
         per_page: int = 21,
@@ -37,6 +53,10 @@ class JobRepository:
             stmt = stmt.where(Job.salary_min <= salary_max)
         if city:
             stmt = stmt.where(Job.location.ilike(f"%{city}%"))
+        if region == "foreign":
+            stmt = stmt.where(or_(*(Job.location.ilike(f"%{kw}%") for kw in FOREIGN_LOCATION_KEYWORDS)))
+        elif region == "hr":
+            stmt = stmt.where(~or_(*(Job.location.ilike(f"%{kw}%") for kw in FOREIGN_LOCATION_KEYWORDS)))
         if category:
             stmt = stmt.where(Job.category.ilike(f"%{category}%"))
         if job_type:

@@ -11,7 +11,6 @@ interface FiltersProps {
 export default function Filters({ filters, setFilters, setPage, cities, categories }: FiltersProps) {
   return (
     <div className="filters">
-      <h2 className="filters__title">Filteri</h2>
       <input
         className="search"
         type="search"
@@ -63,6 +62,18 @@ export default function Filters({ filters, setFilters, setPage, cities, categori
         <option value="all">Svi izvori</option>
         <option value="posao">posao.hr</option>
         <option value="mojposao">mojposao</option>
+      </select>
+
+      <select
+        value={filters.region}
+        onChange={(e) => {
+          setFilters((f) => ({ ...f, region: e.target.value }))
+          setPage(1)
+        }}
+      >
+        <option value="all">Hrvatska i inozemstvo</option>
+        <option value="hr">Hrvatska</option>
+        <option value="foreign">Inozemstvo</option>
       </select>
     </div>
   )

@@ -31,12 +31,6 @@ export default function HomePage() {
         <h1>Plaća prvo. Prijava poslije.</h1>
         <p className="hero__lead">Filtrirali smo sve ostale. Ostalo je ono što vrijedi tvoje vrijeme.</p>
 
-        <div className="hero__manifesto">
-          <span className="hero__manifesto-line hero__manifesto-line--struck">"Po dogovoru" nije odgovor.</span>
-          <span className="hero__manifesto-line">Transparentnost nije luksuz.</span>
-          <span className="hero__manifesto-line hero__manifesto-line--strong">Samo stvarne brojke.</span>
-        </div>
-
         <Link className="cta" href="/jobs">
           Pogledaj oglase <ArrowIcon />
         </Link>
