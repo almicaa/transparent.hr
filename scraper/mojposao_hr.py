@@ -4,7 +4,6 @@ Pokreni: python mojposao_hr.py
 """
 
 import asyncio
-import sqlite3
 import re
 from datetime import datetime
 from playwright.async_api import async_playwright
@@ -24,7 +23,7 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
     except Exception:
         pass
 
-    conn = sqlite3.connect(base.DB_PATH)
+    conn = base.get_connection()
     base.register_source(conn, "mojposao", "mojposao.hr", "https://www.mojposao.hr")
     log_id = base.start_scrape_log(conn, "mojposao")
     total_saved = 0
@@ -179,6 +178,10 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
             await asyncio.sleep(1.5)
 
         await browser.close()
+
+    deactivated = base.deactivate_expired(conn)
+    if deactivated:
+        print(f"[expiry] Deaktivirano {deactivated} isteklih oglasa.")
 
     base.finish_scrape_log(conn, log_id, jobs_found=processed, jobs_saved=total_saved, status="success")
     conn.close()

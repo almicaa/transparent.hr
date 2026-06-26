@@ -25,6 +25,8 @@ class JobOut(BaseModel):
     source: str | None = None
     posted_at: str | None = None
     scraped_at: datetime | None = None
+    expires_at: datetime | None = None
+    is_active: bool = True
 
 
 class JobList(BaseModel):

@@ -7,7 +7,6 @@ pronalazi oglase, pokreni debug_selectors.py i prilagodi selektore.
 """
 
 import asyncio
-import sqlite3
 import re
 from datetime import datetime
 from playwright.async_api import async_playwright
@@ -45,7 +44,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
     except Exception:
         pass
 
-    conn = sqlite3.connect(base.DB_PATH)
+    conn = base.get_connection()
     base.register_source(conn, "posao", "posao.hr", "https://www.posao.hr")
     log_id = base.start_scrape_log(conn, "posao")
     total_saved = 0
@@ -154,6 +153,11 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                     if loc_el:
                         location_line = (await loc_el.inner_text()).strip() or None
 
+                    days_to_expiry = None
+                    date_el = await a.query_selector("span.date_system")
+                    if date_el:
+                        days_to_expiry = base.parse_days_to_expiry((await date_el.inner_text()).strip())
+
                     salary_line = None
                     sal_el = await a.query_selector("span.with_salary")
                     if sal_el:
@@ -164,6 +168,8 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                     job = {"external_id": external_id, "url": url_full, "title": title_line}
                     if location_line:
                         job["location"] = location_line
+                    if days_to_expiry is not None:
+                        job["days_to_expiry"] = days_to_expiry
 
                     if salary_line and base.is_valid_salary(salary_line):
                         job["salary_text"] = salary_line
@@ -288,6 +294,10 @@ async def scrape_posao(max_pages=None, max_jobs=None):
             await asyncio.sleep(1.0)
 
         await browser.close()
+
+    deactivated = base.deactivate_expired(conn)
+    if deactivated:
+        print(f"[expiry] Deaktivirano {deactivated} isteklih oglasa.")
 
     base.finish_scrape_log(conn, log_id, jobs_found=processed, jobs_saved=total_saved, status="success")
     conn.close()

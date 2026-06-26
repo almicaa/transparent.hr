@@ -27,7 +27,7 @@ class JobRepository:
         page: int = 1,
         per_page: int = 21,
     ) -> tuple[int, list[Job]]:
-        stmt = select(Job)
+        stmt = select(Job).where(Job.is_active.is_(True))
 
         if salary_shown is not None:
             stmt = stmt.where(Job.salary_shown == int(salary_shown))
@@ -68,26 +68,30 @@ class JobRepository:
         return self.db.get(Job, job_id)
 
     def count_all(self) -> int:
-        return self.db.scalar(select(func.count()).select_from(Job)) or 0
+        return self.db.scalar(select(func.count()).select_from(Job).where(Job.is_active.is_(True))) or 0
 
     def count_salary_shown(self, shown: bool) -> int:
         return self.db.scalar(
-            select(func.count()).select_from(Job).where(Job.salary_shown == int(shown))
+            select(func.count())
+            .select_from(Job)
+            .where(Job.is_active.is_(True), Job.salary_shown == int(shown))
         ) or 0
 
     def count_new_today(self) -> int:
         return self.db.scalar(
-            select(func.count()).select_from(Job).where(func.date(Job.scraped_at) == date.today())
+            select(func.count())
+            .select_from(Job)
+            .where(Job.is_active.is_(True), func.date(Job.scraped_at) == date.today())
         ) or 0
 
     def counts_by_source(self) -> list[tuple[str, int]]:
-        stmt = select(Job.source, func.count()).group_by(Job.source)
+        stmt = select(Job.source, func.count()).where(Job.is_active.is_(True)).group_by(Job.source)
         return [(row[0], row[1]) for row in self.db.execute(stmt)]
 
     def top_cities(self, limit: int = 10) -> list[tuple[str, int]]:
         stmt = (
             select(Job.location, func.count())
-            .where(Job.location.is_not(None))
+            .where(Job.is_active.is_(True), Job.location.is_not(None))
             .group_by(Job.location)
             .order_by(func.count().desc())
             .limit(limit)
@@ -95,15 +99,30 @@ class JobRepository:
         return [(row[0], row[1]) for row in self.db.execute(stmt)]
 
     def distinct_locations(self) -> list[str]:
-        stmt = select(Job.location).where(Job.location.is_not(None)).distinct().order_by(Job.location)
+        stmt = (
+            select(Job.location)
+            .where(Job.is_active.is_(True), Job.location.is_not(None))
+            .distinct()
+            .order_by(Job.location)
+        )
         return [row[0] for row in self.db.execute(stmt)]
 
     def distinct_categories(self) -> list[str]:
-        stmt = select(Job.category).where(Job.category.is_not(None)).distinct().order_by(Job.category)
+        stmt = (
+            select(Job.category)
+            .where(Job.is_active.is_(True), Job.category.is_not(None))
+            .distinct()
+            .order_by(Job.category)
+        )
         return [row[0] for row in self.db.execute(stmt)]
 
     def distinct_job_types(self) -> list[str]:
-        stmt = select(Job.job_type).where(Job.job_type.is_not(None)).distinct().order_by(Job.job_type)
+        stmt = (
+            select(Job.job_type)
+            .where(Job.is_active.is_(True), Job.job_type.is_not(None))
+            .distinct()
+            .order_by(Job.job_type)
+        )
         return [row[0] for row in self.db.execute(stmt)]
 
     def market_estimates(self) -> list[tuple[str, float]]:

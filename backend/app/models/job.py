@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, String
+from sqlalchemy import Boolean, DateTime, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.session import Base
@@ -30,3 +30,7 @@ class Job(Base):
     source: Mapped[str | None] = mapped_column(String)
     posted_at: Mapped[str | None] = mapped_column(String)
     scraped_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime)
+    """Parsed from the portal's own 'N dana do isteka' countdown, when available."""
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    """Set False once expires_at has passed — hidden from the API by default."""
