@@ -71,7 +71,7 @@ export default async function HomePage() {
         <section className="home-section">
           <div className="home-section__header">
             <h2>Istaknute objave</h2>
-            <Link href="/jobs">Sve oglase →</Link>
+            <Link href="/jobs">Svi oglasi →</Link>
           </div>
           <div className="grid">
             {featuredJobs.map((job) => (
