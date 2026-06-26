@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { getJobs, getStats } from "../lib/api"
-import SourcesBreakdown from "../components/ui/SourcesBreakdown"
 import JobCard from "../components/job/JobCard"
 import HeroIllustration from "../components/ui/HeroIllustration"
 import { CheckIcon, EuroIcon, LayersIcon } from "../components/ui/icons"
@@ -46,7 +45,10 @@ export default async function HomePage() {
             <div className="stat__value">{stats?.salary_shown ?? "-"}</div>
             <div className="meta">Oglasa s plaćom u bazi</div>
           </div>
-          {stats ? <SourcesBreakdown sources={stats.sources} /> : null}
+          <Link href="/izvori" className="stat">
+            <div className="stat__value">{stats?.sources?.length ?? "-"}</div>
+            <div className="meta">Broj portala →</div>
+          </Link>
         </div>
 
         {estimates.length > 0 ? (
