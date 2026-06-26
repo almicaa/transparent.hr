@@ -28,7 +28,9 @@ export default function HomePage() {
     <main>
       <section className="hero">
         <HeroIllustration />
-        <h1>Vrijeme je za ne gubiti više vrijeme</h1>
+        <h1>
+          <span className="hero__title-accent">Vrijeme je</span> za ne gubiti više vrijeme
+        </h1>
         <p className="hero__lead">na oglase bez navedene plaće.</p>
 
         <Link className="cta" href="/jobs">
