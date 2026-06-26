@@ -142,7 +142,17 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
                                 for line in combined.splitlines():
                                     line = line.strip().lstrip("-•").strip()
                                     if re.search(r"(?i)pla[ćc]a|salary", line) and base.is_valid_salary(line):
-                                        salary_text = line
+                                        # Don't keep the whole sentence (e.g. "...i zagarantirano
+                                        # povećanje nakon 1. i 2. godine...") — just the first
+                                        # amount, the rest belongs in the original ad, not the card.
+                                        amount_m = re.search(r"\d[\d.,\s]{0,12}\s*(?:€|EUR)", line, re.IGNORECASE)
+                                        if amount_m:
+                                            basis = base.parse_salary_basis(line)
+                                            amount_clean = amount_m.group(0).strip()
+                                            salary_text = f"{amount_clean} {basis}".strip() if basis else amount_clean
+                                        else:
+                                            salary_text = line
+                                        salary_min, salary_max = base.parse_salary(salary_text)
                                         break
 
                         if not salary_text:
