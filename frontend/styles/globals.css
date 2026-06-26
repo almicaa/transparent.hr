@@ -51,10 +51,10 @@ main .title-block h1{margin:0;font-size:24px;color:var(--dark)}
 main .title-block p{margin:4px 0 0;color:var(--text-secondary)}
 
 .stats{display:flex;gap:12px;align-items:stretch;margin-bottom:16px}
-.stat{background:var(--card-bg);padding:14px;border-radius:10px;min-width:140px;border:3px solid var(--primary);text-decoration:none;display:flex;flex-direction:column;justify-content:center}
+.stat{background:var(--card-bg);padding:14px;border-radius:10px;min-width:140px;border:3px solid rgba(29,158,158,0.22);text-decoration:none;display:flex;flex-direction:column;justify-content:center}
 .stat__value{font-size:20px;font-weight:700;color:var(--dark)}
 .stat__value--sm{font-size:14px;font-weight:600}
-a.stat:hover{border-color:var(--dark)}
+a.stat:hover{border-color:rgba(8,80,80,0.4)}
 
 .sources-list{display:flex;flex-direction:column;gap:12px;width:100%;max-width:480px;text-align:left}
 .sources-list__item{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:16px}
