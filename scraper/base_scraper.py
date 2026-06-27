@@ -62,6 +62,19 @@ MAX_CONCURRENCY = 1
 PROXY_LIST = []  # optional: list of proxy strings (http://user:pass@host:port)
 DRY_RUN = False
 
+# Render's Cron Job instances cap memory at 512MB. Headless Chromium accumulates
+# overhead over hundreds of context create/destroy cycles in a single run, and
+# without these flags that's enough to OOM the whole job (it actually happened —
+# the scraper got SIGKILLed mid-run rather than failing cleanly).
+CHROMIUM_LAUNCH_ARGS = [
+    "--disable-dev-shm-usage",
+    "--disable-gpu",
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-background-networking",
+    "--disable-extensions",
+]
+
 
 def get_ua():
     return random.choice(UA_LIST)

@@ -38,8 +38,13 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
     # this threshold is more conservative than posao_hr.py's.
     CAUGHT_UP_THRESHOLD = 40
 
+    # Safety net against the OOM we hit in production: bound the worst case so
+    # the run always exits cleanly (and writes finish_scrape_log) instead of
+    # getting SIGKILLed by Render's 512MB cap mid-run.
+    MAX_PROCESSED_SAFETY = 600
+
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=True, args=base.CHROMIUM_LAUNCH_ARGS)
         context = await browser.new_context(
             user_agent=base.get_ua(),
             viewport={"width": 1280, "height": 900},
@@ -69,6 +74,9 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
             if max_jobs and processed >= max_jobs:
                 break
             if caught_up:
+                break
+            if processed >= MAX_PROCESSED_SAFETY:
+                print(f"  ↳ Dosegnut sigurnosni limit ({MAX_PROCESSED_SAFETY}) — prekidam da ne riskiram OOM.")
                 break
 
             job_cards = await page.query_selector_all("div.job-card")
@@ -114,7 +122,7 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
                     # 500€!" referral banner that false-positives as a salary). The Nuxt
                     # hydration payload has clean description/benefits text instead.
                     ua = base.get_ua()
-                    ctx = await browser.new_context(user_agent=ua, viewport={"width": 1280, "height": 900})
+                    ctx = await browser.new_context(user_agent=ua, viewport={"width": 1024, "height": 768})
                     detail_page = await ctx.new_page()
                     try:
                         await base.retry_with_backoff(detail_page.goto, job["url"], wait_until="networkidle", timeout=20000)

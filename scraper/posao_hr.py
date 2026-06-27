@@ -56,9 +56,13 @@ async def scrape_posao(max_pages=None, max_jobs=None):
     # ads in a row, the rest of the feed is stuff we already have — stop
     # instead of re-checking pages we've already fully covered.
     CAUGHT_UP_THRESHOLD = 25
+    # Safety net against the OOM hit in production on mojposao: bound the
+    # worst case so the run always exits cleanly instead of getting
+    # SIGKILLed by Render's 512MB cap mid-run.
+    MAX_PROCESSED_SAFETY = 600
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=True, args=base.CHROMIUM_LAUNCH_ARGS)
         context = await browser.new_context(
             user_agent=base.get_ua(),
             viewport={"width": 1200, "height": 900},
@@ -68,6 +72,9 @@ async def scrape_posao(max_pages=None, max_jobs=None):
         page_num = 1
         while True:
             if max_pages and page_num > max_pages:
+                break
+            if processed >= MAX_PROCESSED_SAFETY:
+                print(f"  ↳ Dosegnut sigurnosni limit ({MAX_PROCESSED_SAFETY}) — prekidam da ne riskiram OOM.")
                 break
 
             url = f"{SEARCH_URL}?page={page_num}" if page_num > 1 else SEARCH_URL
@@ -238,7 +245,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                     # Always open detail page and try to extract the real salary amount
                     try:
                         ua = base.get_ua()
-                        ctx2 = await browser.new_context(user_agent=ua, viewport={"width": 1200, "height": 900})
+                        ctx2 = await browser.new_context(user_agent=ua, viewport={"width": 1024, "height": 768})
                         p2 = await ctx2.new_page()
                         await base.retry_with_backoff(p2.goto, url_full, wait_until="networkidle", timeout=30000)
                         det_sal = None
