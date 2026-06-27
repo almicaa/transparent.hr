@@ -131,9 +131,9 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 @media (max-width:900px){
   .features-grid{grid-template-columns:1fr}
 }
-.cta{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:14px 28px;background:transparent;border:1px solid var(--dark);color:var(--dark);border-radius:8px;text-decoration:none;font-weight:700;position:relative;isolation:isolate}
-.cta::before{content:'';position:absolute;background:var(--salary-bg);border-radius:8px;height:calc(100% + 6px);width:100%;right:-7px;top:-9px;z-index:-1;transition:background-color .25s ease}
-.cta:hover::before{background:var(--primary)}
+.cta{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:14px 28px;background:var(--dark);color:#fff;border-radius:8px;text-decoration:none;font-weight:700;position:relative;isolation:isolate}
+.cta::before{content:'';position:absolute;background:var(--primary);border-radius:8px;height:calc(100% + 6px);width:100%;right:-7px;top:-9px;z-index:-1;transition:background-color .25s ease}
+.cta:hover::before{background:#063e3e}
 
 .market-estimate{max-width:480px;text-align:left}
 .market-estimate ul{list-style:none;margin:6px 0 0;padding:0}
