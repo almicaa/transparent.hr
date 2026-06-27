@@ -15,7 +15,7 @@ export default function Header() {
         </Link>
 
         <button
-          className="site-nav__toggle"
+          className={`site-nav__toggle ${open ? "site-nav__toggle--open" : ""}`}
           aria-label={open ? "Zatvori meni" : "Otvori meni"}
           aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
