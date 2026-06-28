@@ -80,6 +80,20 @@ def get_ua():
     return random.choice(UA_LIST)
 
 
+def new_http_client():
+    """Plain HTTP client for detail-page fetches.
+
+    We only ever need the raw server-rendered HTML for these pages (Nuxt's
+    hydration payload and plain salary text are both already present before
+    any client-side JS runs) — no rendering needed. A headless Chromium
+    context per detail page was the real driver behind a 512MB OOM on
+    Render; httpx avoids spinning up a browser renderer at all.
+    """
+    import httpx
+
+    return httpx.AsyncClient(headers={"User-Agent": get_ua()}, timeout=20.0, follow_redirects=True)
+
+
 _BLOCKED_RESOURCE_TYPES = {"image", "media", "font", "stylesheet"}
 
 

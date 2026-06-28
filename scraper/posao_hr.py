@@ -71,16 +71,10 @@ async def scrape_posao(max_pages=None, max_jobs=None):
         await base.block_heavy_resources(context)
         page = await context.new_page()
 
-        # Reuse a single context/page across every detail-page visit instead
-        # of creating a fresh one per job — hundreds of context create/destroy
-        # cycles (one Chromium renderer process each) was the real driver
-        # behind the production OOM on mojposao. Recycled periodically to
-        # rotate the UA and release anything that did accumulate.
-        RECYCLE_EVERY = 40
-        detail_ctx = await browser.new_context(user_agent=base.get_ua(), viewport={"width": 1024, "height": 768})
-        await base.block_heavy_resources(detail_ctx)
-        detail_page_shared = await detail_ctx.new_page()
-        visits_on_context = 0
+        # Detail pages are fetched with plain HTTP (no browser) — see
+        # base.new_http_client(). Only the listing page above needs a real
+        # browser, for the salary-filtered feed's JS.
+        http_client = base.new_http_client()
 
         page_num = 1
         while True:
@@ -255,23 +249,11 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                         job["salary_min"], job["salary_max"] = base.parse_salary(salary_text)
                     job["posted_at"] = datetime.now().isoformat()
 
-                    # Always open detail page and try to extract the real salary amount
-                    if visits_on_context >= RECYCLE_EVERY:
-                        await detail_page_shared.close()
-                        await detail_ctx.close()
-                        detail_ctx = await browser.new_context(
-                            user_agent=base.get_ua(), viewport={"width": 1024, "height": 768}
-                        )
-                        await base.block_heavy_resources(detail_ctx)
-                        detail_page_shared = await detail_ctx.new_page()
-                        visits_on_context = 0
-                    visits_on_context += 1
-                    p2 = detail_page_shared
-
+                    # Always fetch the detail page and try to extract the real salary amount
                     try:
-                        await base.retry_with_backoff(p2.goto, url_full, wait_until="networkidle", timeout=30000)
+                        resp = await base.retry_with_backoff(http_client.get, url_full)
                         det_sal = None
-                        content = await p2.content()
+                        content = resp.text
                         # \b boundaries so this only matches the standalone word "Plaća"
                         # (the salary heading), not a substring inside e.g. "plaćanje"
                         # (referral-bonus disclaimer text that happens to contain "plaća").
@@ -279,13 +261,9 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                         if m and base.is_valid_salary(m.group(1)):
                             det_sal = m.group(1).strip()
                         else:
-                            sel = await p2.query_selector(".with_salary, span.with_salary, [class*='salary'], [data-test*='salary']")
-                            if sel:
-                                det_sal = (await sel.inner_text()).strip()
-                            else:
-                                m2 = re.search(r"(\d[\d\.,\s]{0,30}\s*(?:EUR|€|HRK|kn))", content, re.IGNORECASE)
-                                if m2:
-                                    det_sal = m2.group(0).strip()
+                            m2 = re.search(r"(\d[\d\.,\s]{0,30}\s*(?:EUR|€|HRK|kn))", content, re.IGNORECASE)
+                            if m2:
+                                det_sal = m2.group(0).strip()
 
                         if det_sal:
                             det_sal = base.clean_salary_snippet(det_sal)
@@ -329,8 +307,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
             page_num += 1
             await asyncio.sleep(1.0)
 
-        await detail_page_shared.close()
-        await detail_ctx.close()
+        await http_client.aclose()
         await browser.close()
 
     deactivated = base.deactivate_expired(conn)
