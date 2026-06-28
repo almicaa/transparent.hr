@@ -25,6 +25,7 @@ async def update_market_stat(browser, conn, filtered_page):
     try:
         salary_pages = await base.get_listing_page_count(filtered_page)
         ctx = await browser.new_context(user_agent=base.get_ua())
+        await base.block_heavy_resources(ctx)
         p = await ctx.new_page()
         await p.goto(ALL_JOBS_URL, wait_until="networkidle", timeout=30000)
         total_pages = await base.get_listing_page_count(p)
@@ -59,7 +60,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
     # Safety net against the OOM hit in production on mojposao: bound the
     # worst case so the run always exits cleanly instead of getting
     # SIGKILLed by Render's 512MB cap mid-run.
-    MAX_PROCESSED_SAFETY = 600
+    MAX_PROCESSED_SAFETY = 300
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, args=base.CHROMIUM_LAUNCH_ARGS)
@@ -67,6 +68,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
             user_agent=base.get_ua(),
             viewport={"width": 1200, "height": 900},
         )
+        await base.block_heavy_resources(context)
         page = await context.new_page()
 
         page_num = 1
@@ -246,6 +248,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                     try:
                         ua = base.get_ua()
                         ctx2 = await browser.new_context(user_agent=ua, viewport={"width": 1024, "height": 768})
+                        await base.block_heavy_resources(ctx2)
                         p2 = await ctx2.new_page()
                         await base.retry_with_backoff(p2.goto, url_full, wait_until="networkidle", timeout=30000)
                         det_sal = None

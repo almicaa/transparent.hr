@@ -41,7 +41,7 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
     # Safety net against the OOM we hit in production: bound the worst case so
     # the run always exits cleanly (and writes finish_scrape_log) instead of
     # getting SIGKILLed by Render's 512MB cap mid-run.
-    MAX_PROCESSED_SAFETY = 600
+    MAX_PROCESSED_SAFETY = 300
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, args=base.CHROMIUM_LAUNCH_ARGS)
@@ -49,6 +49,7 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
             user_agent=base.get_ua(),
             viewport={"width": 1280, "height": 900},
         )
+        await base.block_heavy_resources(context)
         page = await context.new_page()
 
         print(f"\n--- {SEARCH_URL} ---")
@@ -123,6 +124,7 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
                     # hydration payload has clean description/benefits text instead.
                     ua = base.get_ua()
                     ctx = await browser.new_context(user_agent=ua, viewport={"width": 1024, "height": 768})
+                    await base.block_heavy_resources(ctx)
                     detail_page = await ctx.new_page()
                     try:
                         await base.retry_with_backoff(detail_page.goto, job["url"], wait_until="networkidle", timeout=20000)

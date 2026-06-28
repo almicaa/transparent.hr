@@ -80,6 +80,28 @@ def get_ua():
     return random.choice(UA_LIST)
 
 
+_BLOCKED_RESOURCE_TYPES = {"image", "media", "font", "stylesheet"}
+
+
+async def _block_heavy_resources(route):
+    if route.request.resource_type in _BLOCKED_RESOURCE_TYPES:
+        await route.abort()
+    else:
+        await route.continue_()
+
+
+async def block_heavy_resources(context) -> None:
+    """Abort image/media/font/stylesheet requests on a browser context.
+
+    We only ever read HTML/JSON from these pages — never render them visually
+    — so images and fonts are pure memory/bandwidth waste. This is the single
+    biggest lever against the 512MB OOM we kept hitting on Render: a typical
+    job listing page pulls several MB of logos/photos per visit, repeated
+    over hundreds of detail-page visits in one run.
+    """
+    await context.route("**/*", _block_heavy_resources)
+
+
 async def sleep_jitter(min_delay=None, max_delay=None):
     mn = min_delay if min_delay is not None else MIN_DELAY
     mx = max_delay if max_delay is not None else MAX_DELAY
