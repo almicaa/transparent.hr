@@ -32,9 +32,10 @@ async def run_all(max_jobs=None, dry_run=False):
     posao_new = await posao_hr.scrape_posao(max_pages=15, max_jobs=max_jobs)
 
     print(f"\nRunning MojPosao (max_jobs={max_jobs}) dry_run={dry_run}")
-    # ~50-55 new cards load per scroll batch after the first — 40 batches
-    # comfortably covers the full ~1660-listing catalog in one run.
-    mojposao_new = await mojposao_hr.scrape_jobs(max_pages=40, max_jobs=max_jobs)
+    # max_pages here is real API pages now (mojposao's own search API reports
+    # totalPages directly, currently ~15) — no cap needed, the API's own
+    # totalPages naturally bounds the loop.
+    mojposao_new = await mojposao_hr.scrape_jobs(max_jobs=max_jobs)
 
     all_new = posao_new + mojposao_new
     if all_new and not dry_run:

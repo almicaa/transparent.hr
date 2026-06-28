@@ -1,25 +1,68 @@
 """
 MojPosao.hr scraper
 Pokreni: python mojposao_hr.py
+
+Uses mojposao's own internal search API (the same endpoint the site's
+frontend calls when you scroll for more results) instead of scraping
+rendered HTML. Discovered via network inspection: the page's "infinite
+scroll" silently caps out after ~2 batches in some environments (worked
+locally, got stuck after one batch on Render) and there's no classic
+?page=N pagination on the HTML route either — but the underlying API at
+/api/proxy/jobs/search *does* support clean page/totalPages pagination
+and already returns title/location/company/salary as structured JSON, no
+browser needed at all for the listing.
 """
 
 import asyncio
 import re
-from datetime import datetime
-from playwright.async_api import async_playwright
+from datetime import datetime, timezone
 
 try:
     from scraper import base_scraper as base
 except Exception:
     import base_scraper as base
 
-SEARCH_URL = "https://www.mojposao.hr/pretraga-poslova?sortBy=adtype"
+API_URL = "https://mojposao.hr/api/proxy/jobs/search"
 
 
-async def scrape_jobs(max_pages=2, max_jobs=None):
-    """max_pages here means "max scroll batches" — mojposao's listing is
-    infinite-scroll (a "Učitaj još poslova" load-more pattern), not classic
-    ?page=N pagination."""
+def _structured_salary_text(sal: dict):
+    salary_min = float(sal["from"] or sal["to"])
+    salary_max = float(sal.get("to") or sal["from"])
+    currency = str(sal.get("currency") or "eur").upper()
+    tax_label = {"gross": "bruto", "net": "neto"}.get(str(sal.get("tax") or "").lower())
+    amount = (
+        f"{int(salary_min)} {currency}"
+        if salary_min == salary_max
+        else f"od {int(salary_min)} do {int(salary_max)} {currency}"
+    )
+    salary_text = f"{amount} {tax_label}".strip() if tax_label else amount
+    return salary_text, salary_min, salary_max
+
+
+def _text_salary_from_benefits(body: str):
+    """Text-only salary mentions (e.g. "Bruto plaća u iznosu od 1430€...") live in
+    the detail page's Nuxt "benefits" field, not in the listing API's description —
+    confirmed by checking ~1300 listing descriptions and finding zero matches there."""
+    nuxt = base.extract_nuxt_payload(body)
+    if not nuxt:
+        return None, None, None
+    combined = "\n".join(filter(None, [nuxt.get("description"), nuxt.get("benefits")]))
+    for line in combined.splitlines():
+        line = line.strip().lstrip("-•").strip()
+        if re.search(r"(?i)pla[ćc]a|salary", line) and base.is_valid_salary(line):
+            amount_m = re.search(r"\d[\d.,\s]{0,12}\s*(?:€|EUR)", line, re.IGNORECASE)
+            if amount_m:
+                basis = base.parse_salary_basis(line)
+                amount_clean = amount_m.group(0).strip()
+                salary_text = f"{amount_clean} {basis}".strip() if basis else amount_clean
+            else:
+                salary_text = line
+            salary_min, salary_max = base.parse_salary(salary_text)
+            return salary_text, salary_min, salary_max
+    return None, None, None
+
+
+async def scrape_jobs(max_pages=None, max_jobs=None):
     base.init_db()
     try:
         base.check_robots("https://www.mojposao.hr")
@@ -37,80 +80,43 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
     # Listing order isn't guaranteed strictly newest-first like posao.hr, so
     # this threshold is more conservative than posao_hr.py's.
     CAUGHT_UP_THRESHOLD = 40
-
-    # Safety net against the OOM we hit in production: bound the worst case so
-    # the run always exits cleanly (and writes finish_scrape_log) instead of
-    # getting SIGKILLed by Render's 512MB cap mid-run.
     MAX_PROCESSED_SAFETY = 2500
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True, args=base.CHROMIUM_LAUNCH_ARGS)
-        context = await browser.new_context(
-            user_agent=base.get_ua(),
-            viewport={"width": 1280, "height": 900},
-        )
-        await base.block_heavy_resources(context)
-        page = await context.new_page()
-
-        print(f"\n--- {SEARCH_URL} ---")
-        try:
-            await page.goto(SEARCH_URL, wait_until="networkidle", timeout=30000)
-            await page.wait_for_selector("div.job-card", timeout=10000)
-        except Exception as e:
-            print(f"Greška pri učitavanju: {e}")
-            await browser.close()
-            base.finish_scrape_log(conn, log_id, jobs_found=0, jobs_saved=0, status="error", error_message=str(e))
-            conn.close()
-            return new_jobs
-
-        await page.wait_for_timeout(1500)
-
-        # Detail pages are fetched with plain HTTP (no browser) — see
-        # base.new_http_client(). Only the listing page above needs a real
-        # browser, for the infinite-scroll JS.
-        http_client = base.new_http_client()
-
-        seen_ids = set()
-        scroll_round = 0
-
+    http_client = base.new_http_client()
+    try:
+        page_n = 1
+        total_pages = None
         while True:
-            if max_pages and scroll_round >= max_pages:
-                print("Dosegnut max_pages (scroll batches).")
-                break
-            if max_jobs and processed >= max_jobs:
-                break
-            if caught_up:
+            if max_pages and page_n > max_pages:
+                print("Dosegnut max_pages.")
                 break
             if processed >= MAX_PROCESSED_SAFETY:
                 print(f"  ↳ Dosegnut sigurnosni limit ({MAX_PROCESSED_SAFETY}) — prekidam da ne riskiram OOM.")
                 break
+            if max_jobs and processed >= max_jobs:
+                break
 
-            job_cards = await page.query_selector_all("div.job-card")
-            print(f"Ukupno učitano kartica: {len(job_cards)} (novih za obraditi: {len(job_cards) - len(seen_ids)})")
+            resp = await base.retry_with_backoff(
+                http_client.get, API_URL, params={"sortBy": "adtype", "page": page_n}
+            )
+            data = resp.json()
+            total_pages = data.get("totalPages") or total_pages
+            items = data.get("items") or []
+            if not items:
+                print("Nema više stavki — kraj liste.")
+                break
 
-            found_new = False
-            for card in job_cards:
-                if max_jobs and processed >= max_jobs:
+            print(f"\n--- Stranica {page_n}/{total_pages} ({len(items)} grupa) ---")
+
+            for item in items:
+                if caught_up or (max_jobs and processed >= max_jobs) or processed >= MAX_PROCESSED_SAFETY:
                     break
-                try:
-                    link_el = await card.query_selector("a[href*='/posao/']")
-                    if not link_el:
-                        continue
-                    href = await link_el.get_attribute("href")
-                    match = re.search(r"/posao/([^/]+)/", href)
-                    external_id = match.group(1) if match else href
+                for jd in item.get("jobs") or []:
+                    if caught_up or (max_jobs and processed >= max_jobs) or processed >= MAX_PROCESSED_SAFETY:
+                        break
 
-                    if external_id in seen_ids:
-                        continue
-                    seen_ids.add(external_id)
-                    found_new = True
-
-                    job = {}
-                    job["url"] = f"https://www.mojposao.hr{href}" if not href.startswith("http") else href
-                    job["external_id"] = external_id
-
-                    job["title"] = (await link_el.inner_text()).strip()
-                    if not job["title"]:
+                    external_id = jd.get("id")
+                    if not external_id:
                         continue
 
                     if base.job_exists(conn, external_id):
@@ -123,138 +129,75 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
                         continue
                     consecutive_known = 0
 
-                    # MojPosao hides salary on the list — fetch the detail page to get it.
-                    # Scraping raw HTML is unreliable (every page has a sitewide "Osvoji
-                    # 500€!" referral banner that false-positives as a salary). The Nuxt
-                    # hydration payload has clean description/benefits text instead.
-                    try:
-                        resp = await base.retry_with_backoff(http_client.get, job["url"])
-                        body = resp.text
-                        salary_text = None
-                        salary_min = salary_max = None
+                    title = (jd.get("title") or "").strip()
+                    if not title:
+                        continue
 
-                        nuxt = base.extract_nuxt_payload(body)
-                        if nuxt:
-                            sal = nuxt.get("salary")
-                            if isinstance(sal, dict) and sal.get("from"):
-                                # Structured field — exact numbers, no text parsing needed.
-                                salary_min = float(sal["from"])
-                                salary_max = float(sal.get("to") or sal["from"])
-                                currency = str(sal.get("currency") or "eur").upper()
-                                tax_label = {"gross": "bruto", "net": "neto"}.get(str(sal.get("tax") or "").lower())
-                                amount = (
-                                    f"{int(salary_min)} {currency}"
-                                    if salary_min == salary_max
-                                    else f"od {int(salary_min)} do {int(salary_max)} {currency}"
-                                )
-                                salary_text = f"{amount} {tax_label}".strip() if tax_label else amount
-                            else:
-                                combined = "\n".join(filter(None, [nuxt.get("description"), nuxt.get("benefits")]))
-                                for line in combined.splitlines():
-                                    line = line.strip().lstrip("-•").strip()
-                                    if re.search(r"(?i)pla[ćc]a|salary", line) and base.is_valid_salary(line):
-                                        # Don't keep the whole sentence (e.g. "...i zagarantirano
-                                        # povećanje nakon 1. i 2. godine...") — just the first
-                                        # amount, the rest belongs in the original ad, not the card.
-                                        amount_m = re.search(r"\d[\d.,\s]{0,12}\s*(?:€|EUR)", line, re.IGNORECASE)
-                                        if amount_m:
-                                            basis = base.parse_salary_basis(line)
-                                            amount_clean = amount_m.group(0).strip()
-                                            salary_text = f"{amount_clean} {basis}".strip() if basis else amount_clean
-                                        else:
-                                            salary_text = line
-                                        salary_min, salary_max = base.parse_salary(salary_text)
-                                        break
+                    job = {
+                        "external_id": external_id,
+                        "url": f"https://www.mojposao.hr/posao/{external_id}/{jd.get('slug', '')}",
+                        "title": title,
+                        "company": (jd.get("organization") or {}).get("name"),
+                        "location": jd.get("location"),
+                        "posted_at": jd.get("publishedAt") or datetime.now().isoformat(),
+                    }
 
-                        if not salary_text:
-                            # Fallback for pages without the Nuxt payload (layout changes etc.)
-                            m = re.search(r"(?i)(Pla[ćc]a:\s*[^<]{0,120})", body)
-                            if m and base.is_valid_salary(m.group(1)):
-                                salary_text = m.group(1).strip()
+                    ends_at = jd.get("endsAt")
+                    if ends_at:
+                        try:
+                            end_dt = datetime.fromisoformat(ends_at.replace("Z", "+00:00"))
+                            job["days_to_expiry"] = (end_dt - datetime.now(timezone.utc)).days
+                        except Exception:
+                            pass
 
-                        salary_text = base.clean_salary_snippet(salary_text)
+                    salary_text = salary_min = salary_max = None
+                    sal = jd.get("salary") or {}
+                    if sal.get("from") or sal.get("to"):
+                        # Structured field — exact numbers, no text parsing needed.
+                        salary_text, salary_min, salary_max = _structured_salary_text(sal)
+                    else:
+                        try:
+                            detail_resp = await base.retry_with_backoff(http_client.get, job["url"])
+                            salary_text, salary_min, salary_max = _text_salary_from_benefits(detail_resp.text)
+                            await base.sleep_jitter()
+                        except Exception:
+                            pass
+
+                    salary_text = base.clean_salary_snippet(salary_text)
+                    if salary_min is not None:
                         job["salary_text"] = salary_text
-                        if salary_min is not None:
-                            job["salary_min"], job["salary_max"] = salary_min, salary_max
-                            job["salary_shown"] = True
-                        elif salary_text and base.is_valid_salary(salary_text):
-                            job["salary_min"], job["salary_max"] = base.parse_salary(salary_text)
-                            job["salary_shown"] = True
-                        else:
-                            job["salary_shown"] = False
-                    except Exception:
-                        job["salary_text"] = None
+                        job["salary_min"], job["salary_max"] = salary_min, salary_max
+                        job["salary_shown"] = True
+                    elif salary_text and base.is_valid_salary(salary_text):
+                        job["salary_text"] = salary_text
+                        job["salary_min"], job["salary_max"] = base.parse_salary(salary_text)
+                        job["salary_shown"] = True
+                    else:
                         job["salary_shown"] = False
 
                     # ignore jobs without a visible salary
-                    if not job.get("salary_shown"):
+                    if not job["salary_shown"]:
                         processed += 1
-                        await base.sleep_jitter()
                         continue
-
-                    # Prefer the clean Nuxt payload fields (same one used for salary)
-                    # over guessing at card CSS classes.
-                    if nuxt and nuxt.get("organization"):
-                        job["company"] = nuxt["organization"]
-                    if nuxt and nuxt.get("location"):
-                        job["location"] = nuxt["location"]
-
-                    if not job.get("company"):
-                        all_links = await card.query_selector_all("a[href]")
-                        for lnk in all_links:
-                            lnk_href = await lnk.get_attribute("href") or ""
-                            if "/posao/" not in lnk_href and "/poslodavac/" in lnk_href:
-                                job["company"] = (await lnk.inner_text()).strip()
-                                break
-                    if not job.get("company"):
-                        company_el = await card.query_selector(
-                            "[class*='employer'], [class*='company'], [data-test*='employer'], [data-test*='company']"
-                        )
-                        if company_el:
-                            job["company"] = (await company_el.inner_text()).strip()
-
-                    if not job.get("location"):
-                        loc_el = await card.query_selector("[class*='location'], [data-test*='location'], [class*='city']")
-                        if loc_el:
-                            job["location"] = (await loc_el.inner_text()).strip()
-
-                    type_el = await card.query_selector("[class*='type'], [data-test*='type'], [class*='employment']")
-                    if type_el:
-                        job["job_type"] = (await type_el.inner_text()).strip()
-
-                    time_el = await card.query_selector("time")
-                    if time_el:
-                        job["posted_at"] = await time_el.get_attribute("datetime") or (await time_el.inner_text()).strip()
-                    else:
-                        job["posted_at"] = datetime.now().isoformat()
 
                     if base.save_job(conn, job, "mojposao"):
                         total_saved += 1
-                        new_jobs.append({"title": job.get("title"), "url": job.get("url"), "salary_text": job.get("salary_text")})
+                        new_jobs.append(
+                            {"title": job.get("title"), "url": job.get("url"), "salary_text": job.get("salary_text")}
+                        )
                         print(f"  ✓ {job['title'][:50]} | 💰 {job.get('salary_text')}")
 
                     processed += 1
-                    await base.sleep_jitter()
-
-                except Exception as e:
-                    print(f"  Greška: {e}")
-                    continue
 
             if caught_up:
                 break
-
-            prev_count = len(job_cards)
-            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await page.wait_for_timeout(2000)
-            new_count = len(await page.query_selector_all("div.job-card"))
-            scroll_round += 1
-
-            if new_count <= prev_count and not found_new:
-                print("Nema više oglasa za učitati (scroll ne dodaje nove).")
+            if total_pages and page_n >= total_pages:
+                print("Dosegnuta zadnja stranica.")
                 break
-
+            page_n += 1
+            await base.sleep_jitter(1.0, 2.5)
+    finally:
         await http_client.aclose()
-        await browser.close()
 
     deactivated = base.deactivate_expired(conn)
     if deactivated:
@@ -268,4 +211,4 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
 
 if __name__ == "__main__":
     print("🚀 Pokrećem MojPosao scraper...")
-    asyncio.run(scrape_jobs(max_pages=2))
+    asyncio.run(scrape_jobs())
