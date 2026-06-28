@@ -41,7 +41,7 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
     # Safety net against the OOM we hit in production: bound the worst case so
     # the run always exits cleanly (and writes finish_scrape_log) instead of
     # getting SIGKILLed by Render's 512MB cap mid-run.
-    MAX_PROCESSED_SAFETY = 300
+    MAX_PROCESSED_SAFETY = 2500
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, args=base.CHROMIUM_LAUNCH_ARGS)

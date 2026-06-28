@@ -60,7 +60,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
     # Safety net against the OOM hit in production on mojposao: bound the
     # worst case so the run always exits cleanly instead of getting
     # SIGKILLed by Render's 512MB cap mid-run.
-    MAX_PROCESSED_SAFETY = 300
+    MAX_PROCESSED_SAFETY = 2500
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, args=base.CHROMIUM_LAUNCH_ARGS)
