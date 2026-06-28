@@ -65,6 +65,18 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
 
         await page.wait_for_timeout(1500)
 
+        # Reuse a single context/page across every detail-page visit instead of
+        # creating a fresh one per job. Playwright spins up a new Chromium
+        # renderer process per context — hundreds of create/destroy cycles in
+        # one run was the real driver behind the production OOM, not just
+        # accumulated cache. Recycled periodically below to rotate the UA and
+        # release anything that did accumulate.
+        RECYCLE_EVERY = 40
+        detail_ctx = await browser.new_context(user_agent=base.get_ua(), viewport={"width": 1024, "height": 768})
+        await base.block_heavy_resources(detail_ctx)
+        detail_page = await detail_ctx.new_page()
+        visits_on_context = 0
+
         seen_ids = set()
         scroll_round = 0
 
@@ -122,10 +134,17 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
                     # Scraping raw HTML is unreliable (every page has a sitewide "Osvoji
                     # 500€!" referral banner that false-positives as a salary). The Nuxt
                     # hydration payload has clean description/benefits text instead.
-                    ua = base.get_ua()
-                    ctx = await browser.new_context(user_agent=ua, viewport={"width": 1024, "height": 768})
-                    await base.block_heavy_resources(ctx)
-                    detail_page = await ctx.new_page()
+                    if visits_on_context >= RECYCLE_EVERY:
+                        await detail_page.close()
+                        await detail_ctx.close()
+                        detail_ctx = await browser.new_context(
+                            user_agent=base.get_ua(), viewport={"width": 1024, "height": 768}
+                        )
+                        await base.block_heavy_resources(detail_ctx)
+                        detail_page = await detail_ctx.new_page()
+                        visits_on_context = 0
+                    visits_on_context += 1
+
                     try:
                         await base.retry_with_backoff(detail_page.goto, job["url"], wait_until="networkidle", timeout=20000)
                         body = await detail_page.content()
@@ -184,9 +203,6 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
                     except Exception:
                         job["salary_text"] = None
                         job["salary_shown"] = False
-                    finally:
-                        await detail_page.close()
-                        await ctx.close()
 
                     # ignore jobs without a visible salary
                     if not job.get("salary_shown"):
@@ -255,6 +271,8 @@ async def scrape_jobs(max_pages=2, max_jobs=None):
                 print("Nema više oglasa za učitati (scroll ne dodaje nove).")
                 break
 
+        await detail_page.close()
+        await detail_ctx.close()
         await browser.close()
 
     deactivated = base.deactivate_expired(conn)

@@ -71,6 +71,17 @@ async def scrape_posao(max_pages=None, max_jobs=None):
         await base.block_heavy_resources(context)
         page = await context.new_page()
 
+        # Reuse a single context/page across every detail-page visit instead
+        # of creating a fresh one per job — hundreds of context create/destroy
+        # cycles (one Chromium renderer process each) was the real driver
+        # behind the production OOM on mojposao. Recycled periodically to
+        # rotate the UA and release anything that did accumulate.
+        RECYCLE_EVERY = 40
+        detail_ctx = await browser.new_context(user_agent=base.get_ua(), viewport={"width": 1024, "height": 768})
+        await base.block_heavy_resources(detail_ctx)
+        detail_page_shared = await detail_ctx.new_page()
+        visits_on_context = 0
+
         page_num = 1
         while True:
             if max_pages and page_num > max_pages:
@@ -245,11 +256,19 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                     job["posted_at"] = datetime.now().isoformat()
 
                     # Always open detail page and try to extract the real salary amount
+                    if visits_on_context >= RECYCLE_EVERY:
+                        await detail_page_shared.close()
+                        await detail_ctx.close()
+                        detail_ctx = await browser.new_context(
+                            user_agent=base.get_ua(), viewport={"width": 1024, "height": 768}
+                        )
+                        await base.block_heavy_resources(detail_ctx)
+                        detail_page_shared = await detail_ctx.new_page()
+                        visits_on_context = 0
+                    visits_on_context += 1
+                    p2 = detail_page_shared
+
                     try:
-                        ua = base.get_ua()
-                        ctx2 = await browser.new_context(user_agent=ua, viewport={"width": 1024, "height": 768})
-                        await base.block_heavy_resources(ctx2)
-                        p2 = await ctx2.new_page()
                         await base.retry_with_backoff(p2.goto, url_full, wait_until="networkidle", timeout=30000)
                         det_sal = None
                         content = await p2.content()
@@ -273,8 +292,6 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                             if base.is_valid_salary(det_sal):
                                 job["salary_text"] = det_sal
                                 job["salary_min"], job["salary_max"] = base.parse_salary(det_sal)
-                        await p2.close()
-                        await ctx2.close()
                         await base.sleep_jitter()
                     except Exception:
                         pass
@@ -312,6 +329,8 @@ async def scrape_posao(max_pages=None, max_jobs=None):
             page_num += 1
             await asyncio.sleep(1.0)
 
+        await detail_page_shared.close()
+        await detail_ctx.close()
         await browser.close()
 
     deactivated = base.deactivate_expired(conn)
