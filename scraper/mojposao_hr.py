@@ -133,11 +133,16 @@ async def scrape_jobs(max_pages=None, max_jobs=None):
                     if not title:
                         continue
 
+                    org = jd.get("organization")
+                    # Confidential postings have organization: "incognito" (a plain
+                    # string) instead of the usual {"name": ...} dict.
+                    company = org.get("name") if isinstance(org, dict) else None
+
                     job = {
                         "external_id": external_id,
                         "url": f"https://www.mojposao.hr/posao/{external_id}/{jd.get('slug', '')}",
                         "title": title,
-                        "company": (jd.get("organization") or {}).get("name"),
+                        "company": company,
                         "location": jd.get("location"),
                         "posted_at": jd.get("publishedAt") or datetime.now().isoformat(),
                     }
