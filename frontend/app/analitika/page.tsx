@@ -25,7 +25,6 @@ export default async function AnalyticsPage() {
   return (
     <main className="hero">
       <h1>Analitika</h1>
-      <p className="hero__lead">Dnevni podaci o transparentnosti plaća po portalu.</p>
 
       <div className="stats">
         <div className="stat">
