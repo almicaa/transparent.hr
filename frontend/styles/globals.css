@@ -147,6 +147,21 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .transparency-table th{font-weight:600;color:var(--muted);font-size:13px}
 .transparency-table tr:hover td{background:var(--badge-bg)}
 
+.sources-cards{display:flex;flex-direction:column;gap:20px}
+.source-card{background:var(--card-bg);border-radius:12px;padding:24px;box-shadow:0 4px 14px rgba(8,80,80,0.07)}
+.source-card__header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.source-card__name{font-size:20px;font-weight:700;color:var(--dark);text-decoration:none}
+.source-card__name:hover{color:var(--primary)}
+.source-card__badge{background:var(--salary-bg);color:var(--dark);font-size:13px;font-weight:600;padding:3px 10px;border-radius:20px}
+.source-card__desc{color:var(--text-secondary);font-size:14px;line-height:1.6;margin:0 0 16px}
+.source-card__meta{display:flex;flex-direction:column;gap:6px;font-size:13px;margin:0}
+.source-card__meta div{display:flex;gap:8px}
+.source-card__meta dt{color:var(--muted);min-width:140px;flex-shrink:0}
+.source-card__meta dd{margin:0;color:var(--text)}
+.source-note{margin-top:40px;padding-top:24px;border-top:1px solid var(--badge-bg)}
+.source-note h2{font-size:18px;font-weight:700;margin-bottom:12px}
+.source-note p{font-size:14px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px}
+.source-note a{color:var(--primary)}
 .job-detail{display:flex;flex-direction:column;gap:8px;max-width:720px;background:var(--card-bg);border-radius:12px;padding:24px;box-shadow:0 4px 16px rgba(8,80,80,0.08)}
 .job-detail h1{margin:12px 0 0;font-size:24px;color:var(--text)}
 .job-detail__company{color:var(--text-secondary)}

@@ -32,6 +32,9 @@ export default function Header() {
           <Link href="/analitika" onClick={() => setOpen(false)}>
             Analitika
           </Link>
+          <Link href="/izvori" onClick={() => setOpen(false)}>
+            Izvori
+          </Link>
         </nav>
       </div>
     </header>

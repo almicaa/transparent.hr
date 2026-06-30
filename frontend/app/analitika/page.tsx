@@ -25,9 +25,7 @@ export default async function AnalyticsPage() {
   return (
     <main className="hero">
       <h1>Analitika</h1>
-      <p className="hero__lead">
-        Svaki dan bilježimo koliko posto oglasa na svakom portalu prikazuje plaću — jer transparentnost nije samo o plaćama, nego i o tome tko je spreman reći koliko plaća.
-      </p>
+      <p className="hero__lead">Dnevni podaci o transparentnosti plaća po portalu.</p>
 
       <div className="stats">
         <div className="stat">
