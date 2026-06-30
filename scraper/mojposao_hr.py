@@ -77,6 +77,8 @@ async def scrape_jobs(max_pages=None, max_jobs=None):
     processed = 0
     consecutive_known = 0
     caught_up = False
+    api_total_jobs = 0
+    api_salary_jobs = 0  # structured salary only — fast, no detail-page needed
     # Listing order isn't guaranteed strictly newest-first like posao.hr, so
     # this threshold is more conservative than posao_hr.py's.
     CAUGHT_UP_THRESHOLD = 40
@@ -101,12 +103,21 @@ async def scrape_jobs(max_pages=None, max_jobs=None):
             )
             data = resp.json()
             total_pages = data.get("totalPages") or total_pages
+            if page_n == 1:
+                api_total_jobs = data.get("total") or 0
             items = data.get("items") or []
             if not items:
                 print("Nema više stavki — kraj liste.")
                 break
 
             print(f"\n--- Stranica {page_n}/{total_pages} ({len(items)} grupa) ---")
+
+            # Count structured-salary jobs across all pages (fast — no detail fetch)
+            for item in items:
+                for jd in item.get("jobs") or []:
+                    sal = jd.get("salary") or {}
+                    if sal.get("from") or sal.get("to"):
+                        api_salary_jobs += 1
 
             for item in items:
                 if caught_up or (max_jobs and processed >= max_jobs) or processed >= MAX_PROCESSED_SAFETY:
@@ -207,6 +218,9 @@ async def scrape_jobs(max_pages=None, max_jobs=None):
     deactivated = base.deactivate_expired(conn)
     if deactivated:
         print(f"[expiry] Deaktivirano {deactivated} isteklih oglasa.")
+
+    if api_total_jobs:
+        base.save_salary_stat(conn, "mojposao", api_total_jobs, api_salary_jobs)
 
     base.finish_scrape_log(conn, log_id, jobs_found=processed, jobs_saved=total_saved, status="success")
     conn.close()

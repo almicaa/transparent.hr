@@ -222,6 +222,17 @@ def init_db():
             )
         """))
         conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS salary_stats (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                source           TEXT NOT NULL,
+                date             TEXT NOT NULL,
+                total_jobs       INTEGER NOT NULL,
+                jobs_with_salary INTEGER NOT NULL,
+                pct              REAL NOT NULL,
+                UNIQUE(source, date)
+            )
+        """))
+        conn.execute(text("""
             CREATE TABLE IF NOT EXISTS job_sources (
                 name          TEXT PRIMARY KEY,
                 display_name  TEXT NOT NULL,
@@ -347,6 +358,32 @@ def save_market_stat(conn: Connection, source: str, total_pages: int, salary_pag
         },
     )
     conn.commit()
+    return pct
+
+
+def save_salary_stat(conn: Connection, source: str, total_jobs: int, jobs_with_salary: int) -> float | None:
+    """Store daily transparency data (one row per source per day, upserted).
+
+    Used to build the historical % chart showing how many job listings on each
+    source have a visible salary over time.
+    """
+    if not total_jobs:
+        return None
+    pct = round(jobs_with_salary / total_jobs * 100, 1)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    conflict_action = "ON CONFLICT(source, date) DO UPDATE SET total_jobs=excluded.total_jobs, jobs_with_salary=excluded.jobs_with_salary, pct=excluded.pct"
+    if IS_SQLITE:
+        conn.execute(
+            text(f"INSERT OR REPLACE INTO salary_stats (source, date, total_jobs, jobs_with_salary, pct) VALUES (:source, :date, :total, :with_sal, :pct)"),
+            {"source": source, "date": today, "total": total_jobs, "with_sal": jobs_with_salary, "pct": pct},
+        )
+    else:
+        conn.execute(
+            text(f"INSERT INTO salary_stats (source, date, total_jobs, jobs_with_salary, pct) VALUES (:source, :date, :total, :with_sal, :pct) {conflict_action}"),
+            {"source": source, "date": today, "total": total_jobs, "with_sal": jobs_with_salary, "pct": pct},
+        )
+    conn.commit()
+    print(f"[stats] {source}: {jobs_with_salary}/{total_jobs} oglasa s plaćom = {pct}%")
     return pct
 
 

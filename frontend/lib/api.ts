@@ -53,6 +53,24 @@ export async function getStats(): Promise<Stats | null> {
   }
 }
 
+export interface SalaryStatPoint {
+  source: string
+  date: string
+  total_jobs: number
+  jobs_with_salary: number
+  pct: number
+}
+
+export async function getTransparencyStats(): Promise<SalaryStatPoint[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/analitika/transparency`, { cache: "no-store" })
+    if (!res.ok) return []
+    return res.json()
+  } catch {
+    return []
+  }
+}
+
 export async function getFilters(): Promise<Filters> {
   const res = await fetch(`${API_URL}/api/filters`, { cache: "no-store" })
   if (!res.ok) throw new Error(`Failed to load filters: ${res.status}`)

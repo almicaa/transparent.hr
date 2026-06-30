@@ -34,6 +34,8 @@ async def update_market_stat(browser, conn, filtered_page):
         if salary_pages and total_pages:
             pct = base.save_market_stat(conn, "posao", total_pages, salary_pages)
             print(f"[market] posao.hr: {salary_pages}/{total_pages} stranica ~ {pct}% oglasa s plaćom")
+            # Approximate job counts from page counts (posao.hr is ~100 jobs/page)
+            base.save_salary_stat(conn, "posao", total_pages * 100, salary_pages * 100)
     except Exception as e:
         print("[market] Greška pri procjeni:", e)
 
