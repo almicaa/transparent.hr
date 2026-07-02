@@ -187,6 +187,10 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
   .container{padding:0 16px}
   .page-content{padding:16px}
 
+  .filters{flex-direction:column}
+  .filters .search{flex:none;width:100%;min-width:0}
+  .filters select{flex:none;width:100%;max-width:none}
+
   .hero{padding:36px 0 28px}
   .hero h1{font-size:32px}
   .hero__lead{font-size:15px}
