@@ -20,8 +20,8 @@ SEARCH_URL = "https://www.posao.hr/poslovi/placa/da/"
 ALL_JOBS_URL = "https://www.posao.hr/poslovi/"
 
 
-async def _parse_job_count(page) -> int | None:
-    """Extract job count from posao.hr h2 headline: '...jedan od <b>6259</b> oglasa...'"""
+async def _parse_total_jobs(page) -> int | None:
+    """Extract total job count from posao.hr /poslovi/ h2: '...jedan od <b>6259</b> oglasa...'"""
     try:
         el = await page.query_selector("h2 b")
         if el:
@@ -32,22 +32,35 @@ async def _parse_job_count(page) -> int | None:
     return None
 
 
-async def update_market_stat(browser, conn, filtered_page):
-    """Get exact job counts from posao.hr h2 headline on both listing pages."""
+async def _count_job_links(page) -> int:
+    """Count unique /oglasi/ job links on a posao.hr listing page."""
     try:
-        salary_jobs = await _parse_job_count(filtered_page)
+        html = await page.content()
+        links = set(re.findall(r'href="(https://www\.posao\.hr/oglasi/[^"]+)"', html))
+        return len(links)
+    except Exception:
+        return 0
+
+
+async def update_market_stat(browser, conn, filtered_page):
+    """Compute salary transparency stats for posao.hr."""
+    try:
+        salary_pages = await base.get_listing_page_count(filtered_page)
+        jobs_per_salary_page = await _count_job_links(filtered_page)
+
         ctx = await browser.new_context(user_agent=base.get_ua())
         await base.block_heavy_resources(ctx)
         p = await ctx.new_page()
-        await p.goto(ALL_JOBS_URL, wait_until="networkidle", timeout=30000)
-        total_jobs = await _parse_job_count(p)
+        await p.goto(ALL_JOBS_URL, wait_until="domcontentloaded", timeout=30000)
+        total_jobs = await _parse_total_jobs(p)
         total_pages = await base.get_listing_page_count(p)
-        salary_pages = await base.get_listing_page_count(filtered_page)
         await p.close()
         await ctx.close()
-        if total_jobs and salary_jobs:
+
+        if salary_pages and jobs_per_salary_page and total_jobs:
+            salary_jobs = salary_pages * jobs_per_salary_page
             pct = round(salary_jobs / total_jobs * 100, 1)
-            print(f"[market] posao.hr: {salary_jobs}/{total_jobs} oglasa = {pct}%")
+            print(f"[market] posao.hr: ~{salary_jobs}/{total_jobs} oglasa = {pct}% ({salary_pages} str × {jobs_per_salary_page})")
             base.save_salary_stat(conn, "posao", total_jobs, salary_jobs)
         if salary_pages and total_pages:
             base.save_market_stat(conn, "posao", total_pages, salary_pages)
