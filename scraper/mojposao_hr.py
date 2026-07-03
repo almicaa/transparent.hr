@@ -23,6 +23,19 @@ except Exception:
     import base_scraper as base
 
 API_URL = "https://mojposao.hr/api/proxy/jobs/search"
+SEARCH_PAGE_URL = "https://mojposao.hr/pretraga-poslova?sortBy=adtype"
+
+
+async def _fetch_site_total(http_client) -> int | None:
+    """Parse total job count from h1 on the search results page: 'Rezultati pretrage <b>(1603)</b>'"""
+    try:
+        resp = await base.retry_with_backoff(http_client.get, SEARCH_PAGE_URL)
+        m = re.search(r"Rezultati pretrage\s*<b>\((\d+)\)</b>", resp.text)
+        if m:
+            return int(m.group(1))
+    except Exception:
+        pass
+    return None
 
 
 def _structured_salary_text(sal: dict):
@@ -212,15 +225,17 @@ async def scrape_jobs(max_pages=None, max_jobs=None):
                 break
             page_n += 1
             await base.sleep_jitter(1.0, 2.5)
+
+        if api_total_jobs:
+            site_total = await _fetch_site_total(http_client)
+            total_for_stat = site_total if site_total else api_total_jobs
+            base.save_salary_stat(conn, "mojposao", total_for_stat, api_salary_jobs)
     finally:
         await http_client.aclose()
 
     deactivated = base.deactivate_expired(conn)
     if deactivated:
         print(f"[expiry] Deaktivirano {deactivated} isteklih oglasa.")
-
-    if api_total_jobs:
-        base.save_salary_stat(conn, "mojposao", api_total_jobs, api_salary_jobs)
 
     base.finish_scrape_log(conn, log_id, jobs_found=processed, jobs_saved=total_saved, status="success")
     conn.close()
