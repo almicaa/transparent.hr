@@ -20,22 +20,37 @@ SEARCH_URL = "https://www.posao.hr/poslovi/placa/da/"
 ALL_JOBS_URL = "https://www.posao.hr/poslovi/"
 
 
-async def update_market_stat(browser, conn, filtered_page):
-    """Estimate the share of posao.hr ads that show a salary from page counts."""
+async def _parse_job_count(page) -> int | None:
+    """Extract job count from posao.hr h2 headline: '...jedan od <b>6259</b> oglasa...'"""
     try:
-        salary_pages = await base.get_listing_page_count(filtered_page)
+        el = await page.query_selector("h2 b")
+        if el:
+            text = await el.inner_text()
+            return int(text.replace(".", "").replace(",", "").strip())
+    except Exception:
+        pass
+    return None
+
+
+async def update_market_stat(browser, conn, filtered_page):
+    """Get exact job counts from posao.hr h2 headline on both listing pages."""
+    try:
+        salary_jobs = await _parse_job_count(filtered_page)
         ctx = await browser.new_context(user_agent=base.get_ua())
         await base.block_heavy_resources(ctx)
         p = await ctx.new_page()
         await p.goto(ALL_JOBS_URL, wait_until="networkidle", timeout=30000)
+        total_jobs = await _parse_job_count(p)
         total_pages = await base.get_listing_page_count(p)
+        salary_pages = await base.get_listing_page_count(filtered_page)
         await p.close()
         await ctx.close()
+        if total_jobs and salary_jobs:
+            pct = round(salary_jobs / total_jobs * 100, 1)
+            print(f"[market] posao.hr: {salary_jobs}/{total_jobs} oglasa = {pct}%")
+            base.save_salary_stat(conn, "posao", total_jobs, salary_jobs)
         if salary_pages and total_pages:
-            pct = base.save_market_stat(conn, "posao", total_pages, salary_pages)
-            print(f"[market] posao.hr: {salary_pages}/{total_pages} stranica ~ {pct}% oglasa s plaćom")
-            # Approximate job counts from page counts (posao.hr is ~100 jobs/page)
-            base.save_salary_stat(conn, "posao", total_pages * 100, salary_pages * 100)
+            base.save_market_stat(conn, "posao", total_pages, salary_pages)
     except Exception as e:
         print("[market] Greška pri procjeni:", e)
 
