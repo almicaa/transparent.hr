@@ -182,8 +182,20 @@ async def scrape_jobs(max_pages=None, max_jobs=None):
                     salary_text = salary_min = salary_max = None
                     sal = jd.get("salary") or {}
                     if sal.get("from") or sal.get("to"):
-                        # Structured field — exact numbers, no text parsing needed.
                         salary_text, salary_min, salary_max = _structured_salary_text(sal)
+                        # Listing API always returns tax:null — get it from detail page Nuxt payload
+                        if not sal.get("tax"):
+                            try:
+                                detail_resp = await base.retry_with_backoff(http_client.get, job["url"])
+                                nuxt = base.extract_nuxt_payload(detail_resp.text)
+                                if nuxt and isinstance(nuxt.get("salary"), dict):
+                                    detail_tax = str(nuxt["salary"].get("tax") or "").lower()
+                                    tax_label = {"gross": "bruto", "net": "neto"}.get(detail_tax)
+                                    if tax_label:
+                                        salary_text = f"{salary_text} {tax_label}"
+                                await base.sleep_jitter()
+                            except Exception:
+                                pass
                     else:
                         try:
                             detail_resp = await base.retry_with_backoff(http_client.get, job["url"])
