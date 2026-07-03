@@ -1,9 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Script from "next/script"
 
-const GA_ID = "G-K4GM301ZJJ"
 const STORAGE_KEY = "ga_consent"
 
 export default function CookieConsent() {
@@ -39,42 +37,23 @@ export default function CookieConsent() {
     updateGtag("denied")
   }
 
-  return (
-    <>
-      {/* GA script always present — consent mode controls data collection */}
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script id="ga-init" strategy="afterInteractive">{`
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('consent', 'default', {
-          analytics_storage: 'denied',
-          ad_storage: 'denied',
-          wait_for_update: 2000
-        });
-        gtag('js', new Date());
-        gtag('config', '${GA_ID}');
-      `}</Script>
+  if (!visible) return null
 
-      {visible && (
-        <div className="cookie-banner">
-          <div className="cookie-banner__content">
-            <p className="cookie-banner__title">Ova stranica upotrebljava kolačiće</p>
-            <p className="cookie-banner__text">
-              Koristimo analitičke kolačiće (Google Analytics) u svrhu poboljšanja korisničkog iskustva i razumijevanja
-              načina korištenja stranice. Prikupljeni podaci su anonimni i ne dijele se s trećim stranama u
-              marketinške svrhe.{" "}
-              <a href="/privatnost">Pravila privatnosti</a>
-            </p>
-          </div>
-          <div className="cookie-banner__actions">
-            <button className="cookie-banner__decline" onClick={decline}>Odbaci sve</button>
-            <button className="cookie-banner__accept" onClick={accept}>Prihvati sve</button>
-          </div>
-        </div>
-      )}
-    </>
+  return (
+    <div className="cookie-banner">
+      <div className="cookie-banner__content">
+        <p className="cookie-banner__title">Ova stranica upotrebljava kolačiće</p>
+        <p className="cookie-banner__text">
+          Koristimo analitičke kolačiće (Google Analytics) u svrhu poboljšanja korisničkog iskustva i razumijevanja
+          načina korištenja stranice. Prikupljeni podaci su anonimni i ne dijele se s trećim stranama u
+          marketinške svrhe.{" "}
+          <a href="/privatnost">Pravila privatnosti</a>
+        </p>
+      </div>
+      <div className="cookie-banner__actions">
+        <button className="cookie-banner__decline" onClick={decline}>Odbaci sve</button>
+        <button className="cookie-banner__accept" onClick={accept}>Prihvati sve</button>
+      </div>
+    </div>
   )
 }
