@@ -18,8 +18,17 @@ export default function PrivacyPage() {
 
       <h2>Kolačići i praćenje</h2>
       <p>
-        Transparent.hr <strong>ne koristi kolačiće</strong> niti bilo kakve alate za praćenje posjetitelja (npr.
-        Google Analytics). Ne prikupljamo osobne podatke posjetitelja stranice.
+        Transparent.hr koristi <strong>Google Analytics</strong> kako bi razumio kako posjetitelji koriste stranicu
+        (broj posjeta, koje stranice su popularne, odakle dolaze posjetitelji). Google Analytics prikuplja anonimne
+        podatke putem kolačića. Ova analitika aktivira se <strong>samo uz tvoju suglasnost</strong> — pri prvom
+        posjetu prikazujemo obavijest gdje možeš prihvatiti ili odbiti.
+      </p>
+      <p>
+        Svoju odluku možeš promijeniti u bilo kojem trenutku brisanjem podataka preglednika (localStorage ključ:{" "}
+        <code>ga_consent</code>). Više o tome kako Google obrađuje podatke:{" "}
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+          Google Privacy Policy
+        </a>.
       </p>
 
       <h2>Podaci koje prikazujemo</h2>

@@ -208,3 +208,12 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 
   .pagination{flex-wrap:wrap;justify-content:center}
 }
+
+.cookie-banner{position:fixed;bottom:0;left:0;right:0;background:var(--dark);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;z-index:1000;box-shadow:0 -2px 12px rgba(0,0,0,0.2)}
+.cookie-banner__text{margin:0;font-size:13px;flex:1 1 260px;line-height:1.5}
+.cookie-banner__text a{color:var(--primary);text-decoration:underline}
+.cookie-banner__actions{display:flex;gap:8px;flex-shrink:0}
+.cookie-banner__accept{background:var(--primary);color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer}
+.cookie-banner__accept:hover{background:#178080}
+.cookie-banner__decline{background:transparent;color:#ccc;border:1px solid #555;padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer}
+.cookie-banner__decline:hover{color:#fff;border-color:#999}

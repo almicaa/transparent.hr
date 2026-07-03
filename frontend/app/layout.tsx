@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import Header from "../components/layout/Header"
 import Footer from "../components/layout/Footer"
+import CookieConsent from "../components/analytics/CookieConsent"
 import { SITE_URL } from "../lib/seo"
 
 const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter" })
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <div className="container page-content">{children}</div>
         <Footer />
+        <CookieConsent />
       </body>
     </html>
   )
