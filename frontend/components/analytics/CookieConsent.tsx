@@ -7,13 +7,11 @@ const GA_ID = "G-K4GM301ZJJ"
 const STORAGE_KEY = "ga_consent"
 
 export default function CookieConsent() {
-  const [consent, setConsent] = useState<"granted" | "denied" | null>(null)
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as "granted" | "denied" | null
     if (stored) {
-      setConsent(stored)
       updateGtag(stored)
     } else {
       setVisible(true)
@@ -31,14 +29,12 @@ export default function CookieConsent() {
 
   function accept() {
     localStorage.setItem(STORAGE_KEY, "granted")
-    setConsent("granted")
     setVisible(false)
     updateGtag("granted")
   }
 
   function decline() {
     localStorage.setItem(STORAGE_KEY, "denied")
-    setConsent("denied")
     setVisible(false)
     updateGtag("denied")
   }
@@ -64,13 +60,18 @@ export default function CookieConsent() {
 
       {visible && (
         <div className="cookie-banner">
-          <p className="cookie-banner__text">
-            Koristimo Google Analytics kako bismo razumjeli kako posjetitelji koriste stranicu. Podaci su anonimni.{" "}
-            <a href="/privatnost">Više o privatnosti</a>
-          </p>
+          <div className="cookie-banner__content">
+            <p className="cookie-banner__title">Ova stranica upotrebljava kolačiće</p>
+            <p className="cookie-banner__text">
+              Koristimo analitičke kolačiće (Google Analytics) u svrhu poboljšanja korisničkog iskustva i razumijevanja
+              načina korištenja stranice. Prikupljeni podaci su anonimni i ne dijele se s trećim stranama u
+              marketinške svrhe.{" "}
+              <a href="/privatnost">Pravila privatnosti</a>
+            </p>
+          </div>
           <div className="cookie-banner__actions">
-            <button className="cookie-banner__accept" onClick={accept}>Prihvati</button>
-            <button className="cookie-banner__decline" onClick={decline}>Odbij</button>
+            <button className="cookie-banner__decline" onClick={decline}>Odbaci sve</button>
+            <button className="cookie-banner__accept" onClick={accept}>Prihvati sve</button>
           </div>
         </div>
       )}
