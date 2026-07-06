@@ -12,7 +12,7 @@ import os
 import re
 import sys
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin, urlparse
 
 from sqlalchemy import create_engine, text
@@ -460,8 +460,6 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
     days_left = job.get("days_to_expiry")
     expires_at = None
     if days_left is not None:
-        from datetime import timedelta
-
         expires_at = (datetime.now(timezone.utc) + timedelta(days=days_left)).isoformat()
 
     result = conn.execute(
@@ -503,13 +501,22 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
 
 
 def deactivate_expired(conn: Connection) -> int:
-    """Mark jobs past their expires_at as inactive so the API stops serving them."""
+    """Mark jobs past their expires_at as inactive so the API stops serving them.
+
+    Also deactivates jobs with no explicit expiry that are older than MAX_AGE_DAYS,
+    since posao.hr doesn't always provide a countdown and old listings accumulate.
+    """
+    MAX_AGE_DAYS = 45
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=MAX_AGE_DAYS)).isoformat()
     result = conn.execute(
         text("""
             UPDATE jobs SET is_active = :inactive
-            WHERE is_active = :active AND expires_at IS NOT NULL AND expires_at < :now
+            WHERE is_active = :active AND (
+                (expires_at IS NOT NULL AND expires_at < :now)
+                OR (expires_at IS NULL AND scraped_at < :cutoff)
+            )
         """),
-        {"inactive": False, "active": True, "now": datetime.now(timezone.utc).isoformat()},
+        {"inactive": False, "active": True, "now": datetime.now(timezone.utc).isoformat(), "cutoff": cutoff},
     )
     conn.commit()
     return result.rowcount
