@@ -42,6 +42,9 @@ export const metadata: Metadata = {
     title,
     description,
   },
+  verification: {
+    google: "kV1-7d8bJmasXX4KCWiXnRVvtEJAFiYkosLGNVp6sNQ",
+  },
 }
 
 const jsonLd = {
