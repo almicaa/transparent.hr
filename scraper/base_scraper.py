@@ -520,3 +520,17 @@ def deactivate_expired(conn: Connection) -> int:
     )
     conn.commit()
     return result.rowcount
+
+
+def purge_old_jobs(conn: Connection) -> int:
+    """Physically delete jobs that have been inactive for at least 30 days."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    result = conn.execute(
+        text("""
+            DELETE FROM jobs
+            WHERE is_active = :inactive AND scraped_at < :cutoff
+        """),
+        {"inactive": False, "cutoff": cutoff},
+    )
+    conn.commit()
+    return result.rowcount

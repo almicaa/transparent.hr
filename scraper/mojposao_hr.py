@@ -248,6 +248,9 @@ async def scrape_jobs(max_pages=None, max_jobs=None):
     deactivated = base.deactivate_expired(conn)
     if deactivated:
         print(f"[expiry] Deaktivirano {deactivated} isteklih oglasa.")
+    purged = base.purge_old_jobs(conn)
+    if purged:
+        print(f"[expiry] Obrisano {purged} starih neaktivnih oglasa iz baze.")
 
     base.finish_scrape_log(conn, log_id, jobs_found=processed, jobs_saved=total_saved, status="success")
     conn.close()
