@@ -33,7 +33,7 @@ export default function HomePage() {
           <span className="hero__title-accent">transparentnom plaćom</span>
         </h1>
         <p className="hero__lead">
-          Samo oglasi koji navode iznos — neto ili bruto, odmah vidljivo.
+          Vrijeme je za ne gubiti više vremena na oglase bez jasno vidljive plaće.
         </p>
 
         <Link className="cta" href="/jobs">
