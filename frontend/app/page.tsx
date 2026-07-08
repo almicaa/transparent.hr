@@ -29,9 +29,12 @@ export default function HomePage() {
       <section className="hero">
         <HeroIllustration />
         <h1>
-          <span className="hero__title-accent">Vrijeme je</span> za ne gubiti više vrijeme
+          Oglasi za posao s{" "}
+          <span className="hero__title-accent">transparentnom plaćom</span>
         </h1>
-        <p className="hero__lead">na oglase bez navedene plaće.</p>
+        <p className="hero__lead">
+          Samo oglasi koji navode iznos — neto ili bruto, odmah vidljivo.
+        </p>
 
         <Link className="cta" href="/jobs">
           Pogledaj oglase <ArrowIcon />
