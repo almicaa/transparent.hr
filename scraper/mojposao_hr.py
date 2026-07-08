@@ -75,6 +75,61 @@ def _text_salary_from_benefits(body: str):
     return None, None, None
 
 
+async def _reconcile_active_jobs(conn, http_client) -> int:
+    """Deactivate DB jobs that no longer appear anywhere in the current mojposao API.
+
+    The main scrape loop stops early (caught_up), so it never sees jobs that
+    have been removed from the API since they were first scraped. This pass
+    fetches all current IDs and deactivates any DB job that's gone missing.
+    """
+    from sqlalchemy import text
+
+    print("[reconcile] Skupljam aktualne ID-ove s mojposao API-ja...")
+    current_ids: set[str] = set()
+    page = 1
+    while True:
+        try:
+            resp = await base.retry_with_backoff(
+                http_client.get, API_URL, params={"sortBy": "adtype", "page": page}
+            )
+            data = resp.json()
+        except Exception as e:
+            print(f"[reconcile] Greška na stranici {page}: {e} — preskačem reconciliation.")
+            return 0
+        items = data.get("items") or []
+        if not items:
+            break
+        for item in items:
+            for jd in item.get("jobs") or []:
+                if jd.get("id"):
+                    current_ids.add(str(jd["id"]))
+        total_pages = data.get("totalPages") or 1
+        if page >= total_pages:
+            break
+        page += 1
+        await base.sleep_jitter(0.3, 0.7)
+
+    if not current_ids:
+        print("[reconcile] API nije vratio nijedan oglas — preskačem.")
+        return 0
+
+    print(f"[reconcile] API trenutno ima {len(current_ids)} oglasa.")
+    db_result = conn.execute(text(
+        "SELECT external_id FROM jobs WHERE source = 'mojposao' AND is_active = true"
+    ))
+    db_ids = {str(row[0]) for row in db_result.fetchall()}
+    gone = db_ids - current_ids
+    if not gone:
+        return 0
+    for eid in gone:
+        conn.execute(
+            text("UPDATE jobs SET is_active = false WHERE external_id = :eid AND source = 'mojposao'"),
+            {"eid": eid},
+        )
+    conn.commit()
+    return len(gone)
+
+
 async def scrape_jobs(max_pages=None, max_jobs=None):
     base.init_db()
     try:
@@ -242,6 +297,11 @@ async def scrape_jobs(max_pages=None, max_jobs=None):
             site_total = await _fetch_site_total(http_client)
             total_for_stat = site_total if site_total else api_total_jobs
             base.save_salary_stat(conn, "mojposao", total_for_stat, api_salary_jobs)
+
+        if not max_pages and not max_jobs:
+            reconciled = await _reconcile_active_jobs(conn, http_client)
+            if reconciled:
+                print(f"[reconcile] Deaktivirano {reconciled} oglasa koji više nisu na API-ju.")
     finally:
         await http_client.aclose()
 
