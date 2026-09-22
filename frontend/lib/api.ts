@@ -29,23 +29,32 @@ function buildQuery(params: Record<string, string | number | undefined>): string
   return qs ? `?${qs}` : ""
 }
 
-export async function getJobs(params: GetJobsParams = {}): Promise<JobList> {
+interface FetchOptions {
+  /** When set, uses Next's data cache with this revalidate window instead of "no-store". */
+  revalidate?: number
+}
+
+function cacheInit({ revalidate }: FetchOptions = {}): RequestInit {
+  return revalidate !== undefined ? { next: { revalidate } } : { cache: "no-store" }
+}
+
+export async function getJobs(params: GetJobsParams = {}, opts: FetchOptions = {}): Promise<JobList> {
   const qs = buildQuery({ ...params })
-  const res = await fetch(`${API_URL}/api/jobs${qs}`, { cache: "no-store" })
+  const res = await fetch(`${API_URL}/api/jobs${qs}`, cacheInit(opts))
   if (!res.ok) throw new Error(`Failed to load jobs: ${res.status}`)
   return res.json()
 }
 
-export async function getJob(id: number | string): Promise<Job | null> {
-  const res = await fetch(`${API_URL}/api/jobs/${id}`, { cache: "no-store" })
+export async function getJob(id: number | string, opts: FetchOptions = {}): Promise<Job | null> {
+  const res = await fetch(`${API_URL}/api/jobs/${id}`, cacheInit(opts))
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`Failed to load job ${id}: ${res.status}`)
   return res.json()
 }
 
-export async function getStats(): Promise<Stats | null> {
+export async function getStats(opts: FetchOptions = {}): Promise<Stats | null> {
   try {
-    const res = await fetch(`${API_URL}/api/stats`, { cache: "no-store" })
+    const res = await fetch(`${API_URL}/api/stats`, cacheInit(opts))
     if (!res.ok) return null
     return res.json()
   } catch {
@@ -71,8 +80,8 @@ export async function getTransparencyStats(): Promise<SalaryStatPoint[]> {
   }
 }
 
-export async function getFilters(): Promise<Filters> {
-  const res = await fetch(`${API_URL}/api/filters`, { cache: "no-store" })
+export async function getFilters(opts: FetchOptions = {}): Promise<Filters> {
+  const res = await fetch(`${API_URL}/api/filters`, cacheInit(opts))
   if (!res.ok) throw new Error(`Failed to load filters: ${res.status}`)
   return res.json()
 }

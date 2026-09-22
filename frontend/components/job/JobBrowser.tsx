@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Filters from "../filters/Filters"
 import JobCard from "./JobCard"
 import { getFilters, getJobs } from "../../lib/api"
@@ -8,18 +8,37 @@ import { Job, JobFilters } from "../../lib/types"
 
 const PER_PAGE = 20
 
-export default function JobBrowser() {
-  const [jobs, setJobs] = useState<Job[]>([])
-  const [cities, setCities] = useState<string[]>([])
-  const [categories, setCategories] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
+interface JobBrowserProps {
+  initialJobs?: Job[]
+  initialTotal?: number
+  initialCities?: string[]
+  initialCategories?: string[]
+}
+
+export default function JobBrowser({
+  initialJobs,
+  initialTotal,
+  initialCities,
+  initialCategories,
+}: JobBrowserProps = {}) {
+  const [jobs, setJobs] = useState<Job[]>(initialJobs ?? [])
+  const [cities, setCities] = useState<string[]>(initialCities ?? [])
+  const [categories, setCategories] = useState<string[]>(initialCategories ?? [])
+  const [loading, setLoading] = useState(initialJobs === undefined)
   const [filters, setFilters] = useState<JobFilters>({ city: "all", category: "all", source: "all", search: "", region: "all" })
 
   const [page, setPage] = useState(1)
-  const [total, setTotal] = useState(0)
+  const [total, setTotal] = useState(initialTotal ?? 0)
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PER_PAGE)), [total])
 
+  const skipFiltersFetch = useRef(initialCities !== undefined)
+  const skipJobsFetch = useRef(initialJobs !== undefined)
+
   useEffect(() => {
+    if (skipFiltersFetch.current) {
+      skipFiltersFetch.current = false
+      return
+    }
     getFilters().then((f) => {
       setCities(f.cities)
       setCategories(f.categories)
@@ -27,6 +46,10 @@ export default function JobBrowser() {
   }, [])
 
   useEffect(() => {
+    if (skipJobsFetch.current) {
+      skipJobsFetch.current = false
+      return
+    }
     let mounted = true
     setLoading(true)
     getJobs({

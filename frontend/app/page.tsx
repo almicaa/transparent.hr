@@ -2,8 +2,9 @@ import Link from "next/link"
 import JobBrowser from "../components/job/JobBrowser"
 import HeroIllustration from "../components/ui/HeroIllustration"
 import { ArrowIcon, CheckIcon, EuroIcon, LayersIcon } from "../components/ui/icons"
+import { getFilters, getJobs } from "../lib/api"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 const FEATURES = [
   {
@@ -23,7 +24,21 @@ const FEATURES = [
   },
 ]
 
-export default function HomePage() {
+async function getHomeData() {
+  try {
+    const [jobsRes, filtersRes] = await Promise.all([
+      getJobs({ page: 1, per_page: 20, salary_shown: "yes", sort: "newest" }, { revalidate: 300 }),
+      getFilters({ revalidate: 300 }),
+    ])
+    return { jobs: jobsRes.jobs, total: jobsRes.total, cities: filtersRes.cities, categories: filtersRes.categories }
+  } catch {
+    return { jobs: [], total: 0, cities: [], categories: [] }
+  }
+}
+
+export default async function HomePage() {
+  const { jobs, total, cities, categories } = await getHomeData()
+
   return (
     <main>
       <section className="hero">
@@ -42,7 +57,7 @@ export default function HomePage() {
       </section>
 
       <section className="home-section">
-        <JobBrowser />
+        <JobBrowser initialJobs={jobs} initialTotal={total} initialCities={cities} initialCategories={categories} />
       </section>
 
       <section className="home-section">

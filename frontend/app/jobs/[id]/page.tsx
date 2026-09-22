@@ -5,10 +5,10 @@ import { buildJobPostingJsonLd, jobDescription, SITE_URL } from "../../../lib/se
 import { SOURCE_LABELS } from "../../../lib/sourceLabels"
 import type { Metadata } from "next"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 3600
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const job = await getJob(params.id)
+  const job = await getJob(params.id, { revalidate: 3600 })
   if (!job) return { title: "Oglas nije pronađen" }
 
   const title = `${job.title}${job.company ? " — " + job.company : ""}`
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 export default async function JobDetailPage({ params }: { params: { id: string } }) {
-  const job = await getJob(params.id)
+  const job = await getJob(params.id, { revalidate: 3600 })
   if (!job) notFound()
 
   const jsonLd = buildJobPostingJsonLd(job)

@@ -11,9 +11,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/uvjeti-koristenja`, changeFrequency: "yearly", priority: 0.1 },
   ]
 
+  const MAX_PAGES = 20 // safety cap: 20 * 100 = 2000 jobs
+
   try {
-    const { jobs } = await getJobs({ per_page: 100, sort: "newest", salary_shown: "yes" })
-    const jobRoutes: MetadataRoute.Sitemap = jobs.map((job) => ({
+    const perPage = 100
+    const first = await getJobs({ page: 1, per_page: perPage, sort: "newest", salary_shown: "yes" })
+    const pageCount = Math.min(Math.ceil(first.total / perPage), MAX_PAGES)
+
+    const rest = await Promise.all(
+      Array.from({ length: Math.max(0, pageCount - 1) }, (_, i) =>
+        getJobs({ page: i + 2, per_page: perPage, sort: "newest", salary_shown: "yes" })
+      )
+    )
+
+    const allJobs = [first, ...rest].flatMap((res) => res.jobs)
+    const jobRoutes: MetadataRoute.Sitemap = allJobs.map((job) => ({
       url: `${SITE_URL}/jobs/${job.id}`,
       lastModified: job.scraped_at || undefined,
       changeFrequency: "daily",

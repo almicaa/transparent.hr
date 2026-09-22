@@ -18,6 +18,7 @@ export interface Job {
   source: string | null
   posted_at: string | null
   scraped_at: string | null
+  expires_at: string | null
 }
 
 export interface JobList {

@@ -1,17 +1,34 @@
-"use client"
-
-import { useEffect, useState } from "react"
+import type { Metadata } from "next"
 import JobBrowser from "../../components/job/JobBrowser"
 import Stats from "../../components/ui/Stats"
-import { getStats } from "../../lib/api"
-import { Stats as StatsType } from "../../lib/types"
+import { getFilters, getJobs, getStats } from "../../lib/api"
+import { SITE_URL } from "../../lib/seo"
 
-export default function JobsPage() {
-  const [stats, setStats] = useState<StatsType | null>(null)
+export const revalidate = 300
 
-  useEffect(() => {
-    getStats().then(setStats).catch(() => {})
-  }, [])
+export const metadata: Metadata = {
+  title: "Svi oglasi za posao s transparentnom plaćom",
+  description:
+    "Pregledaj sve oglase za posao u Hrvatskoj s vidljivom neto ili bruto plaćom u EUR. Filtriraj po gradu, kategoriji i portalu.",
+  alternates: { canonical: `${SITE_URL}/jobs` },
+}
+
+async function getJobsPageData() {
+  const [stats, jobsRes, filtersRes] = await Promise.all([
+    getStats({ revalidate: 300 }),
+    getJobs({ page: 1, per_page: 20, salary_shown: "yes", sort: "newest" }, { revalidate: 300 }).catch(() => ({
+      jobs: [],
+      total: 0,
+      page: 1,
+      per_page: 20,
+    })),
+    getFilters({ revalidate: 300 }).catch(() => ({ cities: [], categories: [], job_types: [] })),
+  ])
+  return { stats, jobsRes, filtersRes }
+}
+
+export default async function JobsPage() {
+  const { stats, jobsRes, filtersRes } = await getJobsPageData()
 
   return (
     <main>
@@ -27,7 +44,12 @@ export default function JobsPage() {
         />
       </div>
 
-      <JobBrowser />
+      <JobBrowser
+        initialJobs={jobsRes.jobs}
+        initialTotal={jobsRes.total}
+        initialCities={filtersRes.cities}
+        initialCategories={filtersRes.categories}
+      />
     </main>
   )
 }
