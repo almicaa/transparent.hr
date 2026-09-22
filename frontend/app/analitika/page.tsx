@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { getStats, getTransparencyStats } from "../../lib/api"
 import { ArrowIcon } from "../../components/ui/icons"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
+import TransparencyChart from "../../components/ui/TransparencyChart"
 
 export const dynamic = "force-dynamic"
 
@@ -54,38 +55,45 @@ export default async function AnalyticsPage() {
 
       {dates.length > 0 && (
         <div className="transparency-history">
-          <h2>Postotak oglasa s plaćom — dnevno</h2>
-          <p className="meta">Graf dolazi kad nakupimo više dana podataka. Za sada, tablica:</p>
-          <table className="transparency-table">
-            <thead>
-              <tr>
-                <th>Datum</th>
-                {SOURCE_ORDER.map((s) => (
-                  <th key={s}>{SOURCE_LABELS[s] || s}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {dates.map((date) => (
-                <tr key={date}>
-                  <td>{date}</td>
-                  {SOURCE_ORDER.map((s) => {
-                    const row = byDateSource[`${date}__${s}`]
-                    return (
-                      <td key={s}>
-                        {row ? (
-                          <>
-                            <strong>{row.pct}%</strong>
-                            <span className="meta"> ({row.jobs_with_salary.toLocaleString()} / {row.total_jobs.toLocaleString()})</span>
-                          </>
-                        ) : "—"}
-                      </td>
-                    )
-                  })}
+          <h2>Postotak oglasa s plaćom — kroz vrijeme</h2>
+          <p className="meta">Udio oglasa na svakom portalu koji prikazuju plaću, mjereno dnevno.</p>
+          <TransparencyChart data={transparency} />
+
+          <details style={{ marginTop: 20 }}>
+            <summary className="meta" style={{ cursor: "pointer" }}>
+              Prikaži tablicu s točnim brojevima
+            </summary>
+            <table className="transparency-table">
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  {SOURCE_ORDER.map((s) => (
+                    <th key={s}>{SOURCE_LABELS[s] || s}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {dates.map((date) => (
+                  <tr key={date}>
+                    <td>{date}</td>
+                    {SOURCE_ORDER.map((s) => {
+                      const row = byDateSource[`${date}__${s}`]
+                      return (
+                        <td key={s}>
+                          {row ? (
+                            <>
+                              <strong>{row.pct}%</strong>
+                              <span className="meta"> ({row.jobs_with_salary.toLocaleString()} / {row.total_jobs.toLocaleString()})</span>
+                            </>
+                          ) : "—"}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
         </div>
       )}
     </main>
