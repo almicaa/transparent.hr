@@ -56,6 +56,7 @@ export interface Stats {
 
 export interface Filters {
   cities: string[]
+  locations: string[]
   categories: string[]
   job_types: string[]
 }

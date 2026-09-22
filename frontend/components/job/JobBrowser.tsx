@@ -12,6 +12,7 @@ interface JobBrowserProps {
   initialJobs?: Job[]
   initialTotal?: number
   initialCities?: string[]
+  initialLocations?: string[]
   initialCategories?: string[]
 }
 
@@ -19,10 +20,12 @@ export default function JobBrowser({
   initialJobs,
   initialTotal,
   initialCities,
+  initialLocations,
   initialCategories,
 }: JobBrowserProps = {}) {
   const [jobs, setJobs] = useState<Job[]>(initialJobs ?? [])
   const [cities, setCities] = useState<string[]>(initialCities ?? [])
+  const [locations, setLocations] = useState<string[]>(initialLocations ?? [])
   const [categories, setCategories] = useState<string[]>(initialCategories ?? [])
   const [loading, setLoading] = useState(initialJobs === undefined)
   const [filters, setFilters] = useState<JobFilters>({ city: "all", category: "all", source: "all", search: "", region: "all" })
@@ -41,6 +44,7 @@ export default function JobBrowser({
     }
     getFilters().then((f) => {
       setCities(f.cities)
+      setLocations(f.locations)
       setCategories(f.categories)
     }).catch(() => {})
   }, [])
@@ -78,7 +82,14 @@ export default function JobBrowser({
 
   return (
     <div className="job-browser">
-      <Filters filters={filters} setFilters={setFilters} setPage={setPage} cities={cities} categories={categories} />
+      <Filters
+        filters={filters}
+        setFilters={setFilters}
+        setPage={setPage}
+        cities={cities}
+        locations={locations}
+        categories={categories}
+      />
 
       <div className="meta" style={{ margin: "16px 0 8px" }}>
         Prikazano {jobs.length} oglasa na stranici (ukupno {total})

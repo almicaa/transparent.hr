@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { JobFilters } from "../../lib/types"
-import { isForeignLocation, matchCountry } from "../../lib/location"
+import { matchCountry } from "../../lib/location"
 
 const MAX_OPTION_LENGTH = 40
 
@@ -13,26 +13,27 @@ interface FiltersProps {
   setFilters: (updater: (f: JobFilters) => JobFilters) => void
   setPage: (page: number) => void
   cities: string[]
+  locations: string[]
   categories: string[]
 }
 
-export default function Filters({ filters, setFilters, setPage, cities, categories }: FiltersProps) {
+export default function Filters({ filters, setFilters, setPage, cities, locations, categories }: FiltersProps) {
   const { locationOptions, locationLabel } = useMemo(() => {
     if (filters.region === "hr") {
       return {
-        locationOptions: cities.filter((c) => !isForeignLocation(c)),
+        locationOptions: cities,
         locationLabel: "Svi gradovi",
       }
     }
     if (filters.region === "foreign") {
-      const countries = new Set(cities.map(matchCountry).filter((c): c is string => !!c))
+      const countries = new Set(locations.map(matchCountry).filter((c): c is string => !!c))
       return {
         locationOptions: Array.from(countries).sort(),
         locationLabel: "Sve države",
       }
     }
     return { locationOptions: cities, locationLabel: "Sve lokacije" }
-  }, [cities, filters.region])
+  }, [cities, locations, filters.region])
 
   return (
     <div className="filters">

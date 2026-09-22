@@ -30,14 +30,20 @@ async function getHomeData() {
       getJobs({ page: 1, per_page: 20, salary_shown: "yes", sort: "newest" }, { revalidate: 300 }),
       getFilters({ revalidate: 300 }),
     ])
-    return { jobs: jobsRes.jobs, total: jobsRes.total, cities: filtersRes.cities, categories: filtersRes.categories }
+    return {
+      jobs: jobsRes.jobs,
+      total: jobsRes.total,
+      cities: filtersRes.cities,
+      locations: filtersRes.locations,
+      categories: filtersRes.categories,
+    }
   } catch {
-    return { jobs: [], total: 0, cities: [], categories: [] }
+    return { jobs: [], total: 0, cities: [], locations: [], categories: [] }
   }
 }
 
 export default async function HomePage() {
-  const { jobs, total, cities, categories } = await getHomeData()
+  const { jobs, total, cities, locations, categories } = await getHomeData()
 
   return (
     <main>
@@ -57,7 +63,13 @@ export default async function HomePage() {
       </section>
 
       <section className="home-section">
-        <JobBrowser initialJobs={jobs} initialTotal={total} initialCities={cities} initialCategories={categories} />
+        <JobBrowser
+          initialJobs={jobs}
+          initialTotal={total}
+          initialCities={cities}
+          initialLocations={locations}
+          initialCategories={categories}
+        />
       </section>
 
       <section className="home-section">

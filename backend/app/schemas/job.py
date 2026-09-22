@@ -68,5 +68,6 @@ class Stats(BaseModel):
 
 class Filters(BaseModel):
     cities: list[str]
+    locations: list[str]
     categories: list[str]
     job_types: list[str]

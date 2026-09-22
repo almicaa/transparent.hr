@@ -71,7 +71,8 @@ class JobService:
 
     def get_filters(self) -> Filters:
         return Filters(
-            cities=self.repo.distinct_locations(),
+            cities=self.repo.distinct_cities(),
+            locations=self.repo.distinct_locations(),
             categories=self.repo.distinct_categories(),
             job_types=self.repo.distinct_job_types(),
         )

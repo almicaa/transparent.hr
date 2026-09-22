@@ -1,3 +1,6 @@
+import os
+import sys
+from collections import Counter
 from datetime import date
 
 from sqlalchemy import func, or_, select
@@ -6,20 +9,8 @@ from sqlalchemy.orm import Session
 from app.models.job import Job
 from app.models.market_stat import MarketStat
 
-# No structured country field is scraped — location is free text (e.g.
-# "Zagreb" vs "Höchstadt a. d. Aisch, Njemačka"). Foreign ads are flagged by
-# matching well-known country names, since that's how they actually show up
-# in the data; anything else defaults to "hr" (the common case).
-FOREIGN_LOCATION_KEYWORDS = [
-    "austrija", "austria", "njemačka", "germany", "deutschland",
-    "švicarska", "switzerland", "italija", "italy", "francuska", "france",
-    "nizozemska", "netherlands", "holland", "belgija", "belgium",
-    "mađarska", "hungary", "irska", "ireland", "švedska", "sweden",
-    "norveška", "norway", "danska", "denmark", "velika britanija",
-    "united kingdom", "england", "poljska", "poland", "češka", "czech",
-    "grčka", "greece", "španjolska", "spain", "malta", "cipar", "cyprus",
-    "kanada", "canada", "australija", "australia", "slovenija", "slovenia",
-]
+sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
+from shared.location_normalizer import CITY_ALIASES, FOREIGN_LOCATION_KEYWORDS, normalize_city  # noqa: E402
 
 
 class JobRepository:
@@ -52,7 +43,10 @@ class JobRepository:
         if salary_max is not None:
             stmt = stmt.where(Job.salary_min <= salary_max)
         if city:
-            stmt = stmt.where(Job.location.ilike(f"%{city}%"))
+            variants = [raw for raw, canon in CITY_ALIASES.items() if canon.lower() == city.lower()]
+            stmt = stmt.where(
+                or_(Job.location.ilike(f"%{city}%"), *(Job.location.ilike(f"%{v}%") for v in variants))
+            )
         if region == "foreign":
             stmt = stmt.where(or_(*(Job.location.ilike(f"%{kw}%") for kw in FOREIGN_LOCATION_KEYWORDS)))
         elif region == "hr":
@@ -113,10 +107,13 @@ class JobRepository:
             select(Job.location, func.count())
             .where(Job.is_active.is_(True), Job.location.is_not(None))
             .group_by(Job.location)
-            .order_by(func.count().desc())
-            .limit(limit)
         )
-        return [(row[0], row[1]) for row in self.db.execute(stmt)]
+        counts = Counter()
+        for raw, cnt in self.db.execute(stmt):
+            city = normalize_city(raw)
+            if city:
+                counts[city] += cnt
+        return counts.most_common(limit)
 
     def distinct_locations(self) -> list[str]:
         stmt = (
@@ -126,6 +123,10 @@ class JobRepository:
             .order_by(Job.location)
         )
         return [row[0] for row in self.db.execute(stmt)]
+
+    def distinct_cities(self) -> list[str]:
+        cities = {normalize_city(loc) for loc in self.distinct_locations()}
+        return sorted(c for c in cities if c)
 
     def distinct_categories(self) -> list[str]:
         stmt = (
