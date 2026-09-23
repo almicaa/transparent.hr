@@ -11,14 +11,19 @@ export const metadata: Metadata = {
   title: "Analitika",
 }
 
-const SOURCE_ORDER = ["posao", "mojposao"]
+// posao.hr is excluded here too — see the comment in TransparencyChart.tsx.
+// Its salary_stats and market_estimates numbers both come from page-count
+// extrapolation methods that disagree with each other by ~7x on the same
+// day, so neither is trustworthy until the counting method is fixed.
+const SOURCE_ORDER = ["mojposao"]
 
 export default async function AnalyticsPage() {
   const [stats, transparency] = await Promise.all([getStats(), getTransparencyStats()])
-  const estimates = stats?.market_estimates ?? []
 
   // Group by date for the table
-  const dates = [...new Set(transparency.map((r) => r.date))].sort().reverse()
+  const dates = [...new Set(transparency.filter((r) => r.source === "mojposao").map((r) => r.date))]
+    .sort()
+    .reverse()
   const byDateSource = Object.fromEntries(
     transparency.map((r) => [`${r.date}__${r.source}`, r])
   )
@@ -39,19 +44,6 @@ export default async function AnalyticsPage() {
           </div>
         </Link>
       </div>
-
-      {estimates.length > 0 ? (
-        <div className="market-estimate">
-          <p className="meta">Procjena udjela oglasa s plaćom po portalu:</p>
-          <ul>
-            {estimates.map((e) => (
-              <li key={e.source}>
-                {SOURCE_LABELS[e.source] || e.source}: <strong>~{e.estimated_pct}%</strong>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
 
       {dates.length > 0 && (
         <div className="transparency-history">

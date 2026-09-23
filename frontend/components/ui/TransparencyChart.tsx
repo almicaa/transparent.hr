@@ -4,10 +4,16 @@ import { useMemo, useState } from "react"
 import { SalaryStatPoint } from "../../lib/api"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
 
-const SOURCE_ORDER = ["posao", "mojposao"]
+// posao.hr is excluded: its daily total is estimated by multiplying a
+// page count from the site's own pagination indicator by a per-page job
+// link count, and those two numbers turn out to use incompatible page-size
+// assumptions (confirmed by comparing against the site directly) — the
+// resulting series swings 33%->82%->35% over weeks with no code change
+// behind it. mojposao's numbers come straight from the site's own JSON API
+// (exact total/salaryVisible counts) and are trustworthy.
+const SOURCE_ORDER = ["mojposao"]
 const SERIES_COLOR: Record<string, string> = {
-  posao: "#1D9E9E",
-  mojposao: "#eb6834",
+  mojposao: "#1D9E9E",
 }
 
 const WIDTH = 720

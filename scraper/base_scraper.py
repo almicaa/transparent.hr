@@ -329,38 +329,6 @@ def job_exists(conn: Connection, external_id: str) -> bool:
     return row is not None
 
 
-def save_market_stat(conn: Connection, source: str, total_pages: int, salary_pages: int) -> float | None:
-    """Store a page-count-based estimate of the share of ads with a visible salary.
-
-    This is an approximation (ads per page can differ between the filtered
-    and unfiltered listing) — good enough for a "roughly X%" landing stat,
-    without crawling thousands of pages just to count exact totals.
-    """
-    if not total_pages:
-        return None
-    pct = round(min(salary_pages, total_pages) / total_pages * 100, 1)
-    conn.execute(
-        text("""
-            INSERT INTO market_stats (source, total_pages, salary_pages, estimated_pct, computed_at)
-            VALUES (:source, :total_pages, :salary_pages, :pct, :computed_at)
-            ON CONFLICT(source) DO UPDATE SET
-                total_pages=excluded.total_pages,
-                salary_pages=excluded.salary_pages,
-                estimated_pct=excluded.estimated_pct,
-                computed_at=excluded.computed_at
-        """),
-        {
-            "source": source,
-            "total_pages": total_pages,
-            "salary_pages": salary_pages,
-            "pct": pct,
-            "computed_at": datetime.now(timezone.utc).isoformat(),
-        },
-    )
-    conn.commit()
-    return pct
-
-
 def save_salary_stat(conn: Connection, source: str, total_jobs: int, jobs_with_salary: int) -> float | None:
     """Store daily transparency data (one row per source per day, upserted).
 

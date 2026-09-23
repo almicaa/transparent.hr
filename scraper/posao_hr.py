@@ -32,38 +32,55 @@ async def _parse_total_jobs(page) -> int | None:
     return None
 
 
-async def _count_job_links(page) -> int:
-    """Count unique /oglasi/ job links on a posao.hr listing page."""
+async def _job_links_on_page(page) -> set[str]:
+    """Unique /oglasi/ job links on a posao.hr listing page."""
     try:
         html = await page.content()
-        links = set(re.findall(r'href="(https://www\.posao\.hr/oglasi/[^"]+)"', html))
-        return len(links)
+        return set(re.findall(r'href="(https://www\.posao\.hr/oglasi/[^"]+)"', html))
     except Exception:
-        return 0
+        return set()
 
 
 async def update_market_stat(browser, conn, filtered_page):
-    """Compute salary transparency stats for posao.hr."""
+    """Compute salary transparency stats for posao.hr.
+
+    Walks every real page of the salary-filtered listing and counts distinct
+    job links — the site's own pagination is a path segment
+    (/stranica/N), not the ?page=N query param a previous version of this
+    used; ?page=N is silently ignored and always re-serves page 1, so the
+    old salary_pages * jobs_per_page estimate was counting the same ~135
+    jobs 17 times over (35%+ instead of the real ~5%).
+    """
     try:
         salary_pages = await base.get_listing_page_count(filtered_page)
-        jobs_per_salary_page = await _count_job_links(filtered_page)
+        salary_job_links = set(await _job_links_on_page(filtered_page))
 
-        ctx = await browser.new_context(user_agent=base.get_ua())
-        await base.block_heavy_resources(ctx)
-        p = await ctx.new_page()
-        await p.goto(ALL_JOBS_URL, wait_until="domcontentloaded", timeout=30000)
-        total_jobs = await _parse_total_jobs(p)
-        total_pages = await base.get_listing_page_count(p)
-        await p.close()
-        await ctx.close()
+        if salary_pages and salary_pages > 1:
+            ctx = await browser.new_context(user_agent=base.get_ua())
+            await base.block_heavy_resources(ctx)
+            p = await ctx.new_page()
+            for page_num in range(2, salary_pages + 1):
+                try:
+                    await p.goto(f"{SEARCH_URL}stranica/{page_num}", wait_until="networkidle", timeout=30000)
+                    salary_job_links |= await _job_links_on_page(p)
+                except Exception as e:
+                    print(f"[market] Greška na stranici {page_num}:", e)
+            await p.close()
+            await ctx.close()
 
-        if salary_pages and jobs_per_salary_page and total_jobs:
-            salary_jobs = salary_pages * jobs_per_salary_page
+        ctx2 = await browser.new_context(user_agent=base.get_ua())
+        await base.block_heavy_resources(ctx2)
+        p2 = await ctx2.new_page()
+        await p2.goto(ALL_JOBS_URL, wait_until="domcontentloaded", timeout=30000)
+        total_jobs = await _parse_total_jobs(p2)
+        await p2.close()
+        await ctx2.close()
+
+        salary_jobs = len(salary_job_links)
+        if total_jobs and salary_jobs:
             pct = round(salary_jobs / total_jobs * 100, 1)
-            print(f"[market] posao.hr: ~{salary_jobs}/{total_jobs} oglasa = {pct}% ({salary_pages} str × {jobs_per_salary_page})")
+            print(f"[market] posao.hr: {salary_jobs}/{total_jobs} oglasa = {pct}%")
             base.save_salary_stat(conn, "posao", total_jobs, salary_jobs)
-        if salary_pages and total_pages:
-            base.save_market_stat(conn, "posao", total_pages, salary_pages)
     except Exception as e:
         print("[market] Greška pri procjeni:", e)
 
@@ -83,6 +100,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
     processed = 0
     consecutive_known = 0
     caught_up = False
+    total_pages_available = None
     # Listings are newest-first, so once we've seen this many already-saved
     # ads in a row, the rest of the feed is stuff we already have — stop
     # instead of re-checking pages we've already fully covered.
@@ -114,7 +132,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                 print(f"  ↳ Dosegnut sigurnosni limit ({MAX_PROCESSED_SAFETY}) — prekidam da ne riskiram OOM.")
                 break
 
-            url = f"{SEARCH_URL}?page={page_num}" if page_num > 1 else SEARCH_URL
+            url = f"{SEARCH_URL}stranica/{page_num}" if page_num > 1 else SEARCH_URL
             page_has_salary = url.startswith(SEARCH_URL)
             print(f"\n--- Stranica {page_num}: {url} ---")
 
@@ -126,6 +144,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
 
             if page_num == 1:
                 await update_market_stat(browser, conn, page)
+                total_pages_available = await base.get_listing_page_count(page)
 
             try:
                 await page.wait_for_selector("a[href]", timeout=10000)
@@ -326,12 +345,11 @@ async def scrape_posao(max_pages=None, max_jobs=None):
             if caught_up:
                 break
 
-            try:
-                next_btn = await page.query_selector("a[rel='next'], a:has-text('Sljedeća'), button:has-text('Sljedeća')")
-            except Exception:
-                next_btn = None
-            if not next_btn:
-                print("Nema više stranica (ili drugačiji pagination).")
+            # Pagination is a path segment (/stranica/N), not a "next" link/button
+            # — the total-pages indicator from the page title is the reliable
+            # signal for whether there's more to fetch.
+            if total_pages_available and page_num >= total_pages_available:
+                print("Nema više stranica.")
                 break
 
             page_num += 1
