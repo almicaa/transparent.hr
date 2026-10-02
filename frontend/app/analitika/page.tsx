@@ -11,19 +11,21 @@ export const metadata: Metadata = {
   title: "Analitika",
 }
 
-// posao.hr is excluded here too — see the comment in TransparencyChart.tsx.
-// Its salary_stats and market_estimates numbers both come from page-count
-// extrapolation methods that disagree with each other by ~7x on the same
-// day, so neither is trustworthy until the counting method is fixed.
-const SOURCE_ORDER = ["mojposao"]
+const SOURCE_ORDER = ["posao", "mojposao"]
+
+// Rows before this date used posao.hr's old, broken page-count estimate
+// (see commit f41321e — it counted the same ~135 ads up to 17x over, 33%+
+// instead of the real ~5%). Filtering them out here keeps the fixed
+// per-link-count method's history from 24.9. onward clean of that false
+// overnight cliff, in both the chart and the table below.
+const POSAO_VALID_FROM = "2026-09-24"
 
 export default async function AnalyticsPage() {
-  const [stats, transparency] = await Promise.all([getStats(), getTransparencyStats()])
+  const [stats, rawTransparency] = await Promise.all([getStats(), getTransparencyStats()])
+  const transparency = rawTransparency.filter((r) => r.source !== "posao" || r.date >= POSAO_VALID_FROM)
 
   // Group by date for the table
-  const dates = [...new Set(transparency.filter((r) => r.source === "mojposao").map((r) => r.date))]
-    .sort()
-    .reverse()
+  const dates = [...new Set(transparency.map((r) => r.date))].sort().reverse()
   const byDateSource = Object.fromEntries(
     transparency.map((r) => [`${r.date}__${r.source}`, r])
   )

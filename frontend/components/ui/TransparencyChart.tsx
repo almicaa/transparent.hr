@@ -4,15 +4,14 @@ import { useMemo, useState } from "react"
 import { SalaryStatPoint } from "../../lib/api"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
 
-// posao.hr is excluded: its daily total is estimated by multiplying a
-// page count from the site's own pagination indicator by a per-page job
-// link count, and those two numbers turn out to use incompatible page-size
-// assumptions (confirmed by comparing against the site directly) — the
-// resulting series swings 33%->82%->35% over weeks with no code change
-// behind it. mojposao's numbers come straight from the site's own JSON API
-// (exact total/salaryVisible counts) and are trustworthy.
-const SOURCE_ORDER = ["mojposao"]
+// posao.hr was excluded after commit f41321e found its old page-count
+// estimate was counting the same ads up to 17x over. It now walks every
+// real page of the salary-filtered listing and counts distinct job links,
+// confirmed stable (4.3%-5.1%) across the days since that fix — the page.tsx
+// caller filters out the pre-fix rows before they ever reach this component.
+const SOURCE_ORDER = ["posao", "mojposao"]
 const SERIES_COLOR: Record<string, string> = {
+  posao: "#eb6834",
   mojposao: "#1D9E9E",
 }
 

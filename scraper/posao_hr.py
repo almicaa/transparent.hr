@@ -33,10 +33,17 @@ async def _parse_total_jobs(page) -> int | None:
 
 
 async def _job_links_on_page(page) -> set[str]:
-    """Unique /oglasi/ job links on a posao.hr listing page."""
+    """Unique /oglasi/ job links on a posao.hr listing page.
+
+    Page 1 of the salary-filtered listing embeds a "featured ads" section
+    that re-links some of the same jobs already in the flat list below it,
+    tagged with a ?source=featured-ads query string — stripping the query
+    string before deduping avoids counting those as separate jobs.
+    """
     try:
         html = await page.content()
-        return set(re.findall(r'href="(https://www\.posao\.hr/oglasi/[^"]+)"', html))
+        links = re.findall(r'href="(https://www\.posao\.hr/oglasi/[^"]+)"', html)
+        return {link.split("?")[0] for link in links}
     except Exception:
         return set()
 
