@@ -61,6 +61,11 @@ export default function JobCard({ job }: { job: Job }) {
 
   return (
     <article className="job">
+      <h3 className="job__title">
+        {/* The link covers the whole card (see .job__title a::after). */}
+        <Link href={`/jobs/${job.id}`}>{job.title}</Link>
+      </h3>
+      <div className="job__org">{[job.company, job.location].filter(Boolean).join(" · ")}</div>
       {pay ? (
         <div className="job__pay">
           <span className="job__amount">{pay}</span>
@@ -68,11 +73,6 @@ export default function JobCard({ job }: { job: Job }) {
           <NetCalculator job={job} />
         </div>
       ) : null}
-      <h3 className="job__title">
-        {/* The link covers the whole card (see .job__title a::after). */}
-        <Link href={`/jobs/${job.id}`}>{job.title}</Link>
-      </h3>
-      <div className="job__org">{[job.company, job.location].filter(Boolean).join(" · ")}</div>
       {isNew || job.expires_at ? (
         <div className="job__foot">
           {isNew ? <span className="job__new">Novo</span> : <span />}

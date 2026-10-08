@@ -177,18 +177,18 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 
 /* Job card: the title link is stretched over the whole card. */
-/* Salary leads — it's the reason the site exists. */
+/* Position first, then who and where, then the salary — set apart in its own band. */
 .job{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:20px 22px 16px;border:1px solid var(--border);border-radius:16px;background:var(--card-bg);text-align:left;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
 .job:hover{border-color:var(--primary);box-shadow:0 10px 26px rgba(8,80,80,0.10);transform:translateY(-2px)}
 .job:focus-within{outline:2px solid var(--primary);outline-offset:2px}
-.job__pay{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;margin-bottom:4px}
-.job__amount{color:var(--dark);font-size:24px;font-weight:800;letter-spacing:-0.02em;line-height:1.15}
+.job__pay{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin:4px 0 14px;padding:10px 12px;border-radius:10px;background:var(--salary-bg)}
+.job__amount{color:var(--dark);font-size:18px;font-weight:800;letter-spacing:-0.01em;line-height:1.2}
 .job__basis{color:var(--primary);font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
-.job__title{margin:0;font-size:16px;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
+.job__title{margin:0;font-size:19px;font-weight:700;line-height:1.3;letter-spacing:-0.01em;overflow-wrap:anywhere}
 .job__title a{color:var(--text);text-decoration:none;outline:none}
 .job__title a::after{content:"";position:absolute;inset:0;border-radius:inherit}
 .job:hover .job__title a{color:var(--dark)}
-.job__org{margin-bottom:12px;color:var(--text-secondary);font-size:14px;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.job__org{color:var(--text-secondary);font-size:14px;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .job__foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:12px;border-top:1px dashed var(--border);font-size:13px}
 .job__new{display:inline-flex;align-items:center;gap:6px;color:var(--dark);font-weight:700}
 .job__new::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--primary)}
@@ -318,7 +318,7 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
   .results-head{margin-top:26px;align-items:flex-start}
   .job-browser .results-head h2{font-size:20px}
   .results-head__actions{width:100%;justify-content:space-between}
-  .job__amount{font-size:22px}
+  .job__title{font-size:18px}
   .drawer{top:auto;left:0;width:100%;max-height:88vh;border-radius:18px 18px 0 0;transform:translateY(100%)}
   main .site-header{flex-direction:column;align-items:flex-start}
   .site-nav__inner{padding-inline:16px;flex-wrap:wrap}
