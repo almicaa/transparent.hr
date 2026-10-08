@@ -1,7 +1,7 @@
 import os
 import sys
 from collections import Counter
-from datetime import date
+from datetime import date, timedelta
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
@@ -14,13 +14,16 @@ from app.models.scrape_log import ScrapeLog
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 from shared.category_normalizer import OTHER as OTHER_CATEGORY  # noqa: E402
 from shared.location_normalizer import (  # noqa: E402
-    CITY_ALIASES,
     FOREIGN_LOCATION_KEYWORDS,
     country_keywords,
     match_countries,
     normalize_city,
     split_cities,
 )
+
+
+# How recent a job must be to count as "new" — the "Samo novi oglasi" toggle.
+NEW_JOB_DAYS = 3
 
 
 def _live():
@@ -47,6 +50,7 @@ class JobRepository:
         search: str | None = None,
         region: str | None = None,
         country: str | None = None,
+        new_only: bool = False,
         sort: str = "newest",
         page: int = 1,
         per_page: int = 21,
@@ -63,11 +67,12 @@ class JobRepository:
         if salary_max is not None:
             stmt = stmt.where(Job.salary_min <= salary_max)
         if city:
-            if city.lower() == "cijela hrvatska":
-                variants = ["hrvatska"]
-            else:
-                variants = [city] + [raw for raw, canon in CITY_ALIASES.items() if canon.lower() == city.lower()]
-            stmt = stmt.where(or_(*(Job.location.ilike(f"%{v}%") for v in variants)))
+            # Same parsing as the per-city counts (option_counts), so "Split (11)"
+            # in the dropdown gives 11 results — a plain ILIKE '%Split%' would
+            # also catch "Splitsko-dalmatinska županija".
+            stmt = stmt.where(Job.id.in_(self._ids_in_city(city)))
+        if new_only:
+            stmt = stmt.where(Job.scraped_at >= utcnow() - timedelta(days=NEW_JOB_DAYS))
         if country:
             stmt = stmt.where(or_(*(Job.location.ilike(f"%{kw}%") for kw in country_keywords(country) or [country])))
         if region == "foreign":
@@ -106,6 +111,11 @@ class JobRepository:
 
         rows = list(self.db.scalars(stmt))
         return total, rows
+
+    def _ids_in_city(self, city: str) -> list[int]:
+        wanted = city.lower()
+        rows = self.db.execute(select(Job.id, Job.location).where(_live(), Job.location.is_not(None)))
+        return [job_id for job_id, location in rows if wanted in {c.lower() for c in split_cities(location)}]
 
     def get_by_id(self, job_id: int) -> Job | None:
         # Expired jobs 404 like deleted ones. Their rows stay until purge_old_jobs

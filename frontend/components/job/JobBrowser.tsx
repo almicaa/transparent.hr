@@ -4,8 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Filters from "../filters/Filters"
 import JobCard from "./JobCard"
 import { getFilters, getJobs, GetJobsParams } from "../../lib/api"
-import { jobCountLabel } from "../../lib/format"
-import { EMPTY_FILTERS, Filters as FilterData, Job, JobFilters } from "../../lib/types"
+import { EMPTY_FILTERS, Filters as FilterData, Job, JobFilters, JobSort } from "../../lib/types"
 
 const PER_PAGE = 20
 const SEARCH_DEBOUNCE_MS = 350
@@ -40,6 +39,7 @@ function filtersFromUrl(params: URLSearchParams): { filters: JobFilters; page: n
       salaryMax: params.get("placa_do") ?? "",
       sort: sort === "salary_desc" || sort === "salary_asc" ? sort : "newest",
       source: params.get("izvor") ?? "",
+      newOnly: params.get("novi") === "1",
     },
     page: Math.max(1, Number(params.get("stranica")) || 1),
   }
@@ -57,6 +57,7 @@ function filtersToUrl(filters: JobFilters, page: number): string {
   if (filters.salaryMax) params.set("placa_do", filters.salaryMax)
   if (filters.sort !== "newest") params.set("sort", filters.sort)
   if (filters.source) params.set("izvor", filters.source)
+  if (filters.newOnly) params.set("novi", "1")
   if (page > 1) params.set("stranica", String(page))
   const qs = params.toString()
   return qs ? `?${qs}` : window.location.pathname
@@ -77,16 +78,24 @@ function toApiParams(filters: JobFilters, search: string, page: number): GetJobs
     salary_max: filters.salaryMax ? Number(filters.salaryMax) : undefined,
     sort: filters.sort,
     source: filters.source || undefined,
+    new_only: filters.newOnly || undefined,
   }
 }
 
-function useDebounced<T>(value: T, delay: number): T {
+/** Debounced copy of `value`, plus a way to skip the wait (submit button). */
+function useDebounced<T>(value: T, delay: number): [T, () => void] {
   const [debounced, setDebounced] = useState(value)
   useEffect(() => {
     const t = setTimeout(() => setDebounced(value), delay)
     return () => clearTimeout(t)
   }, [value, delay])
-  return debounced
+  return [debounced, () => setDebounced(value)]
+}
+
+const SORT_LABELS: Record<JobSort, string> = {
+  newest: "Najnovije",
+  salary_desc: "Najviša plaća",
+  salary_asc: "Najniža plaća",
 }
 
 interface JobBrowserProps {
@@ -108,7 +117,8 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
   const [total, setTotal] = useState(initialTotal ?? 0)
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PER_PAGE)), [total])
 
-  const search = useDebounced(filters.search.trim(), SEARCH_DEBOUNCE_MS)
+  const [search, flushSearch] = useDebounced(filters.search.trim(), SEARCH_DEBOUNCE_MS)
+  const resultsRef = useRef<HTMLDivElement>(null)
   const topRef = useRef<HTMLDivElement>(null)
   // The server-rendered first page already matches unfiltered state, so the
   // first fetch is skipped; URL filters applied on mount then trigger a real one.
@@ -156,7 +166,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
       mounted = false
     }
     // filters.search is deliberately left out — the debounced `search` drives fetching.
-  }, [page, search, filters.category, filters.location, filters.salaryMin, filters.salaryMax, filters.sort, filters.source])
+  }, [page, search, filters.category, filters.location, filters.salaryMin, filters.salaryMax, filters.sort, filters.source, filters.newOnly])
 
   function updateFilters(patch: Partial<JobFilters>) {
     setFilters((f) => ({ ...f, ...patch }))
@@ -173,6 +183,10 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
       <Filters
         filters={filters}
         onChange={updateFilters}
+        onSubmit={() => {
+          flushSearch()
+          resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+        }}
         total={total}
         categoryOptions={filterData.category_options ?? []}
         regionOptions={filterData.region_options ?? []}
@@ -181,13 +195,27 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
         salaryHistogram={filterData.salary_histogram ?? []}
       />
 
-      <div className="meta job-browser__count">{loading && jobs.length === 0 ? "Učitavanje…" : jobCountLabel(total)}</div>
+      <div className="results-head" ref={resultsRef}>
+        <h2>
+          Rezultati <span className="results-head__count">{loading && jobs.length === 0 ? "…" : `(${total})`}</span>
+        </h2>
+        <label className="results-head__sort">
+          Poredaj po
+          <select value={filters.sort} onChange={(e) => updateFilters({ sort: e.target.value as JobSort })}>
+            {(Object.keys(SORT_LABELS) as JobSort[]).map((s) => (
+              <option key={s} value={s}>
+                {SORT_LABELS[s]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       {!loading && jobs.length === 0 ? (
         <div className="job-browser__empty">
           <p>Nema oglasa za odabrane filtere.</p>
-          <button type="button" className="filters__reset" onClick={() => updateFilters(EMPTY_FILTERS)}>
-            Poništi filtere
+          <button type="button" className="active-filters__clear" onClick={() => updateFilters(EMPTY_FILTERS)}>
+            Očisti filtere
           </button>
         </div>
       ) : (

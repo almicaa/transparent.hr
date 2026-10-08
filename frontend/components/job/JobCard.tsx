@@ -1,8 +1,6 @@
 import Link from "next/link"
 import { Job } from "../../lib/types"
-import { categoryIcon, categoryShortLabel } from "../../lib/categories"
-import { daysUntil, parseApiDate } from "../../lib/format"
-import { SOURCE_LABELS } from "../../lib/sourceLabels"
+import { daysUntil, formatDate, parseApiDate } from "../../lib/format"
 
 function cleanSalary(s: string | null): string | null {
   if (!s) return s
@@ -21,85 +19,48 @@ function cleanSalary(s: string | null): string | null {
   return t.replace(/[.\s]+$/g, "").trim()
 }
 
-const NEW_WITHIN_HOURS = 24
-const DEADLINE_SOON_DAYS = 7
-// Within this many percent of the category median counts as "about typical".
-const TYPICAL_BAND_PCT = 5
+// Matches NEW_JOB_DAYS in the backend ("Samo novi oglasi").
+const NEW_WITHIN_DAYS = 3
+// Below this many days left, the deadline line turns into a red countdown.
+const URGENT_DAYS = 3
 
-function deadlineLabel(days: number): string {
-  if (days <= 0) return "Ističe danas"
-  if (days === 1) return "Ističe sutra"
-  return `Još ${days} dana`
-}
-
-function SalaryComparison({ job }: { job: Job }) {
-  const pct = job.salary_vs_category
-  if (pct === null || pct === undefined || !job.category) return null
-  const basis = job.salary_basis ? `${job.salary_basis} ` : ""
-  const title = `U usporedbi s medijanom ${basis}plaća u grani ${job.category}`
-  if (Math.abs(pct) < TYPICAL_BAND_PCT) {
+function DeadlineLine({ expiresAt }: { expiresAt: string }) {
+  const days = daysUntil(expiresAt)
+  if (days <= URGENT_DAYS) {
+    const text = days <= 0 ? "Prijava ističe danas" : days === 1 ? "Prijava ističe sutra" : `Prijava ističe za ${days} dana`
     return (
-      <span className="job__compare" title={title}>
-        ≈ prosjek grane
-      </span>
+      // Relative to "now", so a cached server render and the client can disagree by a day.
+      <div className="job__deadline is-urgent" suppressHydrationWarning>
+        {text}
+      </div>
     )
   }
-  const above = pct > 0
   return (
-    <span className={above ? "job__compare is-above" : "job__compare is-below"} title={title}>
-      {above ? "▲" : "▼"} {Math.round(Math.abs(pct))}% {above ? "iznad" : "ispod"} prosjeka grane
-    </span>
+    <div className="job__deadline">
+      Prijava do <strong>{formatDate(expiresAt)}</strong>
+    </div>
   )
 }
 
 export default function JobCard({ job }: { job: Job }) {
-  const sourceLabel = SOURCE_LABELS[job.source || ""] || job.source || "unknown"
   const salaryDisplay = job.salary_shown
     ? cleanSalary(job.salary_text) || (job.salary_min ? `${job.salary_min} - ${job.salary_max}` : null)
     : null
   const isNew = job.scraped_at
-    ? Date.now() - parseApiDate(job.scraped_at).getTime() < NEW_WITHIN_HOURS * 3_600_000
+    ? Date.now() - parseApiDate(job.scraped_at).getTime() < NEW_WITHIN_DAYS * 86_400_000
     : false
-  const daysLeft = job.expires_at ? daysUntil(job.expires_at) : null
-  const showDeadline = daysLeft !== null && daysLeft <= DEADLINE_SOON_DAYS
 
   return (
     <article className="job">
-      {isNew || showDeadline ? (
-        <div className="job__flags">
-          {isNew ? <span className="flag flag--new">Novo</span> : null}
-          {showDeadline ? (
-            // Relative to "now", so a cached server render and the client can disagree by a day.
-            <span className={daysLeft! <= 3 ? "flag flag--urgent" : "flag"} suppressHydrationWarning>
-              {deadlineLabel(daysLeft!)}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-
+      {isNew ? <span className="job__new">Novi oglas</span> : null}
       <h3 className="job__title">
         {/* The link covers the whole card (see .job__title a::after). */}
         <Link href={`/jobs/${job.id}`}>{job.title}</Link>
       </h3>
-      <div className="job__meta">
-        {[job.company, job.location].filter(Boolean).join(" · ")}
-      </div>
-
-      {salaryDisplay ? (
-        <div className="job__pay">
-          <div className="job__salary">{salaryDisplay}</div>
-          <SalaryComparison job={job} />
-        </div>
-      ) : null}
-
-      <div className="job__footer">
-        {job.category ? (
-          <span className="badge" title={job.category}>
-            {categoryIcon(job.category)} {categoryShortLabel(job.category)}
-          </span>
-        ) : null}
-        <span className="job__source">{sourceLabel}</span>
-      </div>
+      {job.company ? <div className="job__company">{job.company}</div> : null}
+      {job.location ? <div className="job__location">{job.location}</div> : null}
+      {salaryDisplay ? <div className="job__salary">{salaryDisplay}</div> : null}
+      {job.expires_at ? <DeadlineLine expiresAt={job.expires_at} /> : null}
     </article>
   )
 }

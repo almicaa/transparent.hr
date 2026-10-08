@@ -16,10 +16,11 @@ export interface GetJobsParams {
   search?: string
   region?: "hr" | "foreign"
   country?: string
+  new_only?: boolean
   sort?: JobSort
 }
 
-function buildQuery(params: Record<string, string | number | undefined>): string {
+function buildQuery(params: Record<string, string | number | boolean | undefined>): string {
   const usp = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== "" && value !== "all") {

@@ -90,6 +90,8 @@ export interface JobFilters {
   salaryMax: string
   sort: JobSort
   source: string
+  /** Only jobs added in the last few days. */
+  newOnly: boolean
 }
 
 export const EMPTY_FILTERS: JobFilters = {
@@ -100,4 +102,5 @@ export const EMPTY_FILTERS: JobFilters = {
   salaryMax: "",
   sort: "newest",
   source: "",
+  newOnly: false,
 }

@@ -1,7 +1,6 @@
-import Link from "next/link"
 import JobBrowser from "../components/job/JobBrowser"
 import HeroIllustration from "../components/ui/HeroIllustration"
-import { ArrowIcon, CheckIcon, EuroIcon, LayersIcon } from "../components/ui/icons"
+import { CheckIcon, EuroIcon, LayersIcon } from "../components/ui/icons"
 import { getFilters, getJobs } from "../lib/api"
 
 export const revalidate = 300
@@ -50,10 +49,6 @@ export default async function HomePage() {
         <p className="hero__lead">
           Vrijeme je za ne gubiti više vremena na oglase bez jasno vidljive plaće.
         </p>
-
-        <Link className="cta" href="/jobs">
-          Pogledaj oglase <ArrowIcon />
-        </Link>
       </section>
 
       <section className="home-section">

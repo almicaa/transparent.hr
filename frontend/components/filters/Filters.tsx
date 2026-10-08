@@ -1,44 +1,27 @@
 import { useEffect, useState } from "react"
-import { FilterOption, JobFilters, JobSort, EMPTY_FILTERS, SalaryBucket } from "../../lib/types"
+import { EMPTY_FILTERS, FilterOption, JobFilters, SalaryBucket } from "../../lib/types"
 import { jobCountLabel } from "../../lib/format"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
-import CategoryChips from "./CategoryChips"
+import LocationCombobox, { locationLabel } from "./LocationCombobox"
 import SalaryRange from "./SalaryRange"
-
-const MAX_OPTION_LENGTH = 40
 
 // Portals we actually scrape (SOURCE_LABELS also covers ones we don't, yet).
 const SOURCES = ["posao", "mojposao"]
 
-const SORT_LABELS: Record<JobSort, string> = {
-  newest: "Najnovije",
-  salary_desc: "Najviša plaća",
-  salary_asc: "Najniža plaća",
+function euro(n: string): string {
+  return `${Number(n).toLocaleString("hr-HR")} €`
 }
 
-const REGIONS = [
-  { value: "", label: "Svi" },
-  { value: "hr", label: "Hrvatska" },
-  { value: "foreign", label: "Inozemstvo" },
-]
-
-function truncate(text: string): string {
-  return text.length > MAX_OPTION_LENGTH ? text.slice(0, MAX_OPTION_LENGTH - 1).trimEnd() + "…" : text
-}
-
-function optionLabel(o: FilterOption): string {
-  return `${truncate(o.value)} (${o.count})`
-}
-
-/** Keeps a selected value visible even when it isn't among the options (e.g. from a shared link). */
-function withSelected(options: FilterOption[], selected: string): FilterOption[] {
-  if (!selected || options.some((o) => o.value === selected)) return options
-  return [{ value: selected, count: 0 }, ...options]
+function salaryLabel(min: string, max: string): string {
+  if (min && max) return `${euro(min)} – ${euro(max)}`
+  return min ? `od ${euro(min)}` : `do ${euro(max)}`
 }
 
 interface FiltersProps {
   filters: JobFilters
   onChange: (patch: Partial<JobFilters>) => void
+  /** Flush the debounced search right away (the "Pretraži" button / Enter). */
+  onSubmit: () => void
   total: number
   categoryOptions: FilterOption[]
   regionOptions: FilterOption[]
@@ -50,6 +33,7 @@ interface FiltersProps {
 export default function Filters({
   filters,
   onChange,
+  onSubmit,
   total,
   categoryOptions,
   regionOptions,
@@ -57,180 +41,159 @@ export default function Filters({
   countryOptions,
   salaryHistogram,
 }: FiltersProps) {
-  // Mobile only: the secondary filters live in a bottom sheet behind a button.
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const selectedCity = filters.location.startsWith("city:") ? filters.location.slice(5) : ""
-  const selectedCountry = filters.location.startsWith("country:") ? filters.location.slice(8) : ""
-  const region = selectedCity || filters.location === "hr" ? "hr" : selectedCountry || filters.location === "foreign" ? "foreign" : ""
-  const isFiltered = (Object.keys(EMPTY_FILTERS) as (keyof JobFilters)[]).some((k) => filters[k] !== EMPTY_FILTERS[k])
-  // What's hidden in the sheet — search and category stay visible on mobile.
-  const sheetFilterCount = [
-    filters.location,
-    filters.salaryMin || filters.salaryMax,
-    filters.sort !== "newest",
-    filters.source,
-  ].filter(Boolean).length
+  // Everything in the drawer, so the button can say how many are on.
+  const drawerCount = [filters.category, filters.salaryMin || filters.salaryMax, filters.source].filter(Boolean).length
+
+  // Removable summary of what's applied; search text stays in its own field.
+  const active: { key: string; label: string; clear: Partial<JobFilters> }[] = []
+  if (filters.location) active.push({ key: "location", label: locationLabel(filters.location), clear: { location: "" } })
+  if (filters.category) active.push({ key: "category", label: filters.category, clear: { category: "" } })
+  if (filters.salaryMin || filters.salaryMax)
+    active.push({ key: "salary", label: salaryLabel(filters.salaryMin, filters.salaryMax), clear: { salaryMin: "", salaryMax: "" } })
+  if (filters.source) active.push({ key: "source", label: SOURCE_LABELS[filters.source] ?? filters.source, clear: { source: "" } })
+  if (filters.newOnly) active.push({ key: "new", label: "Samo novi", clear: { newOnly: false } })
 
   useEffect(() => {
-    if (!sheetOpen) return
+    if (!drawerOpen) return
     const previous = document.body.style.overflow
     document.body.style.overflow = "hidden"
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSheetOpen(false)
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setDrawerOpen(false)
     window.addEventListener("keydown", onKey)
     return () => {
       document.body.style.overflow = previous
       window.removeEventListener("keydown", onKey)
     }
-  }, [sheetOpen])
+  }, [drawerOpen])
 
   return (
     <div className="filters">
-      <div className="filters__top">
+      <form
+        className="search-bar"
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault()
+          onSubmit()
+        }}
+      >
         <input
-          className="search"
+          className="search-bar__query"
           type="search"
-          placeholder="Pretraži po nazivu, tvrtki…"
+          placeholder="Posao, pozicija ili tvrtka"
           aria-label="Pretraži oglase"
           value={filters.search}
           onChange={(e) => onChange({ search: e.target.value })}
         />
-        <button
-          type="button"
-          className={sheetFilterCount ? "filters__open is-active" : "filters__open"}
-          aria-expanded={sheetOpen}
-          onClick={() => setSheetOpen(true)}
-        >
-          Filteri{sheetFilterCount ? ` (${sheetFilterCount})` : ""}
+        <span className="search-bar__divider" aria-hidden="true" />
+        <LocationCombobox
+          value={filters.location}
+          onChange={(location) => onChange({ location })}
+          regionOptions={regionOptions}
+          cityOptions={cityOptions}
+          countryOptions={countryOptions}
+        />
+        <button type="submit" className="search-bar__submit">
+          Pretraži
+        </button>
+      </form>
+
+      <div className="filters__sub">
+        <label className="toggle">
+          <input type="checkbox" checked={filters.newOnly} onChange={(e) => onChange({ newOnly: e.target.checked })} />
+          <span className="toggle__track" aria-hidden="true" />
+          Samo novi oglasi
+        </label>
+        <button type="button" className="filters__open" aria-expanded={drawerOpen} onClick={() => setDrawerOpen(true)}>
+          Filteri{drawerCount ? ` (${drawerCount})` : ""}
         </button>
       </div>
 
-      {sheetOpen ? <div className="filters__backdrop" onClick={() => setSheetOpen(false)} /> : null}
+      {active.length ? (
+        <div className="active-filters">
+          {active.map((a) => (
+            <button key={a.key} type="button" className="active-filter" onClick={() => onChange(a.clear)} aria-label={`Ukloni filter ${a.label}`}>
+              {a.label}
+              <span aria-hidden="true">✕</span>
+            </button>
+          ))}
+          <button type="button" className="active-filters__clear" onClick={() => onChange(EMPTY_FILTERS)}>
+            Očisti sve
+          </button>
+        </div>
+      ) : null}
 
-      <div
-        className={sheetOpen ? "filters__panel is-open" : "filters__panel"}
-        role={sheetOpen ? "dialog" : undefined}
-        aria-modal={sheetOpen || undefined}
-        aria-label={sheetOpen ? "Filteri" : undefined}
-      >
-        <div className="filters__sheet-header">
+      {drawerOpen ? <div className="drawer-backdrop" onClick={() => setDrawerOpen(false)} /> : null}
+      <aside className={drawerOpen ? "drawer is-open" : "drawer"} aria-hidden={!drawerOpen} aria-label="Filteri">
+        <div className="drawer__header">
           <strong>Filteri</strong>
-          <button type="button" className="filters__close" aria-label="Zatvori" onClick={() => setSheetOpen(false)}>
+          <button type="button" className="drawer__close" aria-label="Zatvori" onClick={() => setDrawerOpen(false)}>
             ✕
           </button>
         </div>
 
-        <div className="filters__location">
-          <div className="segmented" role="radiogroup" aria-label="Područje">
-            {REGIONS.map(({ value, label }) => {
-              const count = value ? regionOptions.find((o) => o.value === value)?.count : undefined
-              return (
+        <div className="drawer__body">
+          <section className="drawer__section">
+            <h3>Plaća</h3>
+            <SalaryRange
+              histogram={salaryHistogram}
+              min={filters.salaryMin}
+              max={filters.salaryMax}
+              onChange={(salaryMin, salaryMax) => onChange({ salaryMin, salaryMax })}
+            />
+          </section>
+
+          <section className="drawer__section">
+            <h3>Grana</h3>
+            <div className="option-list" role="radiogroup" aria-label="Grana">
+              {[{ value: "", count: undefined as number | undefined }, ...categoryOptions].map((o) => (
+                <label key={o.value || "all"} className="option-list__item">
+                  <input
+                    type="radio"
+                    name="category"
+                    checked={filters.category === o.value}
+                    onChange={() => onChange({ category: o.value })}
+                  />
+                  <span>{o.value || "Sve grane"}</span>
+                  {o.count !== undefined ? <span className="option-list__count">{o.count}</span> : null}
+                </label>
+              ))}
+            </div>
+          </section>
+
+          <section className="drawer__section">
+            <h3>Izvor</h3>
+            <div className="segmented" role="radiogroup" aria-label="Izvor">
+              {["", ...SOURCES].map((s) => (
                 <button
-                  key={label}
+                  key={s || "all"}
                   type="button"
                   role="radio"
-                  aria-checked={region === value}
-                  className={region === value ? "segmented__option is-selected" : "segmented__option"}
-                  onClick={() => region !== value && onChange({ location: value })}
+                  aria-checked={filters.source === s}
+                  className={filters.source === s ? "segmented__option is-selected" : "segmented__option"}
+                  onClick={() => onChange({ source: s })}
                 >
-                  {label}
-                  {count !== undefined ? <span className="segmented__count">{count}</span> : null}
+                  {s ? SOURCE_LABELS[s] : "Svi"}
                 </button>
-              )
-            })}
-          </div>
-
-          {region === "hr" ? (
-            <select
-              aria-label="Grad"
-              className={selectedCity ? "is-active" : undefined}
-              value={filters.location}
-              onChange={(e) => onChange({ location: e.target.value })}
-            >
-              <option value="hr">Svi gradovi</option>
-              {withSelected(cityOptions, selectedCity).map((o) => (
-                <option key={o.value} value={`city:${o.value}`} title={o.value}>
-                  {optionLabel(o)}
-                </option>
               ))}
-            </select>
-          ) : null}
-
-          {region === "foreign" ? (
-            <select
-              aria-label="Država"
-              className={selectedCountry ? "is-active" : undefined}
-              value={filters.location}
-              onChange={(e) => onChange({ location: e.target.value })}
-            >
-              <option value="foreign">Sve države</option>
-              {withSelected(countryOptions, selectedCountry).map((o) => (
-                <option key={o.value} value={`country:${o.value}`}>
-                  {optionLabel(o)}
-                </option>
-              ))}
-            </select>
-          ) : null}
+            </div>
+          </section>
         </div>
 
-        <SalaryRange
-          histogram={salaryHistogram}
-          min={filters.salaryMin}
-          max={filters.salaryMax}
-          onChange={(salaryMin, salaryMax) => onChange({ salaryMin, salaryMax })}
-        />
-
-        <div className="filters__selects">
-          <select aria-label="Sortiranje" value={filters.sort} onChange={(e) => onChange({ sort: e.target.value as JobSort })}>
-            {(Object.keys(SORT_LABELS) as JobSort[]).map((s) => (
-              <option key={s} value={s}>
-                {SORT_LABELS[s]}
-              </option>
-            ))}
-          </select>
-
-          <select
-            aria-label="Izvor"
-            className={filters.source ? "is-active" : undefined}
-            value={filters.source}
-            onChange={(e) => onChange({ source: e.target.value })}
-          >
-            <option value="">Svi izvori</option>
-            {SOURCES.map((source) => (
-              <option key={source} value={source}>
-                {SOURCE_LABELS[source]}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filters__sheet-footer">
+        <div className="drawer__footer">
           <button
             type="button"
-            className="filters__reset"
-            disabled={!isFiltered}
-            onClick={() => onChange(EMPTY_FILTERS)}
+            className="drawer__reset"
+            disabled={!drawerCount}
+            onClick={() => onChange({ category: "", salaryMin: "", salaryMax: "", source: "" })}
           >
             Poništi
           </button>
-          <button type="button" className="filters__apply" onClick={() => setSheetOpen(false)}>
+          <button type="button" className="drawer__apply" onClick={() => setDrawerOpen(false)}>
             Prikaži {jobCountLabel(total)}
           </button>
         </div>
-      </div>
-
-      <div className="filters__chips-row">
-        <CategoryChips
-          options={categoryOptions}
-          selected={filters.category}
-          onSelect={(category) => onChange({ category })}
-        />
-        {isFiltered ? (
-          <button type="button" className="filters__reset filters__reset--inline" onClick={() => onChange(EMPTY_FILTERS)}>
-            Poništi filtere
-          </button>
-        ) : null}
-      </div>
+      </aside>
     </div>
   )
 }
