@@ -93,9 +93,13 @@ interface JobBrowserProps {
 }
 
 export default function JobBrowser({ initialJobs, initialTotal, initialFilterData }: JobBrowserProps = {}) {
+  // An empty server result usually means the backend was briefly unreachable
+  // when the page was (re)generated, and ISR would keep serving that for the
+  // whole revalidate window — so treat it as "no initial data" and fetch here.
+  const hasInitialJobs = !!initialJobs?.length
   const [jobs, setJobs] = useState<Job[]>(initialJobs ?? [])
   const [filterData, setFilterData] = useState<FilterData>(initialFilterData ?? EMPTY_FILTER_DATA)
-  const [loading, setLoading] = useState(initialJobs === undefined)
+  const [loading, setLoading] = useState(!hasInitialJobs)
   const [filters, setFilters] = useState<JobFilters>(EMPTY_FILTERS)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(initialTotal ?? 0)
@@ -105,7 +109,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
   const topRef = useRef<HTMLDivElement>(null)
   // The server-rendered first page already matches unfiltered state, so the
   // first fetch is skipped; URL filters applied on mount then trigger a real one.
-  const skipJobsFetch = useRef(initialJobs !== undefined)
+  const skipJobsFetch = useRef(hasInitialJobs)
   const urlReady = useRef(false)
 
   useEffect(() => {
@@ -118,7 +122,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
   }, [])
 
   useEffect(() => {
-    if (initialFilterData) return
+    if (initialFilterData?.category_options?.length) return
     getFilters()
       .then(setFilterData)
       .catch(() => {})
