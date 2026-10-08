@@ -72,7 +72,11 @@ class JobRepository:
         if region == "foreign":
             stmt = stmt.where(or_(*(Job.location.ilike(f"%{kw}%") for kw in FOREIGN_LOCATION_KEYWORDS)))
         elif region == "hr":
-            stmt = stmt.where(~or_(*(Job.location.ilike(f"%{kw}%") for kw in FOREIGN_LOCATION_KEYWORDS)))
+            # Jobs with no location come from Croatian portals — count them as domestic
+            # (a bare NOT ILIKE would drop them, since it's NULL for a NULL location).
+            stmt = stmt.where(
+                or_(Job.location.is_(None), ~or_(*(Job.location.ilike(f"%{kw}%") for kw in FOREIGN_LOCATION_KEYWORDS)))
+            )
         if category:
             stmt = stmt.where(Job.category == category)
         if job_type:
@@ -173,19 +177,22 @@ class JobRepository:
         )
         return [row[0] for row in self.db.execute(stmt)]
 
-    def option_counts(self) -> tuple[Counter, Counter, Counter]:
-        """Per-category, per-city and per-country counts of active jobs with a
-        salary — the set the job browser lists — for filter dropdowns. A job
-        listing several cities counts toward each, matching the city filter's
-        substring match."""
+    def option_counts(self) -> tuple[Counter, Counter, Counter, Counter]:
+        """Per-category, per-region ('hr' / 'foreign'), per-city and per-country
+        counts of live jobs with a salary — the set the job browser lists — for
+        filter dropdowns. A job listing several cities counts toward each,
+        matching the city filter's substring match."""
         stmt = select(Job.category, Job.location).where(_live(), Job.salary_shown == 1)
-        categories, cities, countries = Counter(), Counter(), Counter()
+        categories, regions, cities, countries = Counter(), Counter(), Counter(), Counter()
         for category, location in self.db.execute(stmt):
             if category:
                 categories[category] += 1
+            job_countries = match_countries(location)
+            # Same split as the API's region filter: foreign iff a country is named.
+            regions["foreign" if job_countries else "hr"] += 1
             cities.update(split_cities(location))
-            countries.update(match_countries(location))
-        return categories, cities, countries
+            countries.update(job_countries)
+        return categories, regions, cities, countries
 
     def market_estimates(self) -> list[tuple[str, float]]:
         stmt = select(MarketStat.source, MarketStat.estimated_pct)

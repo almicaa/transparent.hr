@@ -15,6 +15,7 @@ const EMPTY_FILTER_DATA: FilterData = {
   categories: [],
   job_types: [],
   category_options: [],
+  region_options: [],
   city_options: [],
   country_options: [],
 }
@@ -27,6 +28,7 @@ function filtersFromUrl(params: URLSearchParams): { filters: JobFilters; page: n
   if (params.get("grad")) location = `city:${params.get("grad")}`
   else if (params.get("drzava")) location = `country:${params.get("drzava")}`
   else if (params.get("inozemstvo")) location = "foreign"
+  else if (params.get("hrvatska")) location = "hr"
   return {
     filters: {
       search: params.get("q") ?? "",
@@ -47,6 +49,7 @@ function filtersToUrl(filters: JobFilters, page: number): string {
   if (filters.location.startsWith("city:")) params.set("grad", filters.location.slice(5))
   else if (filters.location.startsWith("country:")) params.set("drzava", filters.location.slice(8))
   else if (filters.location === "foreign") params.set("inozemstvo", "1")
+  else if (filters.location === "hr") params.set("hrvatska", "1")
   if (filters.salaryMin) params.set("placa", filters.salaryMin)
   if (filters.sort !== "newest") params.set("sort", filters.sort)
   if (filters.source) params.set("izvor", filters.source)
@@ -65,7 +68,7 @@ function toApiParams(filters: JobFilters, search: string, page: number): GetJobs
     category: filters.category || undefined,
     city: location.startsWith("city:") ? location.slice(5) : undefined,
     country: location.startsWith("country:") ? location.slice(8) : undefined,
-    region: location === "foreign" ? "foreign" : undefined,
+    region: location === "foreign" || location === "hr" ? location : undefined,
     salary_min: filters.salaryMin ? Number(filters.salaryMin) : undefined,
     sort: filters.sort,
     source: filters.source || undefined,
@@ -171,6 +174,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
         filters={filters}
         onChange={updateFilters}
         categoryOptions={filterData.category_options ?? []}
+        regionOptions={filterData.region_options ?? []}
         cityOptions={filterData.city_options ?? []}
         countryOptions={filterData.country_options ?? []}
       />

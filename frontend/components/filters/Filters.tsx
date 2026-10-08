@@ -14,6 +14,12 @@ const SORT_LABELS: Record<JobSort, string> = {
   salary_asc: "Najniža plaća",
 }
 
+const REGIONS = [
+  { value: "", label: "Svi" },
+  { value: "hr", label: "Hrvatska" },
+  { value: "foreign", label: "Inozemstvo" },
+]
+
 function truncate(text: string): string {
   return text.length > MAX_OPTION_LENGTH ? text.slice(0, MAX_OPTION_LENGTH - 1).trimEnd() + "…" : text
 }
@@ -32,13 +38,22 @@ interface FiltersProps {
   filters: JobFilters
   onChange: (patch: Partial<JobFilters>) => void
   categoryOptions: FilterOption[]
+  regionOptions: FilterOption[]
   cityOptions: FilterOption[]
   countryOptions: FilterOption[]
 }
 
-export default function Filters({ filters, onChange, categoryOptions, cityOptions, countryOptions }: FiltersProps) {
+export default function Filters({
+  filters,
+  onChange,
+  categoryOptions,
+  regionOptions,
+  cityOptions,
+  countryOptions,
+}: FiltersProps) {
   const selectedCity = filters.location.startsWith("city:") ? filters.location.slice(5) : ""
   const selectedCountry = filters.location.startsWith("country:") ? filters.location.slice(8) : ""
+  const region = selectedCity || filters.location === "hr" ? "hr" : selectedCountry || filters.location === "foreign" ? "foreign" : ""
   const isFiltered = (Object.keys(EMPTY_FILTERS) as (keyof JobFilters)[]).some((k) => filters[k] !== EMPTY_FILTERS[k])
 
   return (
@@ -66,31 +81,58 @@ export default function Filters({ filters, onChange, categoryOptions, cityOption
         ))}
       </select>
 
-      <select
-        aria-label="Lokacija"
-        className={filters.location ? "filters__wide is-active" : "filters__wide"}
-        value={filters.location}
-        onChange={(e) => onChange({ location: e.target.value })}
-      >
-        <option value="">Sve lokacije</option>
-        <optgroup label="Hrvatska">
-          {withSelected(cityOptions, selectedCity).map((o) => (
-            <option key={o.value} value={`city:${o.value}`} title={o.value}>
-              {optionLabel(o)}
-            </option>
-          ))}
-        </optgroup>
-        {countryOptions.length > 0 || selectedCountry ? (
-          <optgroup label="Inozemstvo">
-            <option value="foreign">Sve inozemstvo</option>
+      <div className="filters__location">
+        <div className="segmented" role="radiogroup" aria-label="Područje">
+          {REGIONS.map(({ value, label }) => {
+            const count = value ? regionOptions.find((o) => o.value === value)?.count : undefined
+            return (
+              <button
+                key={label}
+                type="button"
+                role="radio"
+                aria-checked={region === value}
+                className={region === value ? "segmented__option is-selected" : "segmented__option"}
+                onClick={() => region !== value && onChange({ location: value })}
+              >
+                {label}
+                {count !== undefined ? <span className="segmented__count">{count}</span> : null}
+              </button>
+            )
+          })}
+        </div>
+
+        {region === "hr" ? (
+          <select
+            aria-label="Grad"
+            className={selectedCity ? "is-active" : undefined}
+            value={filters.location}
+            onChange={(e) => onChange({ location: e.target.value })}
+          >
+            <option value="hr">Svi gradovi</option>
+            {withSelected(cityOptions, selectedCity).map((o) => (
+              <option key={o.value} value={`city:${o.value}`} title={o.value}>
+                {optionLabel(o)}
+              </option>
+            ))}
+          </select>
+        ) : null}
+
+        {region === "foreign" ? (
+          <select
+            aria-label="Država"
+            className={selectedCountry ? "is-active" : undefined}
+            value={filters.location}
+            onChange={(e) => onChange({ location: e.target.value })}
+          >
+            <option value="foreign">Sve države</option>
             {withSelected(countryOptions, selectedCountry).map((o) => (
               <option key={o.value} value={`country:${o.value}`}>
                 {optionLabel(o)}
               </option>
             ))}
-          </optgroup>
+          </select>
         ) : null}
-      </select>
+      </div>
 
       <select
         aria-label="Minimalna plaća"

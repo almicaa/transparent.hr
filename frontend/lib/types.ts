@@ -65,6 +65,7 @@ export interface Filters {
   categories: string[]
   job_types: string[]
   category_options: FilterOption[]
+  region_options: FilterOption[]
   city_options: FilterOption[]
   country_options: FilterOption[]
 }
@@ -74,7 +75,7 @@ export type JobSort = "newest" | "salary_desc" | "salary_asc"
 export interface JobFilters {
   search: string
   category: string
-  /** "" (anywhere), "city:<name>", "country:<name>" or "foreign" (any country abroad). */
+  /** "" (anywhere), "hr" / "foreign" (whole region), "city:<name>" or "country:<name>". */
   location: string
   /** Minimum monthly salary in EUR, "" for no minimum. */
   salaryMin: string

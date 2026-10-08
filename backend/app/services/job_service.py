@@ -72,13 +72,14 @@ class JobService:
         )
 
     def get_filters(self) -> Filters:
-        categories, cities, countries = self.repo.option_counts()
+        categories, regions, cities, countries = self.repo.option_counts()
         return Filters(
             cities=self.repo.distinct_cities(),
             locations=self.repo.distinct_locations(),
             categories=self.repo.distinct_categories(),
             job_types=self.repo.distinct_job_types(),
             category_options=_options(categories, last=OTHER_CATEGORY),
+            region_options=[FilterOption(value=r, count=regions[r]) for r in ("hr", "foreign")],
             city_options=_options(cities),
             country_options=_options(countries),
         )

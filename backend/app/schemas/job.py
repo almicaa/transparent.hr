@@ -78,5 +78,7 @@ class Filters(BaseModel):
     job_types: list[str]
     # Same dimensions with job counts, most common first — what the filter UI uses.
     category_options: list[FilterOption] = []
+    region_options: list[FilterOption] = []
+    """'hr' and 'foreign' job counts."""
     city_options: list[FilterOption] = []
     country_options: list[FilterOption] = []
