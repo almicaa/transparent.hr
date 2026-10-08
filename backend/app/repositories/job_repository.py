@@ -3,9 +3,10 @@ import sys
 from collections import Counter
 from datetime import date
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
+from app.db.session import utcnow
 from app.models.job import Job
 from app.models.market_stat import MarketStat
 
@@ -19,6 +20,12 @@ from shared.location_normalizer import (  # noqa: E402
     normalize_city,
     split_cities,
 )
+
+
+def _live():
+    """Active and not past its deadline. The scraper deactivates expired jobs on
+    each run; this also hides ones that expired since the last run."""
+    return and_(Job.is_active.is_(True), or_(Job.expires_at.is_(None), Job.expires_at > utcnow()))
 
 
 class JobRepository:
@@ -43,7 +50,7 @@ class JobRepository:
         page: int = 1,
         per_page: int = 21,
     ) -> tuple[int, list[Job]]:
-        stmt = select(Job).where(Job.is_active.is_(True))
+        stmt = select(Job).where(_live())
 
         # "from"-type salaries ("od 2000 €") only have a lower bound, so fall back to it.
         salary_top = func.coalesce(Job.salary_max, Job.salary_min)
@@ -99,30 +106,30 @@ class JobRepository:
         return self.db.get(Job, job_id)
 
     def count_all(self) -> int:
-        return self.db.scalar(select(func.count()).select_from(Job).where(Job.is_active.is_(True))) or 0
+        return self.db.scalar(select(func.count()).select_from(Job).where(_live())) or 0
 
     def count_salary_shown(self, shown: bool) -> int:
         return self.db.scalar(
             select(func.count())
             .select_from(Job)
-            .where(Job.is_active.is_(True), Job.salary_shown == int(shown))
+            .where(_live(), Job.salary_shown == int(shown))
         ) or 0
 
     def count_new_today(self) -> int:
         return self.db.scalar(
             select(func.count())
             .select_from(Job)
-            .where(Job.is_active.is_(True), func.date(Job.scraped_at) == date.today())
+            .where(_live(), func.date(Job.scraped_at) == date.today())
         ) or 0
 
     def counts_by_source(self) -> list[tuple[str, int]]:
-        stmt = select(Job.source, func.count()).where(Job.is_active.is_(True)).group_by(Job.source)
+        stmt = select(Job.source, func.count()).where(_live()).group_by(Job.source)
         return [(row[0], row[1]) for row in self.db.execute(stmt)]
 
     def top_cities(self, limit: int = 10) -> list[tuple[str, int]]:
         stmt = (
             select(Job.location, func.count())
-            .where(Job.is_active.is_(True), Job.location.is_not(None))
+            .where(_live(), Job.location.is_not(None))
             .group_by(Job.location)
         )
         counts = Counter()
@@ -135,7 +142,7 @@ class JobRepository:
     def distinct_locations(self) -> list[str]:
         stmt = (
             select(Job.location)
-            .where(Job.is_active.is_(True), Job.location.is_not(None))
+            .where(_live(), Job.location.is_not(None))
             .distinct()
             .order_by(Job.location)
         )
@@ -148,7 +155,7 @@ class JobRepository:
     def distinct_categories(self) -> list[str]:
         stmt = (
             select(Job.category)
-            .where(Job.is_active.is_(True), Job.category.is_not(None))
+            .where(_live(), Job.category.is_not(None))
             .distinct()
         )
         # Alphabetical, but the catch-all "Ostalo" goes last.
@@ -157,7 +164,7 @@ class JobRepository:
     def distinct_job_types(self) -> list[str]:
         stmt = (
             select(Job.job_type)
-            .where(Job.is_active.is_(True), Job.job_type.is_not(None))
+            .where(_live(), Job.job_type.is_not(None))
             .distinct()
             .order_by(Job.job_type)
         )
@@ -168,7 +175,7 @@ class JobRepository:
         salary — the set the job browser lists — for filter dropdowns. A job
         listing several cities counts toward each, matching the city filter's
         substring match."""
-        stmt = select(Job.category, Job.location).where(Job.is_active.is_(True), Job.salary_shown == 1)
+        stmt = select(Job.category, Job.location).where(_live(), Job.salary_shown == 1)
         categories, cities, countries = Counter(), Counter(), Counter()
         for category, location in self.db.execute(stmt):
             if category:

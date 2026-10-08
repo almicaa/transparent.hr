@@ -43,11 +43,11 @@ Scraper će:
 - Zadržati samo oglase s vidljivom plaćom (EUR)
 - Spremiti ih u `backend/jobs.db`
 
-Kategorije (grane) čitaju se s detalja oglasa i mapiraju na zajedničku listu u `shared/category_normalizer.py`. Za oglase spremljene prije toga:
+Kategorije (grane) čitaju se s detalja oglasa i mapiraju na zajedničku listu u `shared/category_normalizer.py`. Rok prijave se čita s detalja oglasa; oglasi bez roka skrivaju se i brišu nakon 40 dana. Za oglase spremljene prije toga:
 
 ```bash
-python -m scraper.backfill_categories          # dohvati kategorije za oglase bez njih
-python -m scraper.backfill_categories --remap  # samo ponovno mapiraj nakon izmjene pravila (bez scrapanja)
+python -m scraper.backfill          # dopuni kategorije i rokove prijave, deaktiviraj uklonjene oglase
+python -m scraper.backfill --remap  # samo ponovno mapiraj kategorije nakon izmjene pravila (bez scrapanja)
 ```
 
 > Selektori se mogu promijeniti na izvoru — koristi `scraper/debug_selectors.py` za inspekciju HTML-a ako scraper prestane pronalaziti oglase.

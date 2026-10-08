@@ -15,7 +15,7 @@ browser needed at all for the listing.
 
 import asyncio
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 
 try:
     from scraper import base_scraper as base
@@ -228,8 +228,7 @@ async def scrape_jobs(max_pages=None, max_jobs=None):
                     ends_at = jd.get("endsAt")
                     if ends_at:
                         try:
-                            end_dt = datetime.fromisoformat(ends_at.replace("Z", "+00:00"))
-                            job["days_to_expiry"] = (end_dt - datetime.now(timezone.utc)).days
+                            job["expires_at"] = datetime.fromisoformat(ends_at.replace("Z", "+00:00"))
                         except Exception:
                             pass
 

@@ -427,6 +427,25 @@ def extract_posao_category(content: str) -> str | None:
     return html.unescape(m.group(1)).strip() if m else None
 
 
+# Croatian deadlines are calendar dates; a fixed UTC+1 is close enough (it's an
+# hour off during summer time) and avoids depending on tzdata in slim images.
+_HR_TZ = timezone(timedelta(hours=1))
+
+
+def parse_posao_deadline(content: str) -> datetime | None:
+    """Exact application deadline from a posao.hr detail page, which states it in
+    its meta description ("Rok za prijavu: 17.10.2026.. Vrsta posla: ...").
+    The ad stays open through the end of that day."""
+    m = re.search(r"Rok za prijavu:\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})", content)
+    if not m:
+        return None
+    day, month, year = (int(g) for g in m.groups())
+    try:
+        return datetime(year, month, day, 23, 59, 59, tzinfo=_HR_TZ)
+    except ValueError:
+        return None
+
+
 def parse_days_to_expiry(text_: str | None) -> int | None:
     """Parse posao.hr's own countdown ('N dana do isteka' / '1 dan do isteka')."""
     if not text_:
@@ -445,9 +464,10 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
     salary_min = job.get("salary_min")
     salary_max = job.get("salary_max")
 
+    # Prefer an exact deadline; fall back to a "N dana do isteka" countdown.
+    expires_at = job["expires_at"].isoformat() if job.get("expires_at") else None
     days_left = job.get("days_to_expiry")
-    expires_at = None
-    if days_left is not None:
+    if expires_at is None and days_left is not None:
         expires_at = (datetime.now(timezone.utc) + timedelta(days=days_left)).isoformat()
 
     result = conn.execute(
@@ -495,10 +515,11 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
 def deactivate_expired(conn: Connection) -> int:
     """Mark jobs past their expires_at as inactive so the API stops serving them.
 
-    Also deactivates jobs with no explicit expiry that are older than MAX_AGE_DAYS,
-    since posao.hr doesn't always provide a countdown and old listings accumulate.
+    Also deactivates jobs with no known deadline once they're MAX_AGE_DAYS old,
+    so ads whose deadline we couldn't read don't linger (purge_old_jobs then
+    deletes them, since they're already past its 30-day cutoff).
     """
-    MAX_AGE_DAYS = 45
+    MAX_AGE_DAYS = 40
     cutoff = (datetime.now(timezone.utc) - timedelta(days=MAX_AGE_DAYS)).isoformat()
     result = conn.execute(
         text("""
