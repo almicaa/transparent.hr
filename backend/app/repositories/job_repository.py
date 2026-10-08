@@ -103,7 +103,10 @@ class JobRepository:
         return total, rows
 
     def get_by_id(self, job_id: int) -> Job | None:
-        return self.db.get(Job, job_id)
+        # Expired jobs 404 like deleted ones. Their rows stay until purge_old_jobs
+        # so the scraper still recognizes them — portals keep listing ads for
+        # weeks past the deadline, and a deleted row would get re-scraped as new.
+        return self.db.scalar(select(Job).where(Job.id == job_id, _live()))
 
     def count_all(self) -> int:
         return self.db.scalar(select(func.count()).select_from(Job).where(_live())) or 0
