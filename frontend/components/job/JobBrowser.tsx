@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Filters from "../filters/Filters"
 import JobCard from "./JobCard"
 import { getFilters, getJobs, GetJobsParams } from "../../lib/api"
@@ -92,19 +92,30 @@ function useDebounced<T>(value: T, delay: number): [T, () => void] {
   return [debounced, () => setDebounced(value)]
 }
 
-const SORT_LABELS: Record<JobSort, string> = {
-  newest: "Najnovije",
-  salary_desc: "Najviša plaća",
-  salary_asc: "Najniža plaća",
+// Lowest-first stays reachable by URL (?sort=salary_asc) but isn't worth a tab.
+const SORT_TABS: { value: JobSort; label: string }[] = [
+  { value: "newest", label: "Najnovije" },
+  { value: "salary_desc", label: "Najviša plaća" },
+]
+
+/** "313 oglasa s plaćom" — the adjective phrase agrees with the count. */
+function resultsTitle(n: number): string {
+  return `${n} ${n % 10 === 1 && n % 100 !== 11 ? "oglas" : "oglasa"} s plaćom`
 }
 
 interface JobBrowserProps {
   initialJobs?: Job[]
   initialTotal?: number
   initialFilterData?: FilterData
+  initialTypicalSalary?: number | null
 }
 
-export default function JobBrowser({ initialJobs, initialTotal, initialFilterData }: JobBrowserProps = {}) {
+export default function JobBrowser({
+  initialJobs,
+  initialTotal,
+  initialFilterData,
+  initialTypicalSalary,
+}: JobBrowserProps = {}) {
   // An empty server result usually means the backend was briefly unreachable
   // when the page was (re)generated, and ISR would keep serving that for the
   // whole revalidate window — so treat it as "no initial data" and fetch here.
@@ -115,6 +126,9 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
   const [filters, setFilters] = useState<JobFilters>(EMPTY_FILTERS)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(initialTotal ?? 0)
+  const [typicalSalary, setTypicalSalary] = useState<number | null>(initialTypicalSalary ?? null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const closeDrawer = useCallback(() => setDrawerOpen(false), [])
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PER_PAGE)), [total])
 
   const [search, flushSearch] = useDebounced(filters.search.trim(), SEARCH_DEBOUNCE_MS)
@@ -157,6 +171,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
         if (!mounted) return
         setJobs(res.jobs)
         setTotal(res.total)
+        setTypicalSalary(res.typical_neto_salary ?? null)
       })
       .catch((e) => console.error(e))
       .finally(() => {
@@ -167,6 +182,8 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
     }
     // filters.search is deliberately left out — the debounced `search` drives fetching.
   }, [page, search, filters.category, filters.location, filters.salaryMin, filters.salaryMax, filters.sort, filters.source, filters.newOnly])
+
+  const drawerCount = [filters.newOnly, filters.category, filters.salaryMin || filters.salaryMax, filters.source].filter(Boolean).length
 
   function updateFilters(patch: Partial<JobFilters>) {
     setFilters((f) => ({ ...f, ...patch }))
@@ -183,6 +200,8 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
       <Filters
         filters={filters}
         onChange={updateFilters}
+        drawerOpen={drawerOpen}
+        onCloseDrawer={closeDrawer}
         onSubmit={() => {
           flushSearch()
           resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -196,19 +215,40 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
       />
 
       <div className="results-head" ref={resultsRef}>
-        <h2>
-          Rezultati <span className="results-head__count">{loading && jobs.length === 0 ? "…" : `(${total})`}</span>
-        </h2>
-        <label className="results-head__sort">
-          Poredaj po
-          <select value={filters.sort} onChange={(e) => updateFilters({ sort: e.target.value as JobSort })}>
-            {(Object.keys(SORT_LABELS) as JobSort[]).map((s) => (
-              <option key={s} value={s}>
-                {SORT_LABELS[s]}
-              </option>
+        <div>
+          <h2>{loading && jobs.length === 0 ? "Učitavanje…" : resultsTitle(total)}</h2>
+          {typicalSalary ? (
+            <p className="results-head__typical">
+              Tipična neto plaća: <strong>{typicalSalary.toLocaleString("hr-HR")} €</strong>
+            </p>
+          ) : null}
+        </div>
+        <div className="results-head__actions">
+          <div className="segmented segmented--compact" role="radiogroup" aria-label="Poredaj po">
+            {SORT_TABS.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                role="radio"
+                aria-checked={filters.sort === t.value}
+                className={filters.sort === t.value ? "segmented__option is-selected" : "segmented__option"}
+                onClick={() => updateFilters({ sort: t.value })}
+              >
+                {t.label}
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+          <button type="button" className="filters-button" aria-expanded={drawerOpen} onClick={() => setDrawerOpen(true)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="16" cy="6" r="2" stroke="currentColor" strokeWidth="2" />
+              <circle cx="10" cy="12" r="2" stroke="currentColor" strokeWidth="2" />
+              <circle cx="18" cy="18" r="2" stroke="currentColor" strokeWidth="2" />
+            </svg>
+            Filteri
+            {drawerCount ? <span className="filters-button__count">{drawerCount}</span> : null}
+          </button>
+        </div>
       </div>
 
       {!loading && jobs.length === 0 ? (

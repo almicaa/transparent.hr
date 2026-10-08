@@ -26,6 +26,7 @@ export interface JobList {
   total: number
   page: number
   per_page: number
+  typical_neto_salary: number | null
   jobs: Job[]
 }
 

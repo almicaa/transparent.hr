@@ -29,14 +29,14 @@ async function getHomeData() {
       getJobs({ page: 1, per_page: 20, salary_shown: "yes", sort: "newest" }, { revalidate: 300 }),
       getFilters({ revalidate: 300 }),
     ])
-    return { jobs: jobsRes.jobs, total: jobsRes.total, filterData: filtersRes }
+    return { jobs: jobsRes.jobs, total: jobsRes.total, typical: jobsRes.typical_neto_salary, filterData: filtersRes }
   } catch {
-    return { jobs: [], total: 0, filterData: undefined }
+    return { jobs: [], total: 0, typical: null, filterData: undefined }
   }
 }
 
 export default async function HomePage() {
-  const { jobs, total, filterData } = await getHomeData()
+  const { jobs, total, typical, filterData } = await getHomeData()
 
   return (
     <main>
@@ -56,6 +56,7 @@ export default async function HomePage() {
           initialJobs={jobs}
           initialTotal={total}
           initialFilterData={filterData}
+          initialTypicalSalary={typical}
         />
       </section>
 

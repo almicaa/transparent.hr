@@ -1,6 +1,7 @@
 import os
 import sys
 from collections import Counter
+from statistics import median
 from datetime import date, timedelta
 
 from sqlalchemy import and_, func, or_, select
@@ -21,6 +22,9 @@ from shared.location_normalizer import (  # noqa: E402
     split_cities,
 )
 
+
+# Fewest neto salaries a result set needs before we quote a "typical" one.
+MIN_TYPICAL_SAMPLE = 5
 
 # How recent a job must be to count as "new" — the "Samo novi oglasi" toggle.
 NEW_JOB_DAYS = 3
@@ -54,7 +58,7 @@ class JobRepository:
         sort: str = "newest",
         page: int = 1,
         per_page: int = 21,
-    ) -> tuple[int, list[Job]]:
+    ) -> tuple[int, list[Job], float | None]:
         stmt = select(Job).where(_live())
 
         # "from"-type salaries ("od 2000 €") only have a lower bound, so fall back to it.
@@ -99,6 +103,15 @@ class JobRepository:
 
         total = self.db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
 
+        # Typical neto pay across everything matching (not just this page). Neto
+        # only: bruto/unstated amounts aren't comparable, and mixing them would
+        # make the number meaningless.
+        neto = stmt.with_only_columns(Job.salary_min, Job.salary_max).where(
+            Job.salary_basis == "neto", Job.salary_min.is_not(None)
+        )
+        midpoints = [(lo + (hi if hi is not None else lo)) / 2 for lo, hi in self.db.execute(neto)]
+        typical_neto = median(midpoints) if len(midpoints) >= MIN_TYPICAL_SAMPLE else None
+
         # nulls_last: Postgres puts NULLs first on DESC, which floated jobs
         # without a parsed amount to the top of "highest salary".
         order_map = {
@@ -110,7 +123,7 @@ class JobRepository:
         stmt = stmt.offset((page - 1) * per_page).limit(per_page)
 
         rows = list(self.db.scalars(stmt))
-        return total, rows
+        return total, rows, typical_neto
 
     def _ids_in_city(self, city: str) -> list[int]:
         wanted = city.lower()

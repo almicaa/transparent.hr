@@ -19,48 +19,64 @@ function cleanSalary(s: string | null): string | null {
   return t.replace(/[.\s]+$/g, "").trim()
 }
 
-// Matches NEW_JOB_DAYS in the backend ("Samo novi oglasi").
+// Matches NEW_JOB_DAYS in the backend ("Samo novi" filter).
 const NEW_WITHIN_DAYS = 3
-// Below this many days left, the deadline line turns into a red countdown.
+// At or below this many days left, the deadline turns into a red countdown.
 const URGENT_DAYS = 3
 
-function DeadlineLine({ expiresAt }: { expiresAt: string }) {
+function amount(n: number): string {
+  return Math.round(n).toLocaleString("hr-HR")
+}
+
+/** "1.100 – 1.500 €", "od 2.000 €", "1.400 €" from the parsed numbers; falls back to the ad's own text. */
+function salaryAmount(job: Job): string | null {
+  const { salary_min: lo, salary_max: hi } = job
+  if (lo === null) return job.salary_shown ? cleanSalary(job.salary_text) : null
+  if (job.salary_type === "from" || job.salary_type === "above") return `od ${amount(lo)} €`
+  if (hi === null || hi === lo) return `${amount(lo)} €`
+  return `${amount(lo)} – ${amount(hi)} €`
+}
+
+function Deadline({ expiresAt }: { expiresAt: string }) {
   const days = daysUntil(expiresAt)
   if (days <= URGENT_DAYS) {
-    const text = days <= 0 ? "Prijava ističe danas" : days === 1 ? "Prijava ističe sutra" : `Prijava ističe za ${days} dana`
+    const text = days <= 0 ? "Ističe danas" : days === 1 ? "Ističe sutra" : `Još ${days} dana`
+    // Relative to "now", so a cached server render and the client can disagree by a day.
     return (
-      // Relative to "now", so a cached server render and the client can disagree by a day.
-      <div className="job__deadline is-urgent" suppressHydrationWarning>
+      <span className="job__deadline is-urgent" suppressHydrationWarning>
         {text}
-      </div>
+      </span>
     )
   }
-  return (
-    <div className="job__deadline">
-      Prijava do <strong>{formatDate(expiresAt)}</strong>
-    </div>
-  )
+  // "17. 10." — the year is noise on a card; the detail page has the full date.
+  return <span className="job__deadline">Rok {formatDate(expiresAt).replace(/\s*\d{4}\.$/, "")}</span>
 }
 
 export default function JobCard({ job }: { job: Job }) {
-  const salaryDisplay = job.salary_shown
-    ? cleanSalary(job.salary_text) || (job.salary_min ? `${job.salary_min} - ${job.salary_max}` : null)
-    : null
+  const pay = salaryAmount(job)
   const isNew = job.scraped_at
     ? Date.now() - parseApiDate(job.scraped_at).getTime() < NEW_WITHIN_DAYS * 86_400_000
     : false
 
   return (
     <article className="job">
-      {isNew ? <span className="job__new">Novi oglas</span> : null}
+      {pay ? (
+        <div className="job__pay">
+          <span className="job__amount">{pay}</span>
+          {job.salary_basis ? <span className="job__basis">{job.salary_basis}</span> : null}
+        </div>
+      ) : null}
       <h3 className="job__title">
         {/* The link covers the whole card (see .job__title a::after). */}
         <Link href={`/jobs/${job.id}`}>{job.title}</Link>
       </h3>
-      {job.company ? <div className="job__company">{job.company}</div> : null}
-      {job.location ? <div className="job__location">{job.location}</div> : null}
-      {salaryDisplay ? <div className="job__salary">{salaryDisplay}</div> : null}
-      {job.expires_at ? <DeadlineLine expiresAt={job.expires_at} /> : null}
+      <div className="job__org">{[job.company, job.location].filter(Boolean).join(" · ")}</div>
+      {isNew || job.expires_at ? (
+        <div className="job__foot">
+          {isNew ? <span className="job__new">Novo</span> : <span />}
+          {job.expires_at ? <Deadline expiresAt={job.expires_at} /> : null}
+        </div>
+      ) : null}
     </article>
   )
 }
