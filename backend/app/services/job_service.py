@@ -47,7 +47,7 @@ class JobService:
         per_page: int,
     ) -> JobList:
         shown = {"yes": True, "no": False}.get(salary_shown)
-        total, rows, typical_neto = self.repo.list_jobs(
+        total, rows = self.repo.list_jobs(
             salary_shown=shown,
             salary_min=salary_min,
             salary_max=salary_max,
@@ -68,7 +68,6 @@ class JobService:
             total=total,
             page=page,
             per_page=per_page,
-            typical_neto_salary=round(typical_neto) if typical_neto is not None else None,
             jobs=self._with_salary_context(rows),
         )
 

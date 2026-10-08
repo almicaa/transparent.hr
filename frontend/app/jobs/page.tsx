@@ -22,7 +22,6 @@ async function getJobsPageData() {
       total: 0,
       page: 1,
       per_page: 20,
-      typical_neto_salary: null,
     })),
     getFilters({ revalidate: 300 }).catch(() => undefined),
   ])
@@ -51,7 +50,6 @@ export default async function JobsPage() {
         initialJobs={jobsRes.jobs}
         initialTotal={jobsRes.total}
         initialFilterData={filtersRes}
-        initialTypicalSalary={jobsRes.typical_neto_salary}
       />
     </main>
   )

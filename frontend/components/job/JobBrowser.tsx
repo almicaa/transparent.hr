@@ -107,15 +107,9 @@ interface JobBrowserProps {
   initialJobs?: Job[]
   initialTotal?: number
   initialFilterData?: FilterData
-  initialTypicalSalary?: number | null
 }
 
-export default function JobBrowser({
-  initialJobs,
-  initialTotal,
-  initialFilterData,
-  initialTypicalSalary,
-}: JobBrowserProps = {}) {
+export default function JobBrowser({ initialJobs, initialTotal, initialFilterData }: JobBrowserProps = {}) {
   // An empty server result usually means the backend was briefly unreachable
   // when the page was (re)generated, and ISR would keep serving that for the
   // whole revalidate window — so treat it as "no initial data" and fetch here.
@@ -126,7 +120,6 @@ export default function JobBrowser({
   const [filters, setFilters] = useState<JobFilters>(EMPTY_FILTERS)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(initialTotal ?? 0)
-  const [typicalSalary, setTypicalSalary] = useState<number | null>(initialTypicalSalary ?? null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const closeDrawer = useCallback(() => setDrawerOpen(false), [])
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PER_PAGE)), [total])
@@ -171,7 +164,6 @@ export default function JobBrowser({
         if (!mounted) return
         setJobs(res.jobs)
         setTotal(res.total)
-        setTypicalSalary(res.typical_neto_salary ?? null)
       })
       .catch((e) => console.error(e))
       .finally(() => {
@@ -215,14 +207,7 @@ export default function JobBrowser({
       />
 
       <div className="results-head" ref={resultsRef}>
-        <div>
-          <h2>{loading && jobs.length === 0 ? "Učitavanje…" : resultsTitle(total)}</h2>
-          {typicalSalary ? (
-            <p className="results-head__typical">
-              Tipična neto plaća: <strong>{typicalSalary.toLocaleString("hr-HR")} €</strong>
-            </p>
-          ) : null}
-        </div>
+        <h2>{loading && jobs.length === 0 ? "Učitavanje…" : resultsTitle(total)}</h2>
         <div className="results-head__actions">
           <div className="segmented segmented--compact" role="radiogroup" aria-label="Poredaj po">
             {SORT_TABS.map((t) => (

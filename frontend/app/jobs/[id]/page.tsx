@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { getJob } from "../../../lib/api"
 import { buildJobPostingJsonLd, jobDescription, SITE_URL } from "../../../lib/seo"
 import { formatDate } from "../../../lib/format"
+import NetCalculator from "../../../components/job/NetCalculator"
 import { SOURCE_LABELS } from "../../../lib/sourceLabels"
 import type { Metadata } from "next"
 
@@ -59,7 +60,10 @@ export default async function JobDetailPage({ params }: { params: { id: string }
       {job.location ? <div className="job-detail__location">{job.location}</div> : null}
 
       {job.salary_shown && job.salary_text ? (
-        <div className="job-detail__salary">{job.salary_text}</div>
+        <div className="job-detail__pay">
+          <div className="job-detail__salary">{job.salary_text}</div>
+          <NetCalculator job={job} />
+        </div>
       ) : null}
 
       {job.description ? <p className="job-detail__description">{job.description}</p> : null}

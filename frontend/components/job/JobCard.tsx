@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Job } from "../../lib/types"
 import { daysUntil, formatDate, parseApiDate } from "../../lib/format"
+import NetCalculator from "./NetCalculator"
 
 function cleanSalary(s: string | null): string | null {
   if (!s) return s
@@ -64,6 +65,7 @@ export default function JobCard({ job }: { job: Job }) {
         <div className="job__pay">
           <span className="job__amount">{pay}</span>
           {job.salary_basis ? <span className="job__basis">{job.salary_basis}</span> : null}
+          <NetCalculator job={job} />
         </div>
       ) : null}
       <h3 className="job__title">

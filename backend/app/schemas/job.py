@@ -37,8 +37,6 @@ class JobList(BaseModel):
     total: int
     page: int
     per_page: int
-    typical_neto_salary: int | None = None
-    """Median neto monthly pay across all matching jobs, when enough state it."""
     jobs: list[JobOut]
 
 
