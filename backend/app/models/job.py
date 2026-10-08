@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.session import Base
+from app.db.session import Base, utcnow
 
 
 class Job(Base):
@@ -15,7 +15,10 @@ class Job(Base):
     company: Mapped[str | None] = mapped_column(String)
     location: Mapped[str | None] = mapped_column(String)
     job_type: Mapped[str | None] = mapped_column(String)
-    category: Mapped[str | None] = mapped_column(String)
+    category: Mapped[str | None] = mapped_column(String, index=True)
+    """Canonical category from shared.category_normalizer — what the filter matches on."""
+    category_raw: Mapped[str | None] = mapped_column(String)
+    """The portal's own label, kept so categories can be re-mapped without re-scraping."""
     salary_min: Mapped[float | None] = mapped_column(Float)
     salary_max: Mapped[float | None] = mapped_column(Float)
     salary_text: Mapped[str | None] = mapped_column(String)
@@ -29,7 +32,7 @@ class Job(Base):
     url: Mapped[str | None] = mapped_column(String)
     source: Mapped[str | None] = mapped_column(String)
     posted_at: Mapped[str | None] = mapped_column(String)
-    scraped_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    scraped_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime)
     """Parsed from the portal's own 'N dana do isteka' countdown, when available."""
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")

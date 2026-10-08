@@ -7,7 +7,7 @@ Job agregator za Hrvatsku fokusiran isključivo na oglase s transparentnom plać
 ```
 transparent.hr/
   backend/    FastAPI, clean architecture (api/core/models/schemas/services/repositories)
-  frontend/   Next.js 15 App Router, TypeScript
+  frontend/   Next.js 14 App Router, TypeScript
   scraper/    Playwright scraperi: posao.hr, mojposao.hr
   shared/     salary parser zajednički za scraper i backend
   infra/      deploy konfiguracija (Render, Vercel, Neon)
@@ -42,6 +42,13 @@ Scraper će:
 - Skenirati Posao.hr i MojPosao.hr
 - Zadržati samo oglase s vidljivom plaćom (EUR)
 - Spremiti ih u `backend/jobs.db`
+
+Kategorije (grane) čitaju se s detalja oglasa i mapiraju na zajedničku listu u `shared/category_normalizer.py`. Za oglase spremljene prije toga:
+
+```bash
+python -m scraper.backfill_categories          # dohvati kategorije za oglase bez njih
+python -m scraper.backfill_categories --remap  # samo ponovno mapiraj nakon izmjene pravila (bez scrapanja)
+```
 
 > Selektori se mogu promijeniti na izvoru — koristi `scraper/debug_selectors.py` za inspekciju HTML-a ako scraper prestane pronalaziti oglase.
 

@@ -55,6 +55,10 @@ export function buildJobPostingJsonLd(job: Job) {
     jsonLd.validThrough = job.expires_at
   }
 
+  if (job.category) {
+    jsonLd.industry = job.category
+  }
+
   if (job.salary_shown && job.salary_min) {
     jsonLd.baseSalary = {
       "@type": "MonetaryAmount",

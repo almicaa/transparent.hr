@@ -22,7 +22,7 @@ async function getJobsPageData() {
       page: 1,
       per_page: 20,
     })),
-    getFilters({ revalidate: 300 }).catch(() => ({ cities: [], locations: [], categories: [], job_types: [] })),
+    getFilters({ revalidate: 300 }).catch(() => undefined),
   ])
   return { stats, jobsRes, filtersRes }
 }
@@ -47,9 +47,7 @@ export default async function JobsPage() {
       <JobBrowser
         initialJobs={jobsRes.jobs}
         initialTotal={jobsRes.total}
-        initialCities={filtersRes.cities}
-        initialLocations={filtersRes.locations}
-        initialCategories={filtersRes.categories}
+        initialFilterData={filtersRes}
       />
     </main>
   )

@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.session import Base
+from app.db.session import Base, utcnow
 
 
 class MarketStat(Base):
@@ -21,4 +21,4 @@ class MarketStat(Base):
     total_pages: Mapped[int] = mapped_column(Integer)
     salary_pages: Mapped[int] = mapped_column(Integer)
     estimated_pct: Mapped[float] = mapped_column(Float)
-    computed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    computed_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

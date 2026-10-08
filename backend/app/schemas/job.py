@@ -66,8 +66,17 @@ class Stats(BaseModel):
     top_cities: list[CityCount]
 
 
+class FilterOption(BaseModel):
+    value: str
+    count: int
+
+
 class Filters(BaseModel):
     cities: list[str]
     locations: list[str]
     categories: list[str]
     job_types: list[str]
+    # Same dimensions with job counts, most common first — what the filter UI uses.
+    category_options: list[FilterOption] = []
+    city_options: list[FilterOption] = []
+    country_options: list[FilterOption] = []

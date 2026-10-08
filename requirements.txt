@@ -1,9 +1,10 @@
-fastapi
-uvicorn[standard]
-playwright
-beautifulsoup4
-sqlalchemy
-alembic
-pydantic-settings
-psycopg[binary]
-httpx
+fastapi==0.136.3
+uvicorn[standard]==0.49.0
+# Must match the mcr.microsoft.com/playwright/python image tag in infra/scraper.Dockerfile
+playwright==1.60.0
+beautifulsoup4==4.15.0
+sqlalchemy==2.0.51
+alembic==1.18.4
+pydantic-settings==2.14.2
+psycopg[binary]==3.3.4
+httpx==0.28.1

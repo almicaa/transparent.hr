@@ -10,7 +10,15 @@ from app.models.job import Job
 from app.models.market_stat import MarketStat
 
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
-from shared.location_normalizer import CITY_ALIASES, FOREIGN_LOCATION_KEYWORDS, normalize_city  # noqa: E402
+from shared.category_normalizer import OTHER as OTHER_CATEGORY  # noqa: E402
+from shared.location_normalizer import (  # noqa: E402
+    CITY_ALIASES,
+    FOREIGN_LOCATION_KEYWORDS,
+    country_keywords,
+    match_countries,
+    normalize_city,
+    split_cities,
+)
 
 
 class JobRepository:
@@ -30,29 +38,36 @@ class JobRepository:
         company: str | None = None,
         search: str | None = None,
         region: str | None = None,
+        country: str | None = None,
         sort: str = "newest",
         page: int = 1,
         per_page: int = 21,
     ) -> tuple[int, list[Job]]:
         stmt = select(Job).where(Job.is_active.is_(True))
 
+        # "from"-type salaries ("od 2000 €") only have a lower bound, so fall back to it.
+        salary_top = func.coalesce(Job.salary_max, Job.salary_min)
+
         if salary_shown is not None:
             stmt = stmt.where(Job.salary_shown == int(salary_shown))
         if salary_min is not None:
-            stmt = stmt.where(Job.salary_max >= salary_min)
+            stmt = stmt.where(salary_top >= salary_min)
         if salary_max is not None:
             stmt = stmt.where(Job.salary_min <= salary_max)
         if city:
-            variants = [raw for raw, canon in CITY_ALIASES.items() if canon.lower() == city.lower()]
-            stmt = stmt.where(
-                or_(Job.location.ilike(f"%{city}%"), *(Job.location.ilike(f"%{v}%") for v in variants))
-            )
+            if city.lower() == "cijela hrvatska":
+                variants = ["hrvatska"]
+            else:
+                variants = [city] + [raw for raw, canon in CITY_ALIASES.items() if canon.lower() == city.lower()]
+            stmt = stmt.where(or_(*(Job.location.ilike(f"%{v}%") for v in variants)))
+        if country:
+            stmt = stmt.where(or_(*(Job.location.ilike(f"%{kw}%") for kw in country_keywords(country) or [country])))
         if region == "foreign":
             stmt = stmt.where(or_(*(Job.location.ilike(f"%{kw}%") for kw in FOREIGN_LOCATION_KEYWORDS)))
         elif region == "hr":
             stmt = stmt.where(~or_(*(Job.location.ilike(f"%{kw}%") for kw in FOREIGN_LOCATION_KEYWORDS)))
         if category:
-            stmt = stmt.where(Job.category.ilike(f"%{category}%"))
+            stmt = stmt.where(Job.category == category)
         if job_type:
             stmt = stmt.where(Job.job_type.ilike(f"%{job_type}%"))
         if source:
@@ -67,12 +82,14 @@ class JobRepository:
 
         total = self.db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
 
+        # nulls_last: Postgres puts NULLs first on DESC, which floated jobs
+        # without a parsed amount to the top of "highest salary".
         order_map = {
             "newest": Job.scraped_at.desc(),
-            "salary_desc": Job.salary_max.desc(),
-            "salary_asc": Job.salary_min.asc(),
+            "salary_desc": salary_top.desc().nulls_last(),
+            "salary_asc": Job.salary_min.asc().nulls_last(),
         }
-        stmt = stmt.order_by(order_map.get(sort, Job.scraped_at.desc()))
+        stmt = stmt.order_by(order_map.get(sort, Job.scraped_at.desc()), Job.id.desc())
         stmt = stmt.offset((page - 1) * per_page).limit(per_page)
 
         rows = list(self.db.scalars(stmt))
@@ -133,9 +150,9 @@ class JobRepository:
             select(Job.category)
             .where(Job.is_active.is_(True), Job.category.is_not(None))
             .distinct()
-            .order_by(Job.category)
         )
-        return [row[0] for row in self.db.execute(stmt)]
+        # Alphabetical, but the catch-all "Ostalo" goes last.
+        return sorted((row[0] for row in self.db.execute(stmt)), key=lambda c: (c == OTHER_CATEGORY, c))
 
     def distinct_job_types(self) -> list[str]:
         stmt = (
@@ -145,6 +162,20 @@ class JobRepository:
             .order_by(Job.job_type)
         )
         return [row[0] for row in self.db.execute(stmt)]
+
+    def option_counts(self) -> tuple[Counter, Counter, Counter]:
+        """Per-category, per-city and per-country counts of active jobs with a
+        salary — the set the job browser lists — for filter dropdowns. A job
+        listing several cities counts toward each, matching the city filter's
+        substring match."""
+        stmt = select(Job.category, Job.location).where(Job.is_active.is_(True), Job.salary_shown == 1)
+        categories, cities, countries = Counter(), Counter(), Counter()
+        for category, location in self.db.execute(stmt):
+            if category:
+                categories[category] += 1
+            cities.update(split_cities(location))
+            countries.update(match_countries(location))
+        return categories, cities, countries
 
     def market_estimates(self) -> list[tuple[str, float]]:
         stmt = select(MarketStat.source, MarketStat.estimated_pct)

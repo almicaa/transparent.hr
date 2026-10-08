@@ -54,17 +54,39 @@ export interface Stats {
   top_cities: CityCount[]
 }
 
+export interface FilterOption {
+  value: string
+  count: number
+}
+
 export interface Filters {
   cities: string[]
   locations: string[]
   categories: string[]
   job_types: string[]
+  category_options: FilterOption[]
+  city_options: FilterOption[]
+  country_options: FilterOption[]
 }
 
+export type JobSort = "newest" | "salary_desc" | "salary_asc"
+
 export interface JobFilters {
-  city: string
-  category: string
-  source: string
   search: string
-  region: string
+  category: string
+  /** "" (anywhere), "city:<name>", "country:<name>" or "foreign" (any country abroad). */
+  location: string
+  /** Minimum monthly salary in EUR, "" for no minimum. */
+  salaryMin: string
+  sort: JobSort
+  source: string
+}
+
+export const EMPTY_FILTERS: JobFilters = {
+  search: "",
+  category: "",
+  location: "",
+  salaryMin: "",
+  sort: "newest",
+  source: "",
 }

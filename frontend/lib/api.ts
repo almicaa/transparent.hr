@@ -1,4 +1,4 @@
-import { Filters, Job, JobList, Stats } from "./types"
+import { Filters, Job, JobList, JobSort, Stats } from "./types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
@@ -15,7 +15,8 @@ export interface GetJobsParams {
   company?: string
   search?: string
   region?: "hr" | "foreign"
-  sort?: "newest" | "salary_desc" | "salary_asc"
+  country?: string
+  sort?: JobSort
 }
 
 function buildQuery(params: Record<string, string | number | undefined>): string {
@@ -70,9 +71,9 @@ export interface SalaryStatPoint {
   pct: number
 }
 
-export async function getTransparencyStats(): Promise<SalaryStatPoint[]> {
+export async function getTransparencyStats(opts: FetchOptions = {}): Promise<SalaryStatPoint[]> {
   try {
-    const res = await fetch(`${API_URL}/api/analitika/transparency`, { cache: "no-store" })
+    const res = await fetch(`${API_URL}/api/analitika/transparency`, cacheInit(opts))
     if (!res.ok) return []
     return res.json()
   } catch {

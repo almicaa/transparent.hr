@@ -34,7 +34,10 @@ export default function JobCard({ job }: { job: Job }) {
         {job.company ? <div className="job__company">{job.company}</div> : null}
         {job.location ? <div className="job__location">{job.location}</div> : null}
         {salaryDisplay ? <div className="job__salary">{salaryDisplay}</div> : null}
-        <div className="badge source-badge">{sourceLabel}</div>
+        <div className="job__badges">
+          {job.category ? <div className="badge">{job.category}</div> : null}
+          <div className="badge source-badge">{sourceLabel}</div>
+        </div>
       </div>
 
       <div className="job__footer">

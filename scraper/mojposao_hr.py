@@ -52,11 +52,10 @@ def _structured_salary_text(sal: dict):
     return salary_text, salary_min, salary_max
 
 
-def _text_salary_from_benefits(body: str):
+def _text_salary_from_benefits(nuxt: dict | None):
     """Text-only salary mentions (e.g. "Bruto plaća u iznosu od 1430€...") live in
     the detail page's Nuxt "benefits" field, not in the listing API's description —
     confirmed by checking ~1300 listing descriptions and finding zero matches there."""
-    nuxt = base.extract_nuxt_payload(body)
     if not nuxt:
         return None, None, None
     combined = "\n".join(filter(None, [nuxt.get("description"), nuxt.get("benefits")]))
@@ -234,30 +233,30 @@ async def scrape_jobs(max_pages=None, max_jobs=None):
                         except Exception:
                             pass
 
+                    # The detail page's Nuxt payload carries the category (rootPosition),
+                    # the salary's tax basis (the listing API always returns tax:null) and,
+                    # for ads without a structured salary, the benefits text it may be in.
+                    nuxt = None
+                    try:
+                        detail_resp = await base.retry_with_backoff(http_client.get, job["url"])
+                        nuxt = base.extract_nuxt_payload(detail_resp.text)
+                        await base.sleep_jitter()
+                    except Exception:
+                        pass
+                    if nuxt:
+                        job["category_raw"] = nuxt.get("category")
+
                     salary_text = salary_min = salary_max = None
                     sal = jd.get("salary") or {}
                     if sal.get("from") or sal.get("to"):
                         salary_text, salary_min, salary_max = _structured_salary_text(sal)
-                        # Listing API always returns tax:null — get it from detail page Nuxt payload
-                        if not sal.get("tax"):
-                            try:
-                                detail_resp = await base.retry_with_backoff(http_client.get, job["url"])
-                                nuxt = base.extract_nuxt_payload(detail_resp.text)
-                                if nuxt and isinstance(nuxt.get("salary"), dict):
-                                    detail_tax = str(nuxt["salary"].get("tax") or "").lower()
-                                    tax_label = {"gross": "bruto", "net": "neto"}.get(detail_tax)
-                                    if tax_label:
-                                        salary_text = f"{salary_text} {tax_label}"
-                                await base.sleep_jitter()
-                            except Exception:
-                                pass
+                        if not sal.get("tax") and nuxt and isinstance(nuxt.get("salary"), dict):
+                            detail_tax = str(nuxt["salary"].get("tax") or "").lower()
+                            tax_label = {"gross": "bruto", "net": "neto"}.get(detail_tax)
+                            if tax_label:
+                                salary_text = f"{salary_text} {tax_label}"
                     else:
-                        try:
-                            detail_resp = await base.retry_with_backoff(http_client.get, job["url"])
-                            salary_text, salary_min, salary_max = _text_salary_from_benefits(detail_resp.text)
-                            await base.sleep_jitter()
-                        except Exception:
-                            pass
+                        salary_text, salary_min, salary_max = _text_salary_from_benefits(nuxt)
 
                     salary_text = base.clean_salary_snippet(salary_text)
                     if salary_min is not None:

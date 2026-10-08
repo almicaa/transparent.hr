@@ -5,7 +5,8 @@ import { ArrowIcon } from "../../components/ui/icons"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
 import TransparencyChart from "../../components/ui/TransparencyChart"
 
-export const dynamic = "force-dynamic"
+// Stats only change once per scraper run (every few hours).
+export const revalidate = 600
 
 export const metadata: Metadata = {
   title: "Analitika",
@@ -21,7 +22,7 @@ const SOURCE_ORDER = ["posao", "mojposao"]
 const POSAO_VALID_FROM = "2026-09-24"
 
 export default async function AnalyticsPage() {
-  const [stats, rawTransparency] = await Promise.all([getStats(), getTransparencyStats()])
+  const [stats, rawTransparency] = await Promise.all([getStats({ revalidate: 600 }), getTransparencyStats({ revalidate: 600 })])
   const transparency = rawTransparency.filter((r) => r.source !== "posao" || r.date >= POSAO_VALID_FROM)
 
   // Group by date for the table

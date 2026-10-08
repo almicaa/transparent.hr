@@ -7,6 +7,7 @@ is set — critical for scrapers running on a schedule against production.
 
 import random
 import asyncio
+import html
 import json
 import os
 import re
@@ -26,6 +27,7 @@ from shared.salary_parser import (  # noqa: E402,F401
     is_valid_salary,
     clean_salary_snippet,
 )
+from shared.category_normalizer import normalize_category  # noqa: E402
 
 DB_PATH = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "backend", "jobs.db"))
 
@@ -196,6 +198,7 @@ def init_db():
                 location     TEXT,
                 job_type     TEXT,
                 category     TEXT,
+                category_raw TEXT,
                 salary_min   REAL,
                 salary_max   REAL,
                 salary_text  TEXT,
@@ -395,6 +398,13 @@ def extract_nuxt_payload(content: str) -> dict | None:
         if isinstance(org_raw, dict):
             organization = resolve(org_raw.get("name"))
 
+        # rootPosition is mojposao's top-level category ({"id": 9, "name":
+        # "Graditeljstvo, geodezija, geologija"}); `position` is the specific role.
+        root_raw = resolve_key("rootPosition")
+        category = None
+        if isinstance(root_raw, dict):
+            category = resolve(root_raw.get("name"))
+
         return {
             "title": resolve_key("title"),
             "description": resolve_key("description"),
@@ -402,9 +412,19 @@ def extract_nuxt_payload(content: str) -> dict | None:
             "salary": salary,
             "location": location,
             "organization": organization,
+            "category": category if isinstance(category, str) else None,
         }
     except Exception:
         return None
+
+
+def extract_posao_category(content: str) -> str | None:
+    """First category from a posao.hr detail page's "Kategorija:" row, e.g.
+    <div class="... category ...">Kategorija:</div><div ...><a href=".../djelatnosti/...">
+    Instalacije, održavanje, popravak</a>, <a ...>Zanatska zanimanja ...</a></div>.
+    Ads can list several; the first is the employer's primary pick."""
+    m = re.search(r"Kategorija:</div>\s*<div[^>]*>\s*<a[^>]*>([^<]+)</a>", content)
+    return html.unescape(m.group(1)).strip() if m else None
 
 
 def parse_days_to_expiry(text_: str | None) -> int | None:
@@ -436,10 +456,12 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
             (external_id, title, company, location, job_type,
              salary_min, salary_max, salary_text, salary_shown,
              salary_currency, salary_basis, salary_type,
+             category, category_raw,
              url, source, posted_at, expires_at)
             VALUES (:external_id, :title, :company, :location, :job_type,
                     :salary_min, :salary_max, :salary_text, :salary_shown,
                     :salary_currency, :salary_basis, :salary_type,
+                    :category, :category_raw,
                     :url, :source, :posted_at, :expires_at)
             ON CONFLICT (external_id) DO NOTHING
             RETURNING id
@@ -457,6 +479,8 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
             "salary_currency": "EUR" if salary_min is not None else None,
             "salary_basis": parse_salary_basis(salary_text),
             "salary_type": parse_salary_type(salary_text, salary_min, salary_max),
+            "category": normalize_category(job.get("category_raw")),
+            "category_raw": job.get("category_raw"),
             "url": job.get("url"),
             "source": source,
             "posted_at": job.get("posted_at"),

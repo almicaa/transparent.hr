@@ -310,6 +310,7 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                         resp = await base.retry_with_backoff(http_client.get, url_full)
                         det_sal = None
                         content = resp.text
+                        job["category_raw"] = base.extract_posao_category(content)
                         # \b boundaries so this only matches the standalone word "Plaća"
                         # (the salary heading), not a substring inside e.g. "plaćanje"
                         # (referral-bonus disclaimer text that happens to contain "plaća").

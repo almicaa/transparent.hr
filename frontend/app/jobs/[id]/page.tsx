@@ -56,7 +56,10 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
       {job.description ? <p className="job-detail__description">{job.description}</p> : null}
 
-      <div className="badge source-badge">{SOURCE_LABELS[job.source || ""] || job.source}</div>
+      <div className="job__badges">
+        {job.category ? <div className="badge">{job.category}</div> : null}
+        <div className="badge source-badge">{SOURCE_LABELS[job.source || ""] || job.source}</div>
+      </div>
 
       {job.url ? (
         <p>
