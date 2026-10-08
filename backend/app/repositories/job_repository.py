@@ -181,15 +181,16 @@ class JobRepository:
     def last_scrape_finished(self):
         return self.db.scalar(select(func.max(ScrapeLog.finished_at)).where(ScrapeLog.status == "success"))
 
-    def salary_points(self) -> list[tuple[str | None, str | None, float]]:
-        """(category, salary_basis, monthly midpoint) for every live job with a
-        parsed amount — the raw material for the histogram and category medians."""
-        stmt = select(Job.category, Job.salary_basis, Job.salary_min, Job.salary_max).where(
+    def salary_points(self) -> list[tuple[str | None, str | None, float, bool]]:
+        """(category, salary_basis, monthly midpoint, is_foreign) for every live
+        job with a parsed amount — the raw material for the histogram and
+        category medians."""
+        stmt = select(Job.category, Job.salary_basis, Job.salary_min, Job.salary_max, Job.location).where(
             _live(), Job.salary_shown == 1, Job.salary_min.is_not(None)
         )
         return [
-            (category, basis, (lo + (hi if hi is not None else lo)) / 2)
-            for category, basis, lo, hi in self.db.execute(stmt)
+            (category, basis, (lo + (hi if hi is not None else lo)) / 2, bool(match_countries(location)))
+            for category, basis, lo, hi, location in self.db.execute(stmt)
         ]
 
     def option_counts(self) -> tuple[Counter, Counter, Counter, Counter]:

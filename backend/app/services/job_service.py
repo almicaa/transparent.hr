@@ -1,7 +1,7 @@
 from statistics import median
 
 from app.models.job import Job
-from app.repositories.job_repository import OTHER_CATEGORY, JobRepository
+from app.repositories.job_repository import OTHER_CATEGORY, JobRepository, match_countries
 from app.schemas.job import (
     CityCount,
     FilterOption,
@@ -77,10 +77,12 @@ class JobService:
         """Serialize jobs, adding how each salary compares to its category.
 
         Only compares neto to neto and bruto to bruto — a large share of ads
-        don't say which, and mixing them would make every bruto ad look generous."""
+        don't say which, and mixing them would make every bruto ad look generous.
+        Jobs abroad are left out entirely: German or Austrian pay against a
+        Croatian median just reads as "+140%"."""
         groups: dict[tuple[str, str], list[float]] = {}
-        for category, basis, midpoint in self.repo.salary_points():
-            if category and basis:
+        for category, basis, midpoint, is_foreign in self.repo.salary_points():
+            if category and basis and not is_foreign:
                 groups.setdefault((category, basis), []).append(midpoint)
         medians = {key: median(values) for key, values in groups.items() if len(values) >= MIN_PEERS}
 
@@ -88,7 +90,7 @@ class JobService:
         for row in rows:
             job = JobOut.model_validate(row, from_attributes=True)
             peer_median = medians.get((row.category, row.salary_basis))
-            if peer_median and row.salary_min is not None:
+            if peer_median and row.salary_min is not None and not match_countries(row.location):
                 midpoint = (row.salary_min + (row.salary_max if row.salary_max is not None else row.salary_min)) / 2
                 job.salary_vs_category = round((midpoint / peer_median - 1) * 100, 1)
             jobs.append(job)
@@ -131,7 +133,7 @@ class JobService:
     def _salary_histogram(self) -> list[SalaryBucket]:
         starts = range(SALARY_HISTOGRAM_MIN, SALARY_HISTOGRAM_MAX + 1, SALARY_BUCKET_SIZE)
         counts = dict.fromkeys(starts, 0)
-        for _, _, midpoint in self.repo.salary_points():
+        for _, _, midpoint, _ in self.repo.salary_points():
             clamped = min(max(midpoint, SALARY_HISTOGRAM_MIN), SALARY_HISTOGRAM_MAX)
             start = SALARY_HISTOGRAM_MIN + int((clamped - SALARY_HISTOGRAM_MIN) // SALARY_BUCKET_SIZE) * SALARY_BUCKET_SIZE
             counts[start] += 1
