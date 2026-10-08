@@ -19,6 +19,7 @@ export interface Job {
   posted_at: string | null
   scraped_at: string | null
   expires_at: string | null
+  salary_vs_category: number | null
 }
 
 export interface JobList {
@@ -52,10 +53,16 @@ export interface Stats {
   market_estimates: MarketEstimate[]
   sources: SourceCount[]
   top_cities: CityCount[]
+  last_updated: string | null
 }
 
 export interface FilterOption {
   value: string
+  count: number
+}
+
+export interface SalaryBucket {
+  start: number
   count: number
 }
 
@@ -68,6 +75,7 @@ export interface Filters {
   region_options: FilterOption[]
   city_options: FilterOption[]
   country_options: FilterOption[]
+  salary_histogram: SalaryBucket[]
 }
 
 export type JobSort = "newest" | "salary_desc" | "salary_asc"
@@ -77,8 +85,9 @@ export interface JobFilters {
   category: string
   /** "" (anywhere), "hr" / "foreign" (whole region), "city:<name>" or "country:<name>". */
   location: string
-  /** Minimum monthly salary in EUR, "" for no minimum. */
+  /** Monthly salary bounds in EUR, "" for unbounded. */
   salaryMin: string
+  salaryMax: string
   sort: JobSort
   source: string
 }
@@ -88,6 +97,7 @@ export const EMPTY_FILTERS: JobFilters = {
   category: "",
   location: "",
   salaryMin: "",
+  salaryMax: "",
   sort: "newest",
   source: "",
 }

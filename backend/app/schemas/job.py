@@ -27,6 +27,10 @@ class JobOut(BaseModel):
     scraped_at: datetime | None = None
     expires_at: datetime | None = None
     is_active: bool = True
+    salary_vs_category: float | None = None
+    """How far this job's salary midpoint is from the median of its category's
+    jobs with the same neto/bruto basis, in percent (+18.0 = 18% above). Only
+    set when that peer group is big enough to mean something."""
 
 
 class JobList(BaseModel):
@@ -64,10 +68,18 @@ class Stats(BaseModel):
     market_estimates: list[MarketEstimate]
     sources: list[SourceCount]
     top_cities: list[CityCount]
+    last_updated: datetime | None = None
+    """When the most recent successful scraper run finished (UTC)."""
 
 
 class FilterOption(BaseModel):
     value: str
+    count: int
+
+
+class SalaryBucket(BaseModel):
+    start: int
+    """Lower bound in EUR; each bucket spans SALARY_BUCKET_SIZE, the last one is open-ended."""
     count: int
 
 
@@ -82,3 +94,4 @@ class Filters(BaseModel):
     """'hr' and 'foreign' job counts."""
     city_options: list[FilterOption] = []
     country_options: list[FilterOption] = []
+    salary_histogram: list[SalaryBucket] = []

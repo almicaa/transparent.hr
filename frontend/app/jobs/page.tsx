@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import JobBrowser from "../../components/job/JobBrowser"
 import Stats from "../../components/ui/Stats"
 import { getFilters, getJobs, getStats } from "../../lib/api"
+import { formatUpdatedAt } from "../../lib/format"
 import { SITE_URL } from "../../lib/seo"
 
 export const revalidate = 300
@@ -41,6 +42,7 @@ export default async function JobsPage() {
           total={stats?.total ?? 0}
           totalWithSalary={stats?.salary_shown ?? 0}
           portals={stats?.sources?.length ?? 0}
+          lastUpdate={stats?.last_updated ? formatUpdatedAt(stats.last_updated) : null}
         />
       </div>
 

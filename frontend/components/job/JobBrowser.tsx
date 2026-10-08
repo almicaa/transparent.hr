@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Filters from "../filters/Filters"
 import JobCard from "./JobCard"
 import { getFilters, getJobs, GetJobsParams } from "../../lib/api"
+import { jobCountLabel } from "../../lib/format"
 import { EMPTY_FILTERS, Filters as FilterData, Job, JobFilters } from "../../lib/types"
 
 const PER_PAGE = 20
@@ -18,6 +19,7 @@ const EMPTY_FILTER_DATA: FilterData = {
   region_options: [],
   city_options: [],
   country_options: [],
+  salary_histogram: [],
 }
 
 // Filters live in the URL (?grana=…&grad=…) so a filtered list can be shared
@@ -35,6 +37,7 @@ function filtersFromUrl(params: URLSearchParams): { filters: JobFilters; page: n
       category: params.get("grana") ?? "",
       location,
       salaryMin: params.get("placa") ?? "",
+      salaryMax: params.get("placa_do") ?? "",
       sort: sort === "salary_desc" || sort === "salary_asc" ? sort : "newest",
       source: params.get("izvor") ?? "",
     },
@@ -51,6 +54,7 @@ function filtersToUrl(filters: JobFilters, page: number): string {
   else if (filters.location === "foreign") params.set("inozemstvo", "1")
   else if (filters.location === "hr") params.set("hrvatska", "1")
   if (filters.salaryMin) params.set("placa", filters.salaryMin)
+  if (filters.salaryMax) params.set("placa_do", filters.salaryMax)
   if (filters.sort !== "newest") params.set("sort", filters.sort)
   if (filters.source) params.set("izvor", filters.source)
   if (page > 1) params.set("stranica", String(page))
@@ -70,14 +74,10 @@ function toApiParams(filters: JobFilters, search: string, page: number): GetJobs
     country: location.startsWith("country:") ? location.slice(8) : undefined,
     region: location === "foreign" || location === "hr" ? location : undefined,
     salary_min: filters.salaryMin ? Number(filters.salaryMin) : undefined,
+    salary_max: filters.salaryMax ? Number(filters.salaryMax) : undefined,
     sort: filters.sort,
     source: filters.source || undefined,
   }
-}
-
-/** "1 oglas", "3 oglasa", "11 oglasa", "21 oglas" */
-function jobCountLabel(n: number): string {
-  return n % 10 === 1 && n % 100 !== 11 ? `${n} oglas` : `${n} oglasa`
 }
 
 function useDebounced<T>(value: T, delay: number): T {
@@ -156,7 +156,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
       mounted = false
     }
     // filters.search is deliberately left out — the debounced `search` drives fetching.
-  }, [page, search, filters.category, filters.location, filters.salaryMin, filters.sort, filters.source])
+  }, [page, search, filters.category, filters.location, filters.salaryMin, filters.salaryMax, filters.sort, filters.source])
 
   function updateFilters(patch: Partial<JobFilters>) {
     setFilters((f) => ({ ...f, ...patch }))
@@ -173,10 +173,12 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
       <Filters
         filters={filters}
         onChange={updateFilters}
+        total={total}
         categoryOptions={filterData.category_options ?? []}
         regionOptions={filterData.region_options ?? []}
         cityOptions={filterData.city_options ?? []}
         countryOptions={filterData.country_options ?? []}
+        salaryHistogram={filterData.salary_histogram ?? []}
       />
 
       <div className="meta job-browser__count">{loading && jobs.length === 0 ? "Učitavanje…" : jobCountLabel(total)}</div>
