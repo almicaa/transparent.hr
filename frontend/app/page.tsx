@@ -40,7 +40,7 @@ export default async function HomePage() {
 
   return (
     <main>
-      <section className="hero">
+      <section className="hero hero--home">
         <HeroIllustration />
         <h1>
           Oglasi za posao s{" "}

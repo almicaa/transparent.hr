@@ -4,6 +4,7 @@ import { jobCountLabel } from "../../lib/format"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
 import LocationCombobox, { locationLabel } from "./LocationCombobox"
 import SalaryRange from "./SalaryRange"
+import WhatCombobox from "./WhatCombobox"
 
 // Portals we actually scrape (SOURCE_LABELS also covers ones we don't, yet).
 const SOURCES = ["posao", "mojposao"]
@@ -48,10 +49,9 @@ export default function Filters({
   countryOptions,
   salaryHistogram,
 }: FiltersProps) {
-  // Removable summary of what's applied; search text stays in its own field.
+  // Removable summary of what's applied; search text and the grana stay in the "Što" field.
   const active: { key: string; label: string; clear: Partial<JobFilters> }[] = []
   if (filters.location) active.push({ key: "location", label: locationLabel(filters.location), clear: { location: "" } })
-  if (filters.category) active.push({ key: "category", label: filters.category, clear: { category: "" } })
   if (filters.salaryMin || filters.salaryMax)
     active.push({ key: "salary", label: salaryLabel(filters.salaryMin, filters.salaryMax), clear: { salaryMin: "", salaryMax: "" } })
   if (filters.source) active.push({ key: "source", label: SOURCE_LABELS[filters.source] ?? filters.source, clear: { source: "" } })
@@ -88,15 +88,18 @@ export default function Filters({
           onSubmit()
         }}
       >
-        <label className="finder__field finder__field--what">
-          <span className="finder__label">Što</span>
-          <input
-            type="search"
-            placeholder="Pozicija ili tvrtka"
-            value={filters.search}
-            onChange={(e) => onChange({ search: e.target.value })}
+        <div className="finder__field finder__field--what">
+          <span className="finder__label" aria-hidden="true">
+            Što
+          </span>
+          <WhatCombobox
+            search={filters.search}
+            category={filters.category}
+            onSearch={(search) => onChange({ search })}
+            onCategory={(category) => onChange({ category })}
+            categoryOptions={categoryOptions}
           />
-        </label>
+        </div>
 
         <div className="finder__field finder__field--where">
           <span className="finder__label" aria-hidden="true">
