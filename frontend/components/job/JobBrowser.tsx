@@ -3,10 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Filters from "../filters/Filters"
 import JobCard from "./JobCard"
-import { getFilters, getJobs, GetJobsParams } from "../../lib/api"
+import { getFilters, getJobs, GetJobsParams, JOBS_PER_PAGE as PER_PAGE } from "../../lib/api"
 import { EMPTY_FILTERS, Filters as FilterData, Job, JobFilters, JobSort } from "../../lib/types"
 
-const PER_PAGE = 20
 const SEARCH_DEBOUNCE_MS = 350
 
 const EMPTY_FILTER_DATA: FilterData = {

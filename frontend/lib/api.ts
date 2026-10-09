@@ -2,6 +2,9 @@ import { Filters, Job, JobList, JobSort, Stats } from "./types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
+/** Job cards per page: a multiple of 3 so the desktop grid has no ragged last row. */
+export const JOBS_PER_PAGE = 21
+
 export interface GetJobsParams {
   page?: number
   per_page?: number

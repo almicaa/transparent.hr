@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import JobBrowser from "../../components/job/JobBrowser"
 import Stats from "../../components/ui/Stats"
-import { getFilters, getJobs, getStats } from "../../lib/api"
+import { getFilters, getJobs, getStats, JOBS_PER_PAGE } from "../../lib/api"
 import { formatUpdatedAt } from "../../lib/format"
 import { SITE_URL } from "../../lib/seo"
 
@@ -17,11 +17,11 @@ export const metadata: Metadata = {
 async function getJobsPageData() {
   const [stats, jobsRes, filtersRes] = await Promise.all([
     getStats({ revalidate: 300 }),
-    getJobs({ page: 1, per_page: 20, salary_shown: "yes", sort: "newest" }, { revalidate: 300 }).catch(() => ({
+    getJobs({ page: 1, per_page: JOBS_PER_PAGE, salary_shown: "yes", sort: "newest" }, { revalidate: 300 }).catch(() => ({
       jobs: [],
       total: 0,
       page: 1,
-      per_page: 20,
+      per_page: JOBS_PER_PAGE,
     })),
     getFilters({ revalidate: 300 }).catch(() => undefined),
   ])

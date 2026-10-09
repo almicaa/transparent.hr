@@ -1,7 +1,7 @@
 import JobBrowser from "../components/job/JobBrowser"
 import HeroIllustration from "../components/ui/HeroIllustration"
 import { CheckIcon, EuroIcon, LayersIcon } from "../components/ui/icons"
-import { getFilters, getJobs } from "../lib/api"
+import { getFilters, getJobs, JOBS_PER_PAGE } from "../lib/api"
 
 export const revalidate = 300
 
@@ -26,7 +26,7 @@ const FEATURES = [
 async function getHomeData() {
   try {
     const [jobsRes, filtersRes] = await Promise.all([
-      getJobs({ page: 1, per_page: 20, salary_shown: "yes", sort: "newest" }, { revalidate: 300 }),
+      getJobs({ page: 1, per_page: JOBS_PER_PAGE, salary_shown: "yes", sort: "newest" }, { revalidate: 300 }),
       getFilters({ revalidate: 300 }),
     ])
     return { jobs: jobsRes.jobs, total: jobsRes.total, filterData: filtersRes }
