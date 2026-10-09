@@ -41,6 +41,9 @@ export default function Header({ showBlog = false }: { showBlog?: boolean }) {
           <Link href="/izvori" onClick={() => setOpen(false)}>
             Izvori
           </Link>
+          <Link href="/o-nama" onClick={() => setOpen(false)}>
+            O nama
+          </Link>
         </nav>
       </div>
     </header>

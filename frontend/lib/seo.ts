@@ -3,6 +3,8 @@ import { SOURCE_LABELS } from "./sourceLabels"
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
 export const SITE_NAME = "Transparent.hr"
+/** Public contact address (O nama, footer). */
+export const CONTACT_EMAIL = "info@transparent.hr"
 
 /**
  * The scraper doesn't reliably capture a real description or company name
