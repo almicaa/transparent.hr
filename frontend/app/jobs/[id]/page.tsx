@@ -4,6 +4,7 @@ import { getJob } from "../../../lib/api"
 import { buildJobPostingJsonLd, jobDescription, SITE_URL } from "../../../lib/seo"
 import { formatDate } from "../../../lib/format"
 import NetCalculator from "../../../components/job/NetCalculator"
+import ApplyLink from "../../../components/job/ApplyLink"
 import { SOURCE_LABELS } from "../../../lib/sourceLabels"
 import type { Metadata } from "next"
 
@@ -85,9 +86,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
       {job.url ? (
         <p>
-          <a href={job.url} target="_blank" rel="noreferrer">
-            Pogledaj originalni oglas →
-          </a>
+          <ApplyLink href={job.url} jobId={job.id} source={job.source} category={job.category} />
         </p>
       ) : null}
     </main>

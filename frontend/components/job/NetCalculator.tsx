@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useRef, useState } from "react"
+import { trackEvent } from "../../lib/analytics"
 import { CITY_RATES, DEFAULT_RATES, grossToNet, ratesForLocation } from "../../lib/netSalary"
 import { Job } from "../../lib/types"
 
@@ -49,6 +50,7 @@ export default function NetCalculator({ job }: { job: Job }) {
           e.preventDefault()
           e.stopPropagation()
           dialogRef.current?.showModal()
+          trackEvent("net_calculator_open", { job_id: job.id })
         }}
       >
         Izračunaj neto

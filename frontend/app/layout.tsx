@@ -9,6 +9,7 @@ import { SITE_URL } from "../lib/seo"
 import { getAllPosts } from "../lib/blog"
 
 const GA_ID = "G-K4GM301ZJJ"
+const IS_PRODUCTION = process.env.NODE_ENV === "production"
 
 const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter" })
 
@@ -70,14 +71,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
-        <Script id="ga-init" strategy="afterInteractive">{`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('consent', 'default', { analytics_storage: 'denied', ad_storage: 'denied', wait_for_update: 2000 });
-          gtag('js', new Date());
-          gtag('config', '${GA_ID}');
-        `}</Script>
+        {/* Production only, so local development doesn't count as visits. */}
+        {IS_PRODUCTION ? (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+            <Script id="ga-init" strategy="afterInteractive">{`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('consent', 'default', { analytics_storage: 'denied', ad_storage: 'denied', wait_for_update: 2000 });
+              gtag('js', new Date());
+              gtag('config', '${GA_ID}');
+            `}</Script>
+          </>
+        ) : null}
         <Header showBlog={getAllPosts().length > 0} />
         <div className="container page-content">{children}</div>
         <Footer />

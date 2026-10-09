@@ -20,6 +20,7 @@ export default function HeroSearch({ filterData }: { filterData?: FilterData }) 
       regionOptions={filterData?.region_options ?? []}
       cityOptions={filterData?.city_options ?? []}
       countryOptions={filterData?.country_options ?? []}
+      placement="naslovnica"
     />
   )
 }

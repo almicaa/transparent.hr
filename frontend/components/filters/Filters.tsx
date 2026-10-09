@@ -49,7 +49,7 @@ export function SearchBar({ filters, onChange, onSubmit, ...options }: SearchBar
 
   return (
     <div className="filters">
-      <Finder filters={filters} onChange={onChange} onSubmit={onSubmit} {...options} />
+      <Finder filters={filters} onChange={onChange} onSubmit={onSubmit} placement="oglasi" {...options} />
 
       {active.length ? (
         <div className="active-filters">

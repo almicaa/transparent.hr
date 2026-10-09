@@ -5,6 +5,7 @@ import { FilterPanel, panelFilterCount, SearchBar } from "../filters/Filters"
 import HeroIllustration from "../ui/HeroIllustration"
 import JobCard from "./JobCard"
 import { getFilters, getJobs, GetJobsParams, JOBS_PER_PAGE as PER_PAGE } from "../../lib/api"
+import { trackEvent } from "../../lib/analytics"
 import { filtersFromUrl, filtersToQuery } from "../../lib/filterUrl"
 import { EMPTY_FILTERS, Filters as FilterData, Job, JobFilters, JobSort } from "../../lib/types"
 
@@ -167,6 +168,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
 
   function updateFilters(patch: Partial<JobFilters>) {
     const next = { ...filters, ...patch }
+    if (patch.category && patch.category !== filters.category) trackEvent("select_category", { category: patch.category })
     restorePages.current = 1
     setFilters(next)
     syncUrl(next, 1)
@@ -186,6 +188,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
         setTotal(res.total)
         setPages(next)
         syncUrl(filters, next)
+        trackEvent("load_more", { page_number: next })
       })
       .catch((e) => console.error(e))
       .finally(() => setLoadingMore(false))

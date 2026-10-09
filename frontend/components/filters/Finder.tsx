@@ -1,4 +1,6 @@
+import { trackEvent } from "../../lib/analytics"
 import { FilterOption, JobFilters } from "../../lib/types"
+import { locationLabel } from "./LocationCombobox"
 import LocationCombobox from "./LocationCombobox"
 import WhatCombobox from "./WhatCombobox"
 
@@ -17,6 +19,8 @@ interface FinderProps {
   regionOptions: FilterOption[]
   cityOptions: FilterOption[]
   countryOptions: FilterOption[]
+  /** Where the search bar sits, sent with the GA "search" event ("naslovnica" / "oglasi"). */
+  placement: string
 }
 
 /** The "Što · Gdje · Plaća od" search bar, shared by the home hero and the job list. */
@@ -28,6 +32,7 @@ export default function Finder({
   regionOptions,
   cityOptions,
   countryOptions,
+  placement,
 }: FinderProps) {
   // A slider-picked minimum (e.g. 1.750 €) still needs to show in the quick-pick select.
   const salarySteps =
@@ -41,6 +46,13 @@ export default function Finder({
       role="search"
       onSubmit={(e) => {
         e.preventDefault()
+        trackEvent("search", {
+          search_term: filters.search.trim(),
+          category: filters.category,
+          location: locationLabel(filters.location),
+          salary_min: filters.salaryMin ? Number(filters.salaryMin) : undefined,
+          placement,
+        })
         onSubmit()
       }}
     >
