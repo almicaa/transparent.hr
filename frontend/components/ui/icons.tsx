@@ -27,7 +27,7 @@ export function LayersIcon() {
     <IconWrap>
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
         <rect x="3" y="3" width="13" height="13" rx="4" stroke="#085050" strokeWidth="1.6" />
-        <rect x="8" y="8" width="13" height="13" rx="4" fill="#1D9E9E" fillOpacity="0.55" />
+        <rect x="8" y="8" width="13" height="13" rx="4" fill="#F08A24" fillOpacity="0.6" />
       </svg>
     </IconWrap>
   )
