@@ -1,8 +1,6 @@
 import type { Metadata } from "next"
 import JobBrowser from "../../components/job/JobBrowser"
-import Stats from "../../components/ui/Stats"
-import { getFilters, getJobs, getStats, JOBS_PER_PAGE } from "../../lib/api"
-import { formatUpdatedAt } from "../../lib/format"
+import { getFilters, getJobs, JOBS_PER_PAGE } from "../../lib/api"
 import { SITE_URL } from "../../lib/seo"
 
 export const revalidate = 300
@@ -15,8 +13,7 @@ export const metadata: Metadata = {
 }
 
 async function getJobsPageData() {
-  const [stats, jobsRes, filtersRes] = await Promise.all([
-    getStats({ revalidate: 300 }),
+  const [jobsRes, filtersRes] = await Promise.all([
     getJobs({ page: 1, per_page: JOBS_PER_PAGE, salary_shown: "yes", sort: "newest" }, { revalidate: 300 }).catch(() => ({
       jobs: [],
       total: 0,
@@ -25,27 +22,14 @@ async function getJobsPageData() {
     })),
     getFilters({ revalidate: 300 }).catch(() => undefined),
   ])
-  return { stats, jobsRes, filtersRes }
+  return { jobsRes, filtersRes }
 }
 
 export default async function JobsPage() {
-  const { stats, jobsRes, filtersRes } = await getJobsPageData()
+  const { jobsRes, filtersRes } = await getJobsPageData()
 
   return (
     <main>
-      <div className="site-header">
-        <div className="title-block">
-          <h1>Transparent.hr</h1>
-          <p>Svi oglasi s transparentnom plaćom na jednom mjestu</p>
-        </div>
-        <Stats
-          total={stats?.total ?? 0}
-          totalWithSalary={stats?.salary_shown ?? 0}
-          portals={stats?.sources?.length ?? 0}
-          lastUpdate={stats?.last_updated ? formatUpdatedAt(stats.last_updated) : null}
-        />
-      </div>
-
       <JobBrowser
         initialJobs={jobsRes.jobs}
         initialTotal={jobsRes.total}

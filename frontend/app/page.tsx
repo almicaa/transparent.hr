@@ -45,7 +45,7 @@ export default async function HomePage() {
 
   return (
     <main>
-      <section className="hero hero--home">
+      <section className="hero hero--home hero-surface">
         <HeroIllustration />
         <h1>
           Oglasi za posao s{" "}

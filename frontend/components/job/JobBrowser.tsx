@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import Filters from "../filters/Filters"
+import { FilterPanel, panelFilterCount, SearchBar } from "../filters/Filters"
+import HeroIllustration from "../ui/HeroIllustration"
 import JobCard from "./JobCard"
 import { getFilters, getJobs, GetJobsParams, JOBS_PER_PAGE as PER_PAGE } from "../../lib/api"
 import { filtersFromUrl, filtersToQuery } from "../../lib/filterUrl"
@@ -133,7 +134,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
     // filters.search is deliberately left out — the debounced `search` drives fetching.
   }, [page, search, filters.category, filters.location, filters.salaryMin, filters.salaryMax, filters.sort, filters.source, filters.newOnly])
 
-  const drawerCount = [filters.newOnly, filters.category, filters.salaryMin || filters.salaryMax, filters.source].filter(Boolean).length
+  const drawerCount = panelFilterCount(filters)
 
   function updateFilters(patch: Partial<JobFilters>) {
     setFilters((f) => ({ ...f, ...patch }))
@@ -146,82 +147,96 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
   }
 
   return (
-    <div className="job-browser" ref={topRef}>
-      <Filters
-        filters={filters}
-        onChange={updateFilters}
-        drawerOpen={drawerOpen}
-        onCloseDrawer={closeDrawer}
-        onSubmit={() => {
-          flushSearch()
-          resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-        }}
-        total={total}
-        categoryOptions={filterData.category_options ?? []}
-        regionOptions={filterData.region_options ?? []}
-        cityOptions={filterData.city_options ?? []}
-        countryOptions={filterData.country_options ?? []}
-        salaryHistogram={filterData.salary_histogram ?? []}
-      />
+    <div className="job-browser">
+      <section className="jobs-hero hero-surface">
+        <HeroIllustration />
+        <h1 className="sr-only">Oglasi za posao s transparentnom plaćom</h1>
+        <SearchBar
+          filters={filters}
+          onChange={updateFilters}
+          onSubmit={() => {
+            flushSearch()
+            resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+          }}
+          categoryOptions={filterData.category_options ?? []}
+          regionOptions={filterData.region_options ?? []}
+          cityOptions={filterData.city_options ?? []}
+          countryOptions={filterData.country_options ?? []}
+        />
+      </section>
 
-      <div className="results-head" ref={resultsRef}>
-        <h2>{loading && jobs.length === 0 ? "Učitavanje…" : resultsTitle(total)}</h2>
-        <div className="results-head__actions">
-          <div className="segmented segmented--compact" role="radiogroup" aria-label="Poredaj po">
-            {SORT_TABS.map((t) => (
-              <button
-                key={t.value}
-                type="button"
-                role="radio"
-                aria-checked={filters.sort === t.value}
-                className={filters.sort === t.value ? "segmented__option is-selected" : "segmented__option"}
-                onClick={() => updateFilters({ sort: t.value })}
-              >
-                {t.label}
+      <div className="jobs-layout">
+        <FilterPanel
+          filters={filters}
+          onChange={updateFilters}
+          drawerOpen={drawerOpen}
+          onCloseDrawer={closeDrawer}
+          total={total}
+          categoryOptions={filterData.category_options ?? []}
+          salaryHistogram={filterData.salary_histogram ?? []}
+        />
+
+        <div className="jobs-main" ref={topRef}>
+          <div className="results-head" ref={resultsRef}>
+            <h2>{loading && jobs.length === 0 ? "Učitavanje…" : resultsTitle(total)}</h2>
+            <div className="results-head__actions">
+              <div className="segmented segmented--compact" role="radiogroup" aria-label="Poredaj po">
+                {SORT_TABS.map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={filters.sort === t.value}
+                    className={filters.sort === t.value ? "segmented__option is-selected" : "segmented__option"}
+                    onClick={() => updateFilters({ sort: t.value })}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <button type="button" className="filters-button" aria-expanded={drawerOpen} onClick={() => setDrawerOpen(true)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="16" cy="6" r="2" stroke="currentColor" strokeWidth="2" />
+                  <circle cx="10" cy="12" r="2" stroke="currentColor" strokeWidth="2" />
+                  <circle cx="18" cy="18" r="2" stroke="currentColor" strokeWidth="2" />
+                </svg>
+                Filteri
+                {drawerCount ? <span className="filters-button__count">{drawerCount}</span> : null}
               </button>
-            ))}
+            </div>
           </div>
-          <button type="button" className="filters-button" aria-expanded={drawerOpen} onClick={() => setDrawerOpen(true)}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <circle cx="16" cy="6" r="2" stroke="currentColor" strokeWidth="2" />
-              <circle cx="10" cy="12" r="2" stroke="currentColor" strokeWidth="2" />
-              <circle cx="18" cy="18" r="2" stroke="currentColor" strokeWidth="2" />
-            </svg>
-            Filteri
-            {drawerCount ? <span className="filters-button__count">{drawerCount}</span> : null}
-          </button>
+
+          {!loading && jobs.length === 0 ? (
+            <div className="job-browser__empty">
+              <p>Nema oglasa za odabrane filtere.</p>
+              <button type="button" className="active-filters__clear" onClick={() => updateFilters(EMPTY_FILTERS)}>
+                Očisti filtere
+              </button>
+            </div>
+          ) : (
+            <div className={loading ? "grid grid--loading" : "grid"} aria-busy={loading}>
+              {jobs.map((job) => (
+                <JobCard key={job.id} job={job} />
+              ))}
+            </div>
+          )}
+
+          {totalPages > 1 ? (
+            <div className="pagination">
+              <button onClick={() => goToPage(Math.max(1, page - 1))} disabled={page <= 1}>
+                Prethodna
+              </button>
+              <div className="meta">
+                Stranica {page} / {totalPages}
+              </div>
+              <button onClick={() => goToPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages}>
+                Sljedeća
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
-
-      {!loading && jobs.length === 0 ? (
-        <div className="job-browser__empty">
-          <p>Nema oglasa za odabrane filtere.</p>
-          <button type="button" className="active-filters__clear" onClick={() => updateFilters(EMPTY_FILTERS)}>
-            Očisti filtere
-          </button>
-        </div>
-      ) : (
-        <div className={loading ? "grid grid--loading" : "grid"} aria-busy={loading}>
-          {jobs.map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
-        </div>
-      )}
-
-      {totalPages > 1 ? (
-        <div className="pagination">
-          <button onClick={() => goToPage(Math.max(1, page - 1))} disabled={page <= 1}>
-            Prethodna
-          </button>
-          <div className="meta">
-            Stranica {page} / {totalPages}
-          </div>
-          <button onClick={() => goToPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages}>
-            Sljedeća
-          </button>
-        </div>
-      ) : null}
     </div>
   )
 }

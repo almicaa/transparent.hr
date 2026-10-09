@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { EMPTY_FILTERS, FilterOption, JobFilters, SalaryBucket } from "../../lib/types"
 import { jobCountLabel } from "../../lib/format"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
@@ -9,6 +9,9 @@ import SalaryRange from "./SalaryRange"
 // Portals we actually scrape (SOURCE_LABELS also covers ones we don't, yet).
 const SOURCES = ["posao", "mojposao"]
 
+// Matches the CSS breakpoint where the filter drawer becomes a fixed sidebar.
+const SIDEBAR_QUERY = "(min-width: 1024px)"
+
 function euro(n: string): string {
   return `${Number(n).toLocaleString("hr-HR")} €`
 }
@@ -18,35 +21,25 @@ function salaryLabel(min: string, max: string): string {
   return min ? `od ${euro(min)}` : `do ${euro(max)}`
 }
 
-interface FiltersProps {
+/** How many of the panel's filters are set (the "Filteri" button badge). */
+export function panelFilterCount(filters: JobFilters): number {
+  return [filters.newOnly, filters.category, filters.salaryMin || filters.salaryMax, filters.source].filter(Boolean).length
+}
+
+interface SearchBarProps {
   filters: JobFilters
   onChange: (patch: Partial<JobFilters>) => void
   /** Flush the debounced search right away (the search button / Enter). */
   onSubmit: () => void
-  drawerOpen: boolean
-  onCloseDrawer: () => void
-  total: number
   categoryOptions: FilterOption[]
   regionOptions: FilterOption[]
   cityOptions: FilterOption[]
   countryOptions: FilterOption[]
-  salaryHistogram: SalaryBucket[]
 }
 
-export default function Filters({
-  filters,
-  onChange,
-  onSubmit,
-  drawerOpen,
-  onCloseDrawer,
-  total,
-  categoryOptions,
-  regionOptions,
-  cityOptions,
-  countryOptions,
-  salaryHistogram,
-}: FiltersProps) {
-  // Removable summary of what's applied; search text and the grana stay in the "Što" field.
+/** The finder plus removable pills for what's applied outside it. */
+export function SearchBar({ filters, onChange, onSubmit, ...options }: SearchBarProps) {
+  // Search text and the grana stay in the "Što" field, so they get no pill.
   const active: { key: string; label: string; clear: Partial<JobFilters> }[] = []
   if (filters.location) active.push({ key: "location", label: locationLabel(filters.location), clear: { location: "" } })
   if (filters.salaryMin || filters.salaryMax)
@@ -54,33 +47,9 @@ export default function Filters({
   if (filters.source) active.push({ key: "source", label: SOURCE_LABELS[filters.source] ?? filters.source, clear: { source: "" } })
   if (filters.newOnly) active.push({ key: "new", label: "Samo novi", clear: { newOnly: false } })
 
-  const drawerCount = [filters.newOnly, filters.category, filters.salaryMin || filters.salaryMax, filters.source].filter(
-    Boolean,
-  ).length
-
-  useEffect(() => {
-    if (!drawerOpen) return
-    const previous = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCloseDrawer()
-    window.addEventListener("keydown", onKey)
-    return () => {
-      document.body.style.overflow = previous
-      window.removeEventListener("keydown", onKey)
-    }
-  }, [drawerOpen, onCloseDrawer])
-
   return (
     <div className="filters">
-      <Finder
-        filters={filters}
-        onChange={onChange}
-        onSubmit={onSubmit}
-        categoryOptions={categoryOptions}
-        regionOptions={regionOptions}
-        cityOptions={cityOptions}
-        countryOptions={countryOptions}
-      />
+      <Finder filters={filters} onChange={onChange} onSubmit={onSubmit} {...options} />
 
       {active.length ? (
         <div className="active-filters">
@@ -101,11 +70,76 @@ export default function Filters({
           </button>
         </div>
       ) : null}
+    </div>
+  )
+}
 
-      {drawerOpen ? <div className="drawer-backdrop" onClick={onCloseDrawer} /> : null}
-      <aside className={drawerOpen ? "drawer is-open" : "drawer"} aria-hidden={!drawerOpen} aria-label="Filteri">
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    setMatches(mq.matches)
+    const onChange = () => setMatches(mq.matches)
+    mq.addEventListener("change", onChange)
+    return () => mq.removeEventListener("change", onChange)
+  }, [query])
+  return matches
+}
+
+interface FilterPanelProps {
+  filters: JobFilters
+  onChange: (patch: Partial<JobFilters>) => void
+  drawerOpen: boolean
+  onCloseDrawer: () => void
+  total: number
+  categoryOptions: FilterOption[]
+  salaryHistogram: SalaryBucket[]
+}
+
+/** The remaining filters: a sidebar on wide screens, a slide-in drawer below that. */
+export function FilterPanel({
+  filters,
+  onChange,
+  drawerOpen,
+  onCloseDrawer,
+  total,
+  categoryOptions,
+  salaryHistogram,
+}: FilterPanelProps) {
+  const isSidebar = useMediaQuery(SIDEBAR_QUERY)
+  const count = panelFilterCount(filters)
+
+  useEffect(() => {
+    if (!drawerOpen || isSidebar) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCloseDrawer()
+    window.addEventListener("keydown", onKey)
+    return () => {
+      document.body.style.overflow = previous
+      window.removeEventListener("keydown", onKey)
+    }
+  }, [drawerOpen, isSidebar, onCloseDrawer])
+
+  return (
+    <>
+      {drawerOpen && !isSidebar ? <div className="drawer-backdrop" onClick={onCloseDrawer} /> : null}
+      <aside
+        className={drawerOpen ? "drawer is-open" : "drawer"}
+        aria-hidden={!isSidebar && !drawerOpen}
+        aria-label="Filteri"
+      >
         <div className="drawer__header">
           <strong>Filteri</strong>
+          {count ? (
+            <button
+              type="button"
+              className="drawer__reset drawer__reset--top"
+              onClick={() => onChange({ newOnly: false, category: "", salaryMin: "", salaryMax: "", source: "" })}
+            >
+              Poništi
+            </button>
+          ) : null}
           <button type="button" className="drawer__close" aria-label="Zatvori" onClick={onCloseDrawer}>
             ✕
           </button>
@@ -171,7 +205,7 @@ export default function Filters({
           <button
             type="button"
             className="drawer__reset"
-            disabled={!drawerCount}
+            disabled={!count}
             onClick={() => onChange({ newOnly: false, category: "", salaryMin: "", salaryMax: "", source: "" })}
           >
             Poništi
@@ -181,6 +215,6 @@ export default function Filters({
           </button>
         </div>
       </aside>
-    </div>
+    </>
   )
 }
