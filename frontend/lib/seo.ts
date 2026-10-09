@@ -1,7 +1,10 @@
 import { Job } from "./types"
 import { SOURCE_LABELS } from "./sourceLabels"
 
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+// The public address used in canonical links, the sitemap, robots.txt and
+// structured data. Defaults to production so a missing env var can never
+// tell Google the site lives on localhost.
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.transparent.hr").replace(/\/$/, "")
 export const SITE_NAME = "Transparent.hr"
 /** Public contact address (O nama, footer). */
 export const CONTACT_EMAIL = "info@transparent.hr"
