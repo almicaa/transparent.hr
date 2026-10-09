@@ -8,7 +8,7 @@ import CookieConsent from "../components/analytics/CookieConsent"
 import { SITE_URL } from "../lib/seo"
 import { getAllPosts } from "../lib/blog"
 
-const GA_ID = "G-K4GM301ZJJ"
+const GA_ID = "G-5PPM0Y3J1E"
 const IS_PRODUCTION = process.env.NODE_ENV === "production"
 
 const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter" })
