@@ -4,7 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import Logo from "../ui/Logo"
 
-export default function Header() {
+/** `showBlog`: only link the blog once it has a published post. */
+export default function Header({ showBlog = false }: { showBlog?: boolean }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -32,6 +33,11 @@ export default function Header() {
           <Link href="/analitika" onClick={() => setOpen(false)}>
             Analitika
           </Link>
+          {showBlog ? (
+            <Link href="/blog" onClick={() => setOpen(false)}>
+              Blog
+            </Link>
+          ) : null}
           <Link href="/izvori" onClick={() => setOpen(false)}>
             Izvori
           </Link>

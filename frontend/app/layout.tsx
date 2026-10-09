@@ -6,6 +6,7 @@ import Header from "../components/layout/Header"
 import Footer from "../components/layout/Footer"
 import CookieConsent from "../components/analytics/CookieConsent"
 import { SITE_URL } from "../lib/seo"
+import { getAllPosts } from "../lib/blog"
 
 const GA_ID = "G-K4GM301ZJJ"
 
@@ -77,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           gtag('js', new Date());
           gtag('config', '${GA_ID}');
         `}</Script>
-        <Header />
+        <Header showBlog={getAllPosts().length > 0} />
         <div className="container page-content">{children}</div>
         <Footer />
         <CookieConsent />
