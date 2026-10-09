@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Job } from "../../lib/types"
 import { daysUntil, formatDate, parseApiDate } from "../../lib/format"
 import NetCalculator from "./NetCalculator"
+import { PinIcon } from "../ui/icons"
 
 function cleanSalary(s: string | null): string | null {
   if (!s) return s
@@ -65,7 +66,13 @@ export default function JobCard({ job }: { job: Job }) {
         {/* The link covers the whole card (see .job__title a::after). */}
         <Link href={`/jobs/${job.id}`}>{job.title}</Link>
       </h3>
-      <div className="job__org">{[job.company, job.location].filter(Boolean).join(" · ")}</div>
+      {job.company ? <div className="job__org">{job.company}</div> : null}
+      {job.location ? (
+        <div className="job__loc">
+          <PinIcon />
+          <span>{job.location}</span>
+        </div>
+      ) : null}
       {pay ? (
         <div className="job__pay">
           <span className="job__amount">{pay}</span>
