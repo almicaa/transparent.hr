@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { FilterPanel, panelFilterCount, SearchBar } from "../filters/Filters"
 import HeroIllustration from "../ui/HeroIllustration"
 import JobCard from "./JobCard"
@@ -62,6 +62,32 @@ function resultsTitle(n: number): string {
   return `${n} ${n % 10 === 1 && n % 100 !== 11 ? "oglas" : "oglasa"} s plaćom`
 }
 
+// Filters live in the URL so a filtered list can be shared or bookmarked and
+// survives a refresh. Written only on user actions (never from a mount effect,
+// which would run before Next patches history). A null state lets Next's
+// patched replaceState keep its router in sync with the new URL.
+function syncUrl(filters: JobFilters, pages: number) {
+  window.history.replaceState(null, "", filtersToQuery(filters, pages) || window.location.pathname)
+}
+
+// Opening a job and coming back re-mounts the list, so remember where the
+// reader was (per filter URL) and jump back once the same pages are loaded.
+const SCROLL_KEY = "jobs-scroll"
+
+function saveScroll() {
+  try {
+    sessionStorage.setItem(SCROLL_KEY, JSON.stringify({ url: window.location.search, y: window.scrollY }))
+  } catch {}
+}
+
+function restoreScroll() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(SCROLL_KEY) ?? "null")
+    sessionStorage.removeItem(SCROLL_KEY)
+    if (saved && saved.url === window.location.search) requestAnimationFrame(() => window.scrollTo(0, saved.y))
+  } catch {}
+}
+
 interface JobBrowserProps {
   initialJobs?: Job[]
   initialTotal?: number
@@ -77,27 +103,32 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
   const [filterData, setFilterData] = useState<FilterData>(initialFilterData ?? EMPTY_FILTER_DATA)
   const [loading, setLoading] = useState(!hasInitialJobs)
   const [filters, setFilters] = useState<JobFilters>(EMPTY_FILTERS)
-  const [page, setPage] = useState(1)
+  // How many pages of PER_PAGE are loaded; "Prikaži još" appends the next one.
+  const [pages, setPages] = useState(1)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [total, setTotal] = useState(initialTotal ?? 0)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const closeDrawer = useCallback(() => setDrawerOpen(false), [])
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PER_PAGE)), [total])
 
   const [search, flushSearch] = useDebounced(filters.search.trim(), SEARCH_DEBOUNCE_MS)
   const resultsRef = useRef<HTMLDivElement>(null)
-  const topRef = useRef<HTMLDivElement>(null)
   // The server-rendered first page already matches unfiltered state, so the
   // first fetch is skipped; URL filters applied on mount then trigger a real one.
   const skipJobsFetch = useRef(hasInitialJobs)
-  const urlReady = useRef(false)
+  // Pages to load in one go — more than 1 only when coming back to a list that
+  // had been extended (?stranica=3), until the reader changes a filter.
+  const restorePages = useRef(1)
+  // Bumped by every filter fetch so a slow "Prikaži još" can't append to a newer list.
+  const generation = useRef(0)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     const fromUrl = filtersFromUrl(new URLSearchParams(window.location.search))
     if (fromUrl.page !== 1 || JSON.stringify(fromUrl.filters) !== JSON.stringify(EMPTY_FILTERS)) {
+      restorePages.current = fromUrl.page
       setFilters(fromUrl.filters)
-      setPage(fromUrl.page)
+      setReloadKey((k) => k + 1)
     }
-    urlReady.current = true
   }, [])
 
   useEffect(() => {
@@ -108,42 +139,56 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
   }, [initialFilterData])
 
   useEffect(() => {
-    if (urlReady.current) window.history.replaceState(null, "", filtersToQuery(filters, page) || window.location.pathname)
-  }, [filters, page])
-
-  useEffect(() => {
-    if (skipJobsFetch.current) {
+    if (skipJobsFetch.current && reloadKey === 0) {
       skipJobsFetch.current = false
       return
     }
-    let mounted = true
+    skipJobsFetch.current = false
+    const gen = ++generation.current
+    const count = restorePages.current
     setLoading(true)
-    getJobs(toApiParams(filters, search, page))
-      .then((res) => {
-        if (!mounted) return
-        setJobs(res.jobs)
-        setTotal(res.total)
+    Promise.all(Array.from({ length: count }, (_, i) => getJobs(toApiParams(filters, search, i + 1))))
+      .then((results) => {
+        if (gen !== generation.current) return
+        setJobs(results.flatMap((r) => r.jobs))
+        setTotal(results[0]?.total ?? 0)
+        setPages(count)
+        restoreScroll()
       })
       .catch((e) => console.error(e))
       .finally(() => {
-        if (mounted) setLoading(false)
+        if (gen === generation.current) setLoading(false)
       })
-    return () => {
-      mounted = false
-    }
     // filters.search is deliberately left out — the debounced `search` drives fetching.
-  }, [page, search, filters.category, filters.location, filters.salaryMin, filters.salaryMax, filters.sort, filters.source, filters.newOnly])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reloadKey, search, filters.category, filters.location, filters.salaryMin, filters.salaryMax, filters.sort, filters.source, filters.newOnly])
 
   const drawerCount = panelFilterCount(filters)
 
   function updateFilters(patch: Partial<JobFilters>) {
-    setFilters((f) => ({ ...f, ...patch }))
-    setPage(1)
+    const next = { ...filters, ...patch }
+    restorePages.current = 1
+    setFilters(next)
+    syncUrl(next, 1)
   }
 
-  function goToPage(next: number) {
-    setPage(next)
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  function loadMore() {
+    const gen = generation.current
+    const next = pages + 1
+    setLoadingMore(true)
+    getJobs(toApiParams(filters, search, next))
+      .then((res) => {
+        if (gen !== generation.current) return
+        setJobs((prev) => {
+          const seen = new Set(prev.map((j) => j.id))
+          return [...prev, ...res.jobs.filter((j) => !seen.has(j.id))]
+        })
+        setTotal(res.total)
+        setPages(next)
+        syncUrl(filters, next)
+      })
+      .catch((e) => console.error(e))
+      .finally(() => setLoadingMore(false))
   }
 
   return (
@@ -176,7 +221,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
           salaryHistogram={filterData.salary_histogram ?? []}
         />
 
-        <div className="jobs-main" ref={topRef}>
+        <div className="jobs-main">
           <div className="results-head" ref={resultsRef}>
             <h2>{loading && jobs.length === 0 ? "Učitavanje…" : resultsTitle(total)}</h2>
             <div className="results-head__actions">
@@ -215,24 +260,23 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
               </button>
             </div>
           ) : (
-            <div className={loading ? "grid grid--loading" : "grid"} aria-busy={loading}>
+            <div className={loading ? "grid grid--loading" : "grid"} aria-busy={loading} onClickCapture={saveScroll}>
               {jobs.map((job) => (
                 <JobCard key={job.id} job={job} />
               ))}
             </div>
           )}
 
-          {totalPages > 1 ? (
-            <div className="pagination">
-              <button onClick={() => goToPage(Math.max(1, page - 1))} disabled={page <= 1}>
-                Prethodna
-              </button>
-              <div className="meta">
-                Stranica {page} / {totalPages}
-              </div>
-              <button onClick={() => goToPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages}>
-                Sljedeća
-              </button>
+          {jobs.length ? (
+            <div className="load-more">
+              <p className="meta">
+                Prikazano {jobs.length.toLocaleString("hr-HR")} od {total.toLocaleString("hr-HR")}
+              </p>
+              {jobs.length < total ? (
+                <button type="button" className="load-more__button" onClick={loadMore} disabled={loadingMore}>
+                  {loadingMore ? "Učitavanje…" : "Prikaži još oglasa"}
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>

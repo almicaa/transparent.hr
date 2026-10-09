@@ -31,7 +31,7 @@
 
 *{box-sizing:border-box}
 html,body,#root{height:100%}
-html,body{overflow-x:hidden;max-width:100%}
+html,body{overflow-x:clip;max-width:100%}
 body{font-family:var(--font-inter),ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;line-height:1.5;margin:0;background:var(--page-bg);color:var(--text);-webkit-font-smoothing:antialiased}
 .container{max-width:var(--max-width);margin:0 auto;padding:0 20px}
 .page-content{padding:24px 20px}
@@ -253,9 +253,11 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .badge{display:inline-block;background:var(--badge-bg);color:var(--text-secondary);padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600}
 .source-badge{background:var(--badge-bg);color:var(--text-secondary)}
 .job__badges{display:flex;flex-wrap:wrap;gap:6px}
-.pagination{display:flex;gap:8px;align-items:center;margin-top:20px}
-.pagination button{padding:8px 14px;border-radius:8px;border:none;background:var(--card-bg);box-shadow:0 2px 8px rgba(8,80,80,0.08);cursor:pointer;color:var(--text)}
-.pagination button:disabled{opacity:0.5;cursor:default}
+.load-more{display:flex;flex-direction:column;align-items:center;gap:12px;margin:32px 0 8px}
+.load-more .meta{margin:0;font-size:14px}
+.load-more__button{padding:12px 28px;border:1.5px solid var(--dark);border-radius:999px;background:var(--card-bg);color:var(--dark);font-size:15px;font-weight:700;cursor:pointer;transition:background .15s ease,color .15s ease}
+.load-more__button:hover:not(:disabled){background:var(--dark);color:#fff}
+.load-more__button:disabled{opacity:.6;cursor:default}
 
 .hero{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;padding:60px 0 12px;overflow:hidden}
 .hero h1{font-size:48px;font-weight:800;line-height:1.1;letter-spacing:-0.02em;margin:0;color:var(--text);position:relative}
@@ -434,7 +436,6 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
   .job-detail{padding:16px}
   .job-detail__salary{font-size:20px;padding:10px 14px}
 
-  .pagination{flex-wrap:wrap;justify-content:center}
 }
 
 .cookie-banner{position:fixed;bottom:0;left:0;right:0;background:var(--dark);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;z-index:1000;box-shadow:0 -2px 12px rgba(0,0,0,0.2)}
