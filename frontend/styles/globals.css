@@ -329,6 +329,52 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .blog-post__cta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-top:40px;padding:22px 24px;border-radius:18px;background:#eef5f2}
 .blog-post__cta p{margin:0;font-weight:700;color:var(--dark)}
 .blog-post__cta .why-tile__button{margin-top:0}
+/* O nama: hero band, the story beside a big "7 h" figure, numbered steps,
+   and a dark contact panel — deliberately not the blog's single text column. */
+.about-hero{display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:72px max(24px,calc(50vw - 582px)) 64px}
+.about-hero h1{position:relative;z-index:1;max-width:760px;margin:0;font-size:48px;font-weight:800;line-height:1.12;letter-spacing:-0.02em;color:var(--dark)}
+.about-hero .hero__title-accent{color:var(--dark);background:linear-gradient(transparent 62%,rgba(251,190,130,0.9) 62%,rgba(251,190,130,0.9) 92%,transparent 92%);padding:0 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.about-hero .hero-art__shapes{display:none}
+.about-hero__eyebrow{position:relative;z-index:1;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,0.75);color:var(--dark);font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.about-story{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:40px;align-items:center;margin:64px 0}
+.about-story__figure{display:flex;flex-direction:column;justify-content:space-between;gap:40px;min-height:300px;padding:32px;border-radius:24px;background:#FBC48F;color:#6b2d05}
+.about-story__value{font-size:96px;font-weight:800;line-height:.9;letter-spacing:-0.04em}
+.about-story__label{max-width:240px;font-size:18px;font-weight:700;line-height:1.35}
+.about-story__text h2,.about-steps h2,.about-contact h2{margin:0 0 14px;font-size:30px;letter-spacing:-0.01em;color:var(--dark)}
+.about-story__text p{margin:0 0 16px;color:var(--text);font-size:17px;line-height:1.7}
+.about-story__link{margin-top:4px;font-weight:700;text-decoration:none}
+.about-steps{margin:0 0 64px}
+.about-steps__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:24px 0 0;padding:0;list-style:none}
+.about-step{padding:24px 22px;border-radius:20px;background:#eef5f2}
+.about-step:nth-child(2){background:#b9e6de}
+.about-step__num{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--dark);color:#fff;font-size:14px;font-weight:800}
+.about-step:nth-child(4) .about-step__num{background:var(--accent-strong)}
+.about-step h3{margin:18px 0 8px;font-size:19px;color:var(--text)}
+.about-step p{margin:0;color:var(--text-secondary);font-size:15px;line-height:1.55}
+.about-contact{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px 40px;margin:0 0 24px;padding:40px;border-radius:24px;background:var(--dark);color:#fff}
+.about-contact h2{color:#fff}
+.about-contact p{max-width:520px;margin:0;color:rgba(255,255,255,0.82);font-size:17px;line-height:1.6}
+.about-contact__actions{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+.about-contact__mail{padding:14px 22px;border-radius:12px;background:#fff;color:var(--dark);font-size:18px;font-weight:800;text-decoration:none;transition:background .15s ease}
+.about-contact__mail:hover{background:var(--accent-soft)}
+.about-contact .about-contact__jobs{color:#b9e6de;font-weight:700;text-decoration:none}
+.about-contact .about-contact__jobs:hover{color:#fff}
+@media (max-width:900px){
+  .about-story{grid-template-columns:1fr;gap:24px}
+  .about-story__figure{min-height:0}
+  .about-steps__grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:600px){
+  .about-hero{padding:40px 16px 36px}
+  .about-hero h1{font-size:32px}
+  .about-story{margin:40px 0}
+  .about-story__value{font-size:72px}
+  .about-story__text h2,.about-steps h2,.about-contact h2{font-size:24px}
+  .about-steps{margin-bottom:40px}
+  .about-steps__grid{grid-template-columns:1fr}
+  .about-contact{padding:28px 22px}
+  .about-contact__mail{font-size:16px}
+}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media (min-width:1024px){
   .jobs-layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:28px;align-items:start}
