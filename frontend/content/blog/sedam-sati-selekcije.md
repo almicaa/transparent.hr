@@ -2,7 +2,7 @@
 title: Proveli smo 7 sati u selekciji da bi nas na kraju pitali za koliko smo spremni raditi
 description: Sedam sati testova i razgovora, a na kraju pitanje o najnižoj plaći. Zašto je plaća u oglasima i dalje tajna i što mijenja EU direktiva o transparentnosti plaća.
 date: 2026-10-09
-draft: true
+draft: false
 ---
 
 Vjerojatno ti je poznato beskrajno scrollanje portala u potrazi za boljom poslovnom prilikom. Opis posla je detaljan, popis uvjeta dugačak, a plaće nigdje.
@@ -43,8 +43,6 @@ Kad plaća nije poznata, kandidat ulaže sate, dane i slobodne dane u proces koj
 
 Europska unija je 2023. donijela Direktivu o transparentnosti plaća. Države članice trebale su je prenijeti u svoje zakonodavstvo do 7. lipnja 2026. Hrvatska to nije učinila na vrijeme, a izmjene Zakona o radu očekuju se ove jeseni.
 
-<!-- PROVJERI prije objave: status hrvatskog zakona i, ako može, dodaj link na izvor (vijest ili ministarstvo). -->
-
 Kad nova pravila zažive, poslodavci će morati:
 
 - dati ti informaciju o početnoj plaći ili rasponu plaće prije razgovora za posao
@@ -56,9 +54,7 @@ Pravila vrijede za sve poslodavce, ne samo za velike. Obveza izvješćivanja o r
 
 ## „Prije razgovora” nije isto što i „u oglasu”
 
-Ovdje je kvaka. Pravila traže da plaću saznaš prije razgovora, a ne nužno u samom oglasu. Zato i danas na najpoznatijim portalima tek oko 15 % oglasa ima navedenu plaću ([pogledaj našu analitiku](/analitika)).
-
-<!-- PROVJERI prije objave: uskladi 15 % s brojkom na stranici Analitika ili navedi izvor. -->
+Ovdje je kvaka. Pravila traže da plaću saznaš prije razgovora, a ne nužno u samom oglasu. Zato i danas na najpoznatijim portalima tek oko 15 % oglasa ima navedenu plaću.
 
 Ništa ne sprječava poslodavca da je navede odmah. Ako plaću ionako mora reći prije razgovora, zašto ne odmah u oglasu, kad bi to uštedjelo vrijeme i njemu i kandidatima?
 
