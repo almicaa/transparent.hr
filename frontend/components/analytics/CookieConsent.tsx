@@ -40,19 +40,22 @@ export default function CookieConsent() {
   if (!visible) return null
 
   return (
-    <div className="cookie-banner">
-      <div className="cookie-banner__content">
-        <p className="cookie-banner__title">Ova stranica upotrebljava kolačiće</p>
-        <p className="cookie-banner__text">
-          Koristimo analitičke kolačiće (Google Analytics) u svrhu poboljšanja korisničkog iskustva i razumijevanja
-          načina korištenja stranice. Prikupljeni podaci su anonimni i ne dijele se s trećim stranama u
-          marketinške svrhe.{" "}
-          <a href="/privatnost">Pravila privatnosti</a>
-        </p>
-      </div>
+    <div className="cookie-banner" role="region" aria-label="Kolačići">
+      <p className="cookie-banner__title">
+        <span aria-hidden="true">🍪</span> Kolačići
+      </p>
+      <p className="cookie-banner__text">
+        Koristimo analitičke kolačiće (Google Analytics) kako bismo vidjeli kako se stranica koristi. Podaci su anonimni
+        i ne dijelimo ih u marketinške svrhe.{" "}
+        <a href="/privatnost">Pravila privatnosti</a>
+      </p>
       <div className="cookie-banner__actions">
-        <button className="cookie-banner__decline" onClick={decline}>Odbaci sve</button>
-        <button className="cookie-banner__accept" onClick={accept}>Prihvati sve</button>
+        <button type="button" className="cookie-banner__decline" onClick={decline}>
+          Odbij
+        </button>
+        <button type="button" className="cookie-banner__accept" onClick={accept}>
+          Prihvati
+        </button>
       </div>
     </div>
   )
