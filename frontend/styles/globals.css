@@ -262,22 +262,22 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .hero__title-accent{color:var(--primary)}
 .hero__lead{color:var(--text-secondary);font-size:18px;max-width:520px;position:relative}
 .hero>.stats,.hero>.market-estimate,.hero>.cta,.hero>.transparency-history{position:relative}
-/* Home hero: a soft multi-color panel (teal, sunny yellow, peach) instead of
-   a flat page background, running edge to edge under the header. */
-.hero--home{margin:-24px calc(50% - 50vw) 0;padding:72px max(24px,calc(50vw - 590px)) 64px;isolation:isolate;
+/* Home hero: a rounded, nearly full-width panel — teal base, a soft orange
+   wave sweeping up to the right — with the search bar inside it. */
+.hero--home{margin:-12px calc(50% - 50vw + 12px) 0;padding:88px max(24px,calc(50vw - 590px)) 56px;border-radius:24px;overflow:visible;isolation:isolate;gap:18px;
   background:
-    radial-gradient(60% 85% at 6% 10%,rgba(29,158,158,0.26),transparent 70%),
-    radial-gradient(50% 80% at 12% 100%,rgba(159,214,210,0.50),transparent 70%),
-    radial-gradient(50% 85% at 96% 10%,rgba(240,138,36,0.32),transparent 70%),
-    radial-gradient(55% 80% at 88% 100%,rgba(29,158,158,0.18),transparent 70%),
-    #f3faf7}
-.hero--home h1,.hero--home .hero__lead{z-index:1}
-.hero--home .hero__lead{color:#4d5653}
-.hero--home .hero__title-accent{color:var(--dark);background:linear-gradient(transparent 62%,rgba(240,138,36,0.42) 62%,rgba(240,138,36,0.42) 92%,transparent 92%);padding:0 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
-.hero-art{position:absolute;inset:0;z-index:0;pointer-events:none}
-.hero-art__shapes{position:absolute;width:210px;height:210px}
-.hero-art__shapes--left{left:-30px;bottom:-40px;transform:rotate(-8deg)}
-.hero-art__shapes--right{right:-24px;top:-36px;transform:rotate(10deg)}
+    radial-gradient(40% 65% at 100% 0%,rgba(127,211,203,0.75),transparent 72%),
+    linear-gradient(115deg,#7fd3cb 0%,#c4ebe4 30%,#eef6f1 55%,#e9f6f2 100%)}
+.hero--home h1{max-width:820px;font-size:56px;color:var(--dark);z-index:1}
+.hero--home .hero__lead{margin:0;color:#3f4a47;z-index:1}
+.hero--home .hero__title-accent{color:var(--dark);background:linear-gradient(transparent 62%,rgba(251,190,130,0.9) 62%,rgba(251,190,130,0.9) 92%,transparent 92%);padding:0 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.hero__search{position:relative;z-index:2;width:100%;max-width:1000px;margin-top:14px;text-align:left}
+.hero__search .finder{box-shadow:0 18px 44px rgba(8,80,80,0.16)}
+.hero__all{position:relative;z-index:1;margin-top:4px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,0.7);font-size:15px;font-weight:700;text-decoration:none;backdrop-filter:blur(4px)}
+.hero__all:hover{background:#fff}
+.hero-art{position:absolute;inset:0;z-index:0;overflow:hidden;border-radius:inherit;pointer-events:none}
+.hero-art__wave{position:absolute;inset:0;width:100%;height:100%}
+.hero-art__shapes{position:absolute;left:-30px;top:-40px;width:210px;height:210px;transform:rotate(-8deg)}
 .home-section{padding:48px 0}
 .home-section h2{font-size:22px;margin:0 0 20px;color:var(--text)}
 .home-section__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
@@ -285,15 +285,27 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .home-section__header a{font-weight:600;font-size:14px;text-decoration:none}
 .link-with-icon{display:inline-flex;align-items:center;gap:5px;color:var(--dark)}
 
-.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.feature-card{background:var(--card-bg);border-radius:12px;padding:20px;box-shadow:0 4px 14px rgba(8,80,80,0.07)}
-.feature-card h3{margin:8px 0;font-size:16px;color:var(--text)}
-.feature-card p{margin:0}
-.feature-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;background:var(--salary-bg)}
-.feature-card:nth-child(2) .feature-icon{background:var(--accent-soft)}
+/* "Zašto transparent.hr": number tiles — a colored block with a big figure,
+   the pitch beside it — plus a call-to-action tile into the job list. */
+.why-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.why-tile{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;padding:14px;border-radius:22px;background:#eef5f2}
+.why-tile__block{display:flex;flex-direction:column;justify-content:space-between;gap:24px;min-height:220px;padding:24px;border-radius:16px}
+.why-tile__block--teal{background:var(--dark);color:#fff}
+.why-tile__block--mint{background:#b9e6de;color:var(--dark)}
+.why-tile__block--orange{background:#FBC48F;color:#6b2d05}
+.why-tile__value{font-size:52px;font-weight:800;line-height:1;letter-spacing:-0.03em}
+.why-tile__label{font-size:15px;font-weight:600;line-height:1.35}
+.why-tile__body{padding:14px 10px 14px 0}
+.why-tile__body h3{margin:0 0 8px;font-size:17px;color:var(--text)}
+.why-tile__body p{margin:0;color:var(--text-secondary);font-size:15px;line-height:1.55}
+.why-tile--cta{display:flex;flex-direction:column;align-items:flex-start;gap:16px;padding:28px}
+.why-tile--cta p{margin:0;max-width:420px;color:var(--text);font-size:17px;line-height:1.5}
+.why-tile__button{display:inline-flex;align-items:center;gap:8px;margin-top:auto;padding:11px 18px;border-radius:10px;background:var(--dark);color:#fff;font-weight:700;font-size:15px;text-decoration:none;transition:background .15s ease}
+.why-tile__button:hover{background:var(--primary-text)}
+.why-tile__button:hover .arrow-icon{transform:translateX(2px)}
 
 @media (max-width:900px){
-  .features-grid{grid-template-columns:1fr}
+  .why-grid{grid-template-columns:1fr}
 }
 .cta{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:12px 26px;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;position:relative;isolation:isolate}
 .cta::before{content:'';position:absolute;inset:0;background:var(--dark);border-radius:8px;transform:rotate(-2deg);z-index:-2;transition:transform .15s ease}
@@ -384,10 +396,13 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
   .hero{padding:36px 0 28px}
   .hero h1{font-size:32px}
   .hero__lead{font-size:15px}
-  .hero--home{margin-top:-16px;padding:44px 18px 40px}
+  .hero--home{margin:-8px calc(50% - 50vw + 8px) 0;padding:44px 14px 32px;border-radius:20px}
+  .hero--home h1{font-size:34px}
+  .why-tile{grid-template-columns:1fr;gap:6px}
+  .why-tile__block{min-height:150px}
+  .why-tile__value{font-size:44px}
+  .why-tile__body{padding:10px 8px 8px}
   .hero-art__shapes{width:130px;height:130px}
-  .hero-art__shapes--left{left:-34px;bottom:-34px}
-  .hero-art__shapes--right{right:-30px;top:-30px}
         
   .stats{flex-wrap:wrap}
   .stat{flex:1 1 140px;min-width:0}

@@ -2,15 +2,12 @@ import { useEffect } from "react"
 import { EMPTY_FILTERS, FilterOption, JobFilters, SalaryBucket } from "../../lib/types"
 import { jobCountLabel } from "../../lib/format"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
-import LocationCombobox, { locationLabel } from "./LocationCombobox"
+import Finder from "./Finder"
+import { locationLabel } from "./LocationCombobox"
 import SalaryRange from "./SalaryRange"
-import WhatCombobox from "./WhatCombobox"
 
 // Portals we actually scrape (SOURCE_LABELS also covers ones we don't, yet).
 const SOURCES = ["posao", "mojposao"]
-
-// Quick picks for the search bar's "Plaća od" field; the drawer's slider is finer.
-const SALARY_STEPS = ["1000", "1500", "2000", "2500", "3000"]
 
 function euro(n: string): string {
   return `${Number(n).toLocaleString("hr-HR")} €`
@@ -60,11 +57,6 @@ export default function Filters({
   const drawerCount = [filters.newOnly, filters.category, filters.salaryMin || filters.salaryMax, filters.source].filter(
     Boolean,
   ).length
-  // A slider-picked minimum (e.g. 1.750 €) still needs to show in the quick-pick select.
-  const salarySteps =
-    filters.salaryMin && !SALARY_STEPS.includes(filters.salaryMin)
-      ? [...SALARY_STEPS, filters.salaryMin].sort((a, b) => Number(a) - Number(b))
-      : SALARY_STEPS
 
   useEffect(() => {
     if (!drawerOpen) return
@@ -80,64 +72,15 @@ export default function Filters({
 
   return (
     <div className="filters">
-      <form
-        className="finder"
-        role="search"
-        onSubmit={(e) => {
-          e.preventDefault()
-          onSubmit()
-        }}
-      >
-        <div className="finder__field finder__field--what">
-          <span className="finder__label" aria-hidden="true">
-            Što
-          </span>
-          <WhatCombobox
-            search={filters.search}
-            category={filters.category}
-            onSearch={(search) => onChange({ search })}
-            onCategory={(category) => onChange({ category })}
-            categoryOptions={categoryOptions}
-          />
-        </div>
-
-        <div className="finder__field finder__field--where">
-          <span className="finder__label" aria-hidden="true">
-            Gdje
-          </span>
-          <LocationCombobox
-            value={filters.location}
-            onChange={(location) => onChange({ location })}
-            regionOptions={regionOptions}
-            cityOptions={cityOptions}
-            countryOptions={countryOptions}
-          />
-        </div>
-
-        <label className="finder__field finder__field--pay">
-          <span className="finder__label">Plaća od</span>
-          <select
-            value={filters.salaryMin}
-            onChange={(e) => onChange({ salaryMin: e.target.value })}
-            className={filters.salaryMin ? "is-set" : undefined}
-          >
-            <option value="">Bilo koja</option>
-            {salarySteps.map((amount) => (
-              <option key={amount} value={amount}>
-                {euro(amount)}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <button type="submit" className="finder__submit" aria-label="Traži">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="2.2" />
-            <path d="M16 16l4.5 4.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          </svg>
-          <span>Traži</span>
-        </button>
-      </form>
+      <Finder
+        filters={filters}
+        onChange={onChange}
+        onSubmit={onSubmit}
+        categoryOptions={categoryOptions}
+        regionOptions={regionOptions}
+        cityOptions={cityOptions}
+        countryOptions={countryOptions}
+      />
 
       {active.length ? (
         <div className="active-filters">

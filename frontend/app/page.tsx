@@ -1,42 +1,47 @@
-import JobBrowser from "../components/job/JobBrowser"
+import Link from "next/link"
+import HeroSearch from "../components/home/HeroSearch"
 import HeroIllustration from "../components/ui/HeroIllustration"
-import { CheckIcon, EuroIcon, LayersIcon } from "../components/ui/icons"
-import { getFilters, getJobs, JOBS_PER_PAGE } from "../lib/api"
+import { ArrowIcon } from "../components/ui/icons"
+import { getFilters, getStats } from "../lib/api"
 
 export const revalidate = 300
 
-const FEATURES = [
-  {
-    title: "Samo oglasi koji pričaju.",
-    text: "Svaki oglas ovdje ima broj. Jer \"po dogovoru\" nije odgovor.",
-    Icon: EuroIcon,
-  },
-  {
-    title: "Skupljeno s cijele scene.",
-    text: "Posao.hr, MojPosao i ostali — mi filtriramo, ti biraš.",
-    Icon: LayersIcon,
-  },
-  {
-    title: "Otvori, filtriraj, apliciraj.",
-    text: "Bez registracije. Bez newslettera. Bez ičega suvišnog.",
-    Icon: CheckIcon,
-  },
-]
-
 async function getHomeData() {
-  try {
-    const [jobsRes, filtersRes] = await Promise.all([
-      getJobs({ page: 1, per_page: JOBS_PER_PAGE, salary_shown: "yes", sort: "newest" }, { revalidate: 300 }),
-      getFilters({ revalidate: 300 }),
-    ])
-    return { jobs: jobsRes.jobs, total: jobsRes.total, filterData: filtersRes }
-  } catch {
-    return { jobs: [], total: 0, filterData: undefined }
-  }
+  const [stats, filterData] = await Promise.all([
+    getStats({ revalidate: 300 }).catch(() => null),
+    getFilters({ revalidate: 300 }).catch(() => undefined),
+  ])
+  return { stats, filterData }
 }
 
 export default async function HomePage() {
-  const { jobs, total, filterData } = await getHomeData()
+  const { stats, filterData } = await getHomeData()
+  const withSalary = stats?.salary_shown ?? 0
+  const portals = stats?.sources?.length || 2
+
+  const tiles = [
+    {
+      value: withSalary ? withSalary.toLocaleString("hr-HR") : "100 %",
+      label: "oglasa s vidljivom plaćom",
+      title: "Samo oglasi koji pričaju.",
+      text: "Svaki oglas ovdje ima broj. Jer \"po dogovoru\" nije odgovor.",
+      tone: "teal",
+    },
+    {
+      value: String(portals),
+      label: "portala, jedna pretraga",
+      title: "Skupljeno s cijele scene.",
+      text: "Posao.hr, MojPosao i ostali — mi filtriramo, ti biraš.",
+      tone: "mint",
+    },
+    {
+      value: "0",
+      label: "registracija i newslettera",
+      title: "Otvori, filtriraj, apliciraj.",
+      text: "Bez registracije. Bez newslettera. Bez ičega suvišnog.",
+      tone: "orange",
+    },
+  ]
 
   return (
     <main>
@@ -49,26 +54,41 @@ export default async function HomePage() {
         <p className="hero__lead">
           Vrijeme je za ne gubiti više vremena na oglase bez jasno vidljive plaće.
         </p>
-      </section>
-
-      <section className="home-section">
-        <JobBrowser
-          initialJobs={jobs}
-          initialTotal={total}
-          initialFilterData={filterData}
-        />
+        <div className="hero__search">
+          <HeroSearch filterData={filterData} />
+        </div>
+        <Link href="/jobs" className="hero__all link-with-icon">
+          {withSalary ? `Pogledaj svih ${withSalary.toLocaleString("hr-HR")} oglasa` : "Pogledaj sve oglase"}
+          <ArrowIcon />
+        </Link>
       </section>
 
       <section className="home-section">
         <h2>Zašto transparent.hr</h2>
-        <div className="features-grid">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="feature-card">
-              <f.Icon />
-              <h3>{f.title}</h3>
-              <p className="meta">{f.text}</p>
+        <div className="why-grid">
+          {tiles.map((t) => (
+            <div key={t.title} className="why-tile">
+              <div className={`why-tile__block why-tile__block--${t.tone}`}>
+                <span className="why-tile__value">{t.value}</span>
+                <span className="why-tile__label">{t.label}</span>
+              </div>
+              <div className="why-tile__body">
+                <h3>{t.title}</h3>
+                <p>{t.text}</p>
+              </div>
             </div>
           ))}
+          <div className="why-tile why-tile--cta">
+            <svg className="why-tile__mark" width="34" height="34" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+              <rect x="3" y="3" width="20" height="20" rx="6" stroke="#085050" strokeWidth="2.4" />
+              <rect x="13" y="13" width="20" height="20" rx="6" fill="#F08A24" fillOpacity="0.7" />
+            </svg>
+            <p>Zanima te koliko se plaća u tvojoj struci? Pregledaj oglase po grani, gradu i plaći.</p>
+            <Link href="/jobs" className="why-tile__button">
+              Pregledaj oglase
+              <ArrowIcon />
+            </Link>
+          </div>
         </div>
       </section>
     </main>
