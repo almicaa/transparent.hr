@@ -35,28 +35,26 @@ export default function AboutPage() {
       </section>
 
       <section className="about-story">
-        <div className="about-story__figure" aria-hidden="true">
-          <span className="about-story__value">7 h</span>
-          <span className="about-story__label">selekcije za jedno pitanje na kraju</span>
-        </div>
-        <div className="about-story__text">
-          <h2>Zašto postojimo</h2>
-          <p>
-            Ideja je nastala iz frustracije. Beskrajno scrollanje portala, opisi posla detaljni, popisi uvjeta dugački, a
-            plaće nigdje. Onda sedam sati selekcije: priprema prijave, slobodan dan za tehnički ispit, testovi i razgovori. Na
-            samom kraju pitanje: koja je najniža plaća za koju bih pristala raditi?
-          </p>
-          <p>
-            Plaća bi trebala biti prva stavka u oglasu, odmah uz lokaciju. Kad je poznata od početka, kandidat zna isplati li
-            se prijaviti, a poslodavac ne troši vrijeme na razgovore koji ne vode nikamo.
-          </p>
-          {story ? (
-            <Link href={`/blog/${story.slug}`} className="link-with-icon about-story__link">
-              Cijelu priču pročitaj na blogu
-              <ArrowIcon />
-            </Link>
-          ) : null}
-        </div>
+        <h2>Zašto postojimo</h2>
+        <p>
+          Ideja je nastala iz frustracije. Beskrajno scrollanje portala, opisi posla detaljni, popisi uvjeta dugački, a plaće
+          nigdje. Onda sedam sati selekcije: priprema prijave, slobodan dan za tehnički ispit, testovi i razgovori. A na samom
+          kraju, pitanje:
+        </p>
+        <figure className="about-quote">
+          <blockquote>Koja je najniža plaća za koju biste pristali raditi?</blockquote>
+          <figcaption>Nakon sedam sati testova i razgovora. Posao nisam dobila.</figcaption>
+        </figure>
+        <p>
+          Plaća bi trebala biti prva stavka u oglasu, odmah uz lokaciju. Kad je poznata od početka, kandidat zna isplati li se
+          prijaviti, a poslodavac ne troši vrijeme na razgovore koji ne vode nikamo.
+        </p>
+        {story ? (
+          <Link href={`/blog/${story.slug}`} className="link-with-icon about-story__link">
+            Cijelu priču pročitaj na blogu
+            <ArrowIcon />
+          </Link>
+        ) : null}
       </section>
 
       <section className="about-steps">
