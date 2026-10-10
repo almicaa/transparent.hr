@@ -5,6 +5,7 @@ import { buildJobPostingJsonLd, jobDescription, SITE_URL } from "../../../lib/se
 import { formatDate } from "../../../lib/format"
 import NetCalculator from "../../../components/job/NetCalculator"
 import ApplyLink from "../../../components/job/ApplyLink"
+import SaveButton from "../../../components/job/SaveButton"
 import { SOURCE_LABELS } from "../../../lib/sourceLabels"
 import type { Metadata } from "next"
 
@@ -84,11 +85,10 @@ export default async function JobDetailPage({ params }: { params: { id: string }
         <div className="badge source-badge">{SOURCE_LABELS[job.source || ""] || job.source}</div>
       </div>
 
-      {job.url ? (
-        <p>
-          <ApplyLink href={job.url} jobId={job.id} source={job.source} category={job.category} />
-        </p>
-      ) : null}
+      <div className="job-detail__actions">
+        {job.url ? <ApplyLink href={job.url} jobId={job.id} source={job.source} category={job.category} /> : null}
+        <SaveButton job={job} withLabel />
+      </div>
     </main>
   )
 }

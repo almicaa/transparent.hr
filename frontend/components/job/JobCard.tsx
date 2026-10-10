@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Job } from "../../lib/types"
 import { daysUntil, formatDate, parseApiDate } from "../../lib/format"
 import NetCalculator from "./NetCalculator"
+import SaveButton from "./SaveButton"
 import { PinIcon } from "../ui/icons"
 
 function cleanSalary(s: string | null): string | null {
@@ -62,6 +63,7 @@ export default function JobCard({ job }: { job: Job }) {
 
   return (
     <article className="job">
+      <SaveButton job={job} />
       <h3 className="job__title">
         {/* The link covers the whole card (see .job__title a::after). */}
         <Link href={`/jobs/${job.id}`}>{job.title}</Link>

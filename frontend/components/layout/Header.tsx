@@ -3,10 +3,13 @@
 import { useState } from "react"
 import Link from "next/link"
 import Logo from "../ui/Logo"
+import { useSavedJobs } from "../../lib/savedJobs"
 
 /** `showBlog`: only link the blog once it has a published post. */
 export default function Header({ showBlog = false }: { showBlog?: boolean }) {
   const [open, setOpen] = useState(false)
+  // Only shown once something is saved, so the nav stays short for everyone else.
+  const savedCount = useSavedJobs().length
 
   return (
     <header className="site-nav">
@@ -41,6 +44,11 @@ export default function Header({ showBlog = false }: { showBlog?: boolean }) {
           <Link href="/o-nama" onClick={() => setOpen(false)}>
             O nama
           </Link>
+          {savedCount ? (
+            <Link href="/spremljeno" className="site-nav__saved" onClick={() => setOpen(false)}>
+              <span aria-hidden="true">♥</span> Spremljeno <span className="site-nav__count">{savedCount}</span>
+            </Link>
+          ) : null}
         </nav>
       </div>
     </header>
