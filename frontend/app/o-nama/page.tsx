@@ -43,7 +43,7 @@ export default function AboutPage() {
         </p>
         <figure className="about-quote">
           <blockquote>Koja je najniža plaća za koju biste pristali raditi?</blockquote>
-          <figcaption>Nakon sedam sati testova i razgovora. Posao nisam dobila.</figcaption>
+          <figcaption>je bilo pitanje nakon 7 sati testova i razgovora</figcaption>
         </figure>
         <p>
           Plaća bi trebala biti prva stavka u oglasu, odmah uz lokaciju. Kad je poznata od početka, kandidat zna isplati li se
