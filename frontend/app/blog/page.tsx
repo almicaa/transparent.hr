@@ -5,7 +5,7 @@ import { SITE_URL } from "../../lib/seo"
 
 export const metadata: Metadata = {
   title: "Blog",
-  description: "Članci o plaćama, oglasima za posao i transparentnosti plaća u Hrvatskoj.",
+  description: "Bez uljepšavanja o zapošljavanju, plaćama, pravima radnika i nepravdama na tržištu rada u Hrvatskoj.",
   alternates: { canonical: `${SITE_URL}/blog` },
 }
 
@@ -16,7 +16,7 @@ export default function BlogPage() {
     <main>
       <section className="blog-hero hero-surface">
         <h1>Blog</h1>
-        <p>O plaćama, oglasima i tome zašto broj u oglasu nije tajna.</p>
+        <p>Bez uljepšavanja o zapošljavanju, plaćama i pravima radnika.</p>
       </section>
 
       {posts.length === 0 ? (
