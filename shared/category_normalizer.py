@@ -15,11 +15,13 @@ import unicodedata
 OTHER = "Ostalo"
 
 # (canonical label, keywords) — first match wins, so more specific rules go first.
+# HZZ names categories by occupation ("Ugostitelji, radnici u turizmu",
+# "Strojari i brodograditelji"), hence the stems like "ugostitelj", "strojar".
 # Keywords are matched against the lowercased, diacritic-free raw label.
 _RULES: list[tuple[str, tuple[str, ...]]] = [
-    ("IT i telekomunikacije", ("informatik", " it,", " it ", "telekomunikacij", "softver")),
+    ("IT i telekomunikacije", ("informatik", "informatic", "racunal", " it,", " it ", "telekomunikacij", "softver")),
     ("Ljudski resursi", ("ljudski resursi",)),
-    ("Management", ("management", "menadzment", "upravljanje")),
+    ("Management", ("management", "menadzment", "upravljanje", "direktor", "ravnatelj", "celnic")),
     ("Marketing, PR i mediji", ("marketing", "mediji", " pr ", " pr,")),
     ("Financije i računovodstvo", ("financij", "racunovod", "bankarstv", "ekonomij")),
     ("Pravo", ("pravo",)),
@@ -27,17 +29,17 @@ _RULES: list[tuple[str, tuple[str, ...]]] = [
     ("Državna služba i neprofitne organizacije", ("drzavna", "neprofitn", "uprava")),
     ("Arhitektura, dizajn i umjetnost", ("arhitektur", "dizajn", "umjetnost")),
     ("Elektrotehnika", ("elektrotehnik",)),
-    ("Strojarstvo i brodogradnja", ("strojarstv", "brodogradnj")),
-    ("Graditeljstvo i geodezija", ("graditeljstv", "gradevinarstv", "geodezij")),
+    ("Strojarstvo i brodogradnja", ("strojar", "brodogradnj", "brodograditelj")),
+    ("Graditeljstvo i geodezija", ("graditeljstv", "gradevinar", "geodezij", "geodet")),
     ("Instalacije, održavanje i popravci", ("instalacij", "odrzavanj", "popravc", "popravak")),
-    ("Proizvodnja i zanatstvo", ("proizvodnj", "zanat")),
+    ("Proizvodnja i zanatstvo", ("proizvodnj", "zanat", "obradivac", "tekstil", "kozar", "rudar", "metalur")),
     ("Skladištenje i logistika", ("skladist", "logistik")),
     ("Promet i transport", ("promet", "transport", "pomorstv")),
-    ("Prodaja", ("prodaj", "trgovin")),
-    ("Turizam i ugostiteljstvo", ("turizam", "ugostiteljstv")),
+    ("Prodaja", ("prodaj", "trgovin", "trgovc", "promotor")),
+    ("Turizam i ugostiteljstvo", ("turizam", "turizm", "ugostitelj")),
     ("Zdravstvo i socijalna skrb", ("zdravstv", "socijaln")),
     ("Farmacija, biotehnologija i kemija", ("farmac", "biotehnolog", "kemij")),
-    ("Obrazovanje i znanost", ("obrazovanj", "znanost")),
+    ("Obrazovanje i znanost", ("obrazovanj", "znanost", "ucitelj", "nastavni", "profesor")),
     ("Ljepota i sport", ("ljepot", "sport", "moda")),
     ("Poljoprivreda, šumarstvo i ribarstvo", ("poljoprivred", "sumarstv", "ribarstv")),
     ("Sigurnost i zaštita", ("sigurnost", "zastitar", "zastita")),

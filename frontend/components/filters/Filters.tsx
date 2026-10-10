@@ -7,7 +7,7 @@ import { locationLabel } from "./LocationCombobox"
 import SalaryRange from "./SalaryRange"
 
 // Portals we actually scrape (SOURCE_LABELS also covers ones we don't, yet).
-const SOURCES = ["posao", "mojposao"]
+const SOURCES = ["posao", "mojposao", "hzz"]
 
 // Matches the CSS breakpoint where the filter drawer becomes a fixed sidebar.
 const SIDEBAR_QUERY = "(min-width: 1024px)"

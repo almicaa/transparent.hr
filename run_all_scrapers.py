@@ -1,4 +1,4 @@
-"""Run all active scrapers in sequence: posao.hr, mojposao.hr
+"""Run all active scrapers in sequence: posao.hr, mojposao.hr, HZZ
 
 Usage:
   python run_all_scrapers.py --max_jobs 10 --dry-run
@@ -9,10 +9,10 @@ import argparse
 
 try:
     from scraper import base_scraper as base
-    from scraper import posao_hr, mojposao_hr
+    from scraper import posao_hr, mojposao_hr, hzz_hr
 except Exception:
     import base_scraper as base
-    import posao_hr, mojposao_hr
+    import posao_hr, mojposao_hr, hzz_hr
 
 from shared.email_notify import send_notification
 
@@ -37,7 +37,10 @@ async def run_all(max_jobs=None, dry_run=False):
     # totalPages naturally bounds the loop.
     mojposao_new = await mojposao_hr.scrape_jobs(max_jobs=max_jobs)
 
-    all_new = posao_new + mojposao_new
+    print(f"\nRunning HZZ (max_jobs={max_jobs}) dry_run={dry_run}")
+    hzz_new = await hzz_hr.scrape_hzz(max_jobs=max_jobs)
+
+    all_new = posao_new + mojposao_new + hzz_new
     if all_new and not dry_run:
         subject = f"Transparent.hr: {len(all_new)} novih oglasa s plaćom"
         body = _format_summary(all_new)

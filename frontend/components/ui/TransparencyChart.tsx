@@ -9,10 +9,11 @@ import { SOURCE_LABELS } from "../../lib/sourceLabels"
 // real page of the salary-filtered listing and counts distinct job links,
 // confirmed stable (4.3%-5.1%) across the days since that fix — the page.tsx
 // caller filters out the pre-fix rows before they ever reach this component.
-const SOURCE_ORDER = ["posao", "mojposao"]
+const SOURCE_ORDER = ["posao", "mojposao", "hzz"]
 const SERIES_COLOR: Record<string, string> = {
   posao: "#eb6834",
   mojposao: "#1D9E9E",
+  hzz: "#3D5A80",
 }
 
 const WIDTH = 720
