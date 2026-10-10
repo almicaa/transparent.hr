@@ -37,9 +37,8 @@ export default function AboutPage() {
       <section className="about-story">
         <h2>Zašto postojimo</h2>
         <p>
-          Ideja je nastala iz frustracije. Beskrajno scrollanje portala, opisi posla detaljni, popisi uvjeta dugački, a plaće
-          nigdje. Onda sedam sati selekcije: priprema prijave, slobodan dan za tehnički ispit, testovi i razgovori. A na samom
-          kraju, pitanje:
+          Beskrajno scrollanje portala, opisi posla detaljni, popisi uvjeta dugački, a plaće nigdje. Onda sedam sati
+          selekcije: priprema prijave, uzimanje godišnjeg za odlazak na tehnički ispit, testovi i razgovori.
         </p>
         <figure className="about-quote">
           <blockquote>Koja je najniža plaća za koju biste pristali raditi?</blockquote>
