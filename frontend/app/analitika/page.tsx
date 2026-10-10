@@ -1,7 +1,5 @@
-import Link from "next/link"
 import type { Metadata } from "next"
 import { getStats, getTransparencyStats } from "../../lib/api"
-import { ArrowIcon } from "../../components/ui/icons"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
 import TransparencyChart from "../../components/ui/TransparencyChart"
 
@@ -40,12 +38,10 @@ export default async function AnalyticsPage() {
           <div className="stat__value">{stats?.salary_shown ?? "-"}</div>
           <div className="meta">Oglasa s plaćom u bazi</div>
         </div>
-        <Link href="/izvori" className="stat">
+        <div className="stat">
           <div className="stat__value">{stats?.sources?.length ?? "-"}</div>
-          <div className="meta meta--link">
-            Broj portala <ArrowIcon />
-          </div>
-        </Link>
+          <div className="meta">Broj portala</div>
+        </div>
       </div>
 
       {dates.length > 0 && (
