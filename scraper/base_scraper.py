@@ -42,13 +42,52 @@ def _resolve_database_url() -> str:
 
 
 DATABASE_URL = _resolve_database_url()
-_engine = create_engine(DATABASE_URL)
+# pre_ping: check a pooled connection is still alive before handing it out.
+_engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 IS_SQLITE = _engine.dialect.name == "sqlite"
 
 
 def get_connection() -> Connection:
     """Open a new DB connection. Caller is responsible for closing it."""
     return _engine.connect()
+
+
+class ReconnectingDB:
+    """A DB connection for long scraper runs that survives the server dropping it.
+
+    Neon closes connections that stay open for a long time (a first HZZ fill
+    takes hours), which used to kill the run with "SSL SYSCALL error:
+    Connection timed out". run() calls fn(conn, ...) and, if the connection is
+    gone, throws it away, opens a fresh one and tries once more.
+    """
+
+    def __init__(self):
+        self.conn = get_connection()
+
+    def run(self, fn, *args, **kwargs):
+        from sqlalchemy.exc import DBAPIError, OperationalError
+
+        try:
+            return fn(self.conn, *args, **kwargs)
+        except DBAPIError as e:
+            # Only a lost connection is worth retrying; a constraint or SQL error
+            # would just fail again.
+            if not (isinstance(e, OperationalError) or e.connection_invalidated):
+                raise
+            print(f"[db] Veza s bazom prekinuta ({type(e.orig).__name__}) — spajam se ponovno.")
+            try:
+                self.conn.invalidate()
+                self.conn.close()
+            except Exception:
+                pass
+            self.conn = get_connection()
+            return fn(self.conn, *args, **kwargs)
+
+    def close(self):
+        try:
+            self.conn.close()
+        except Exception:
+            pass
 
 
 # Anti-blocking / politeness configuration

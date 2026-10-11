@@ -170,9 +170,9 @@ async def scrape_hzz(max_jobs=None):
     base.init_db()
     base.check_robots(SITE)
 
-    conn = base.get_connection()
-    base.register_source(conn, "hzz", "HZZ", SITE)
-    log_id = base.start_scrape_log(conn, "hzz")
+    db = base.ReconnectingDB()
+    db.run(base.register_source, "hzz", "HZZ", SITE)
+    log_id = db.run(base.start_scrape_log, "hzz")
     new_jobs = []
     saved = processed = with_salary = 0
 
@@ -191,7 +191,7 @@ async def scrape_hzz(max_jobs=None):
                 print(f"[hzz] Dosegnut limit od {limit} stranica za ovo pokretanje — nastavljam idući put.")
                 break
             external_id = f"hzz-{item['web_id']}"
-            if base.job_exists(conn, external_id):
+            if db.run(base.job_exists, external_id):
                 continue
 
             url = DETAIL_URL.format(id=item["web_id"])
@@ -222,33 +222,33 @@ async def scrape_hzz(max_jobs=None):
                 # public-sector posts rarely fill the salary field, and there
                 # are thousands of them.
                 job.update(salary_text=None, salary_shown=False)
-                base.save_job(conn, job, "hzz")
+                db.run(base.save_job, job, "hzz")
                 continue
 
             with_salary += 1
             job.update(salary_min=salary_min, salary_max=salary_max, salary_shown=True)
-            if base.save_job(conn, job, "hzz"):
+            if db.run(base.save_job, job, "hzz"):
                 saved += 1
                 new_jobs.append({"title": job["title"], "url": url, "salary_text": job["salary_text"]})
                 print(f"  ✓ {job['title'][:50]} | 💰 {job['salary_text']}")
 
         # Share of ads with a salary, from the detail pages read this run.
         if processed >= 50:
-            base.save_salary_stat(conn, "hzz", processed, with_salary)
+            db.run(base.save_salary_stat, "hzz", processed, with_salary)
 
         if not max_jobs:
-            gone = _reconcile(conn, {f"hzz-{i['web_id']}" for i in feed_items})
+            gone = db.run(_reconcile, {f"hzz-{i['web_id']}" for i in feed_items})
             if gone:
                 print(f"[reconcile] Deaktivirano {gone} HZZ oglasa kojih više nema u feedovima.")
     finally:
         await http_client.aclose()
 
-    deactivated = base.deactivate_expired(conn)
+    deactivated = db.run(base.deactivate_expired)
     if deactivated:
         print(f"[expiry] Deaktivirano {deactivated} isteklih oglasa.")
 
-    base.finish_scrape_log(conn, log_id, jobs_found=processed, jobs_saved=saved, status="success")
-    conn.close()
+    db.run(base.finish_scrape_log, log_id, jobs_found=processed, jobs_saved=saved, status="success")
+    db.close()
     print(f"\n✅ HZZ gotovo! Pregledano {processed}, s plaćom {with_salary}, novih {saved}.")
     return new_jobs
 
