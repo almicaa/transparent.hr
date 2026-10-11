@@ -25,8 +25,6 @@ Fiskalizacija nije bila jednostavna. Bila je to tehnička reforma koja je zahvat
 
 ## Zašto je tako?
 
-Ne mislim da je riječ o lošoj namjeri. Riječ je o tome kako sustav reagira na interese i pritiske.
-
 **Država je najbrža kad je riječ o njezinim prihodima.** Fiskalizacija znači manje utaje PDV-a i više novca u proračunu. Uz to, financirana je europskim novcem iz Nacionalnog plana oporavka i otpornosti, a taj novac dolazi s rokovima i uvjetima.
 
 **Ne sjede svi jednako za stolom.** Poslodavci imaju svoje udruge i glas u izradi zakona, i to je legitimno. Njihove brige oko administracije i rokova su realne. Ali kandidati takav glas nemaju. Nitko ne zastupa osobu koja je potrošila sedam sati na selekciju za posao čiju plaću nije znala.
