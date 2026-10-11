@@ -203,6 +203,17 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 
 /* Job card: the title link is stretched over the whole card. */
 /* Position first, then who and where, then the salary — set apart in its own band. */
+/* Job list on /jobs: one card per row — what/who/where on the left, pay on the
+   right, deadline along the bottom. Below 700px it falls back to the stacked card. */
+.grid.grid--list{grid-template-columns:1fr;gap:12px}
+@media (min-width:700px){
+  .grid--list .job{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,290px);grid-template-areas:"title pay" "org pay" "loc pay" "foot foot";align-content:start;column-gap:28px;row-gap:4px;padding:18px 22px 14px}
+  .grid--list .job .job__title{grid-area:title;padding-right:0}
+  .grid--list .job__org{grid-area:org;-webkit-line-clamp:1}
+  .grid--list .job__loc{grid-area:loc}
+  .grid--list .job__pay{grid-area:pay;align-self:center;margin:0 44px 0 0}
+  .grid--list .job__foot{grid-area:foot;margin-top:10px;padding-top:10px}
+}
 .job{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:20px 22px 16px;border:1px solid var(--border);border-radius:16px;background:var(--card-bg);text-align:left;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
 .job:hover{border-color:var(--primary);box-shadow:0 10px 26px rgba(8,80,80,0.10);transform:translateY(-2px)}
 .job:has(.job__title a:focus-visible){outline:2px solid var(--primary);outline-offset:2px}

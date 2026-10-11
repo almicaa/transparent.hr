@@ -263,7 +263,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
               </button>
             </div>
           ) : (
-            <div className={loading ? "grid grid--loading" : "grid"} aria-busy={loading} onClickCapture={saveScroll}>
+            <div className={loading ? "grid grid--list grid--loading" : "grid grid--list"} aria-busy={loading} onClickCapture={saveScroll}>
               {jobs.map((job) => (
                 <JobCard key={job.id} job={job} />
               ))}
