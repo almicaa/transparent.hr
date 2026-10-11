@@ -83,10 +83,17 @@ def parse_salary_type(text: str | None, salary_min: float | None, salary_max: fl
     return "fixed"
 
 
+# A currency right after the amount ("1.450 €", "1.500 eura", "3000+ EUR") or right before it
+# ("€1500", "EUR 2.000"). Requiring the two to touch keeps stray numbers and
+# currencies elsewhere in a sentence from counting as a salary.
+_AMOUNT_WITH_CURRENCY = re.compile(
+    r"\d+\s*\+?\s*(?:€|(?:EUR\w*|HRK|kn)\b)|(?:EUR|€)\s*\d",
+    re.IGNORECASE,
+)
+
+
 def is_valid_salary(text: str) -> bool:
     """A salary snippet only counts if it has a number with an explicit currency."""
     if not text:
         return False
-    if not re.search(r"\d", text):
-        return False
-    return bool(re.search(r"\d+\s*(EUR|€|HRK|kn)", text, re.IGNORECASE))
+    return bool(_AMOUNT_WITH_CURRENCY.search(text))
