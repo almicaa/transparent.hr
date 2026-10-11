@@ -66,7 +66,7 @@ export default function SavedJobs() {
         <h2>{jobCountLabel(open.length)}</h2>
       </div>
       {open.length ? (
-        <div className="grid">
+        <div className="grid grid--list">
           {open.map((job) => (
             <JobCard key={job.id} job={job} />
           ))}
