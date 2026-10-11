@@ -1,7 +1,7 @@
 import os
 import sys
 from collections import Counter
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
@@ -54,7 +54,12 @@ class JobRepository:
         sort: str = "newest",
         page: int = 1,
         per_page: int = 21,
-    ) -> tuple[int, list[Job]]:
+        grouped: bool = True,
+    ) -> tuple[int, list[tuple[Job, int, list[str]]]]:
+        """Returns (total, page) where each entry is (job, how many ads it stands
+        for, their locations). With `grouped`, ads that differ only by location
+        (a chain posting one ad per store) collapse into one entry, and the total
+        and paging count those entries."""
         stmt = select(Job).where(_live())
 
         # "from"-type salaries ("od 2000 €") only have a lower bound, so fall back to it.
@@ -97,6 +102,9 @@ class JobRepository:
                 Job.title.ilike(term) | Job.company.ilike(term) | Job.description.ilike(term)
             )
 
+        if grouped:
+            return self._grouped_page(stmt, sort=sort, page=page, per_page=per_page)
+
         total = self.db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
 
         # nulls_last: Postgres puts NULLs first on DESC, which floated jobs
@@ -110,7 +118,50 @@ class JobRepository:
         stmt = stmt.offset((page - 1) * per_page).limit(per_page)
 
         rows = list(self.db.scalars(stmt))
-        return total, rows
+        return total, [(row, 1, [row.location] if row.location else []) for row in rows]
+
+    def _grouped_page(self, stmt, *, sort: str, page: int, per_page: int):
+        """Group the filtered jobs in Python: the live set is a few thousand rows
+        at most, and doing it here keeps it the same on SQLite and Postgres."""
+        rows = self.db.execute(
+            stmt.with_only_columns(
+                Job.id, Job.title, Job.company, Job.salary_min, Job.salary_max,
+                Job.salary_basis, Job.source, Job.scraped_at, Job.location,
+            )
+        ).all()
+
+        groups: dict[tuple, list] = {}
+        for r in rows:
+            key = (
+                " ".join((r.title or "").lower().split()),
+                (r.company or "").strip().lower(),
+                r.salary_min, r.salary_max, r.salary_basis, r.source,
+            )
+            groups.setdefault(key, []).append(r)
+
+        oldest = datetime.min
+        entries = []
+        for members in groups.values():
+            # The newest ad represents the group (its link, deadline and "Novo").
+            rep = max(members, key=lambda r: (r.scraped_at or oldest, r.id))
+            # City names, not raw strings like "Zagreb (Ilica, Savica)".
+            locations = list(dict.fromkeys(c for r in members if r.location for c in sorted(split_cities(r.location))))
+            entries.append((rep, len(members), locations))
+
+        def top(r):
+            return r.salary_max if r.salary_max is not None else r.salary_min
+
+        # Missing amounts sort last either way; ties go to the newer ad.
+        if sort == "salary_desc":
+            entries.sort(key=lambda e: (top(e[0]) is None, -(top(e[0]) or 0), -e[0].id))
+        elif sort == "salary_asc":
+            entries.sort(key=lambda e: (e[0].salary_min is None, e[0].salary_min or 0, -e[0].id))
+        else:
+            entries.sort(key=lambda e: (e[0].scraped_at or oldest, e[0].id), reverse=True)
+
+        page_entries = entries[(page - 1) * per_page : page * per_page]
+        jobs = {j.id: j for j in self.db.scalars(select(Job).where(Job.id.in_([e[0].id for e in page_entries])))}
+        return len(entries), [(jobs[rep.id], count, locations) for rep, count, locations in page_entries]
 
     def _ids_in_city(self, city: str) -> list[int]:
         wanted = city.lower()

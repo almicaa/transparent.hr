@@ -24,6 +24,7 @@ def get_jobs(
     sort: str = Query("newest", description="newest | salary_desc | salary_asc"),
     page: int = Query(1, ge=1),
     per_page: int = Query(21, ge=1, le=100),
+    grouped: bool = Query(True, description="spoji iste oglase koji se razlikuju samo po lokaciji"),
     service: JobService = Depends(get_job_service),
 ):
     return service.list_jobs(
@@ -42,6 +43,7 @@ def get_jobs(
         sort=sort,
         page=page,
         per_page=per_page,
+        grouped=grouped,
     )
 
 

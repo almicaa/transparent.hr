@@ -39,3 +39,12 @@ export function formatDate(iso: string): string {
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? ""
   return `${get("day")}. ${get("month")}. ${get("year")}.`
 }
+
+/** HZZ titles arrive in capitals ("PRODAVAČ/PRODAVAČICA"); show those as
+ * "Prodavač/prodavačica". Titles in normal case are left alone. */
+export function displayTitle(title: string): string {
+  const hasLower = title !== title.toUpperCase()
+  if (hasLower || !/\p{L}/u.test(title)) return title
+  const lower = title.toLocaleLowerCase("hr-HR")
+  return lower.charAt(0).toLocaleUpperCase("hr-HR") + lower.slice(1)
+}

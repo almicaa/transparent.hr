@@ -2,10 +2,11 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getJob } from "../../../lib/api"
 import { buildJobPostingJsonLd, jobDescription, SITE_URL } from "../../../lib/seo"
-import { formatDate } from "../../../lib/format"
+import { displayTitle, formatDate } from "../../../lib/format"
 import NetCalculator from "../../../components/job/NetCalculator"
 import ApplyLink from "../../../components/job/ApplyLink"
 import SaveButton from "../../../components/job/SaveButton"
+import JobTitle from "../../../components/job/JobTitle"
 import { SOURCE_LABELS } from "../../../lib/sourceLabels"
 import type { Metadata } from "next"
 
@@ -15,7 +16,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const job = await getJob(params.id, { revalidate: 3600 })
   if (!job) return { title: "Oglas nije pronađen" }
 
-  const title = `${job.title}${job.company ? " — " + job.company : ""}`
+  const title = `${displayTitle(job.title)}${job.company ? " — " + job.company : ""}`
   const description = job.salary_text || jobDescription(job).slice(0, 160)
   const url = `${SITE_URL}/jobs/${job.id}`
 
@@ -57,7 +58,9 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
       <Link href="/jobs">← Svi oglasi</Link>
 
-      <h1>{job.title}</h1>
+      <h1>
+        <JobTitle title={job.title} />
+      </h1>
       {job.company ? <div className="job-detail__company">{job.company}</div> : null}
       {job.location ? <div className="job-detail__location">{job.location}</div> : null}
 

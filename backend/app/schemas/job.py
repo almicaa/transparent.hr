@@ -31,6 +31,11 @@ class JobOut(BaseModel):
     """How far this job's salary midpoint is from the median of its category's
     jobs with the same neto/bruto basis, in percent (+18.0 = 18% above). Only
     set when that peer group is big enough to mean something."""
+    group_count: int = 1
+    """How many ads this entry stands for in a grouped list: the same job, pay
+    and company posted separately per location (e.g. one ad per store)."""
+    group_locations: list[str] | None = None
+    """Locations of the grouped ads, when group_count > 1."""
 
 
 class JobList(BaseModel):

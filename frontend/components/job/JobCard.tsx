@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Job } from "../../lib/types"
 import { daysUntil, formatDate, parseApiDate } from "../../lib/format"
+import JobTitle from "./JobTitle"
 import NetCalculator from "./NetCalculator"
 import SaveButton from "./SaveButton"
 import { PinIcon } from "../ui/icons"
@@ -40,6 +41,26 @@ function salaryAmount(job: Job): string | null {
   return `${amount(lo)} – ${amount(hi)} €`
 }
 
+// How many city names to spell out on a grouped card before "i još N".
+const SHOWN_PLACES = 3
+
+/** 1 lokacija, 2–4 lokacije, 5+ lokacija (21 lokacija, 22 lokacije …). */
+function locationsWord(n: number): string {
+  const last = n % 10
+  const lastTwo = n % 100
+  if (last === 1 && lastTwo !== 11) return "lokacija"
+  if (last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)) return "lokacije"
+  return "lokacija"
+}
+
+/** "28 lokacija: Buzet, Delnice, Jastrebarsko i još 25" for a grouped card. */
+function placesLabel(places: string[] | null | undefined): string | null {
+  if (!places || places.length < 2) return null
+  const shown = places.slice(0, SHOWN_PLACES).join(", ")
+  const rest = places.length - SHOWN_PLACES
+  return `${places.length} ${locationsWord(places.length)}: ${shown}${rest > 0 ? ` i još ${rest}` : ""}`
+}
+
 function Deadline({ expiresAt }: { expiresAt: string }) {
   const days = daysUntil(expiresAt)
   if (days <= URGENT_DAYS) {
@@ -57,6 +78,7 @@ function Deadline({ expiresAt }: { expiresAt: string }) {
 
 export default function JobCard({ job }: { job: Job }) {
   const pay = salaryAmount(job)
+  const groupedPlaces = placesLabel(job.group_locations)
   const isNew = job.scraped_at
     ? Date.now() - parseApiDate(job.scraped_at).getTime() < NEW_WITHIN_DAYS * 86_400_000
     : false
@@ -66,13 +88,15 @@ export default function JobCard({ job }: { job: Job }) {
       <SaveButton job={job} />
       <h3 className="job__title">
         {/* The link covers the whole card (see .job__title a::after). */}
-        <Link href={`/jobs/${job.id}`}>{job.title}</Link>
+        <Link href={`/jobs/${job.id}`}>
+          <JobTitle title={job.title} />
+        </Link>
       </h3>
       {job.company ? <div className="job__org">{job.company}</div> : null}
-      {job.location ? (
+      {groupedPlaces || job.location ? (
         <div className="job__loc">
           <PinIcon />
-          <span>{job.location}</span>
+          <span>{groupedPlaces ?? job.location}</span>
         </div>
       ) : null}
       {pay ? (

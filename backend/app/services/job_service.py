@@ -45,6 +45,7 @@ class JobService:
         sort: str,
         page: int,
         per_page: int,
+        grouped: bool = True,
     ) -> JobList:
         shown = {"yes": True, "no": False}.get(salary_shown)
         total, rows = self.repo.list_jobs(
@@ -63,13 +64,14 @@ class JobService:
             sort=sort,
             page=page,
             per_page=per_page,
+            grouped=grouped,
         )
-        return JobList(
-            total=total,
-            page=page,
-            per_page=per_page,
-            jobs=self._with_salary_context(rows),
-        )
+        jobs = self._with_salary_context([job for job, _, _ in rows])
+        for out, (_, count, locations) in zip(jobs, rows):
+            if count > 1:
+                out.group_count = count
+                out.group_locations = locations
+        return JobList(total=total, page=page, per_page=per_page, jobs=jobs)
 
     def get_job(self, job_id: int) -> JobOut | None:
         row = self.repo.get_by_id(job_id)
