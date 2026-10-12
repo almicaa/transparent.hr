@@ -6,7 +6,7 @@ import { SITE_URL } from "../../lib/seo"
 export const revalidate = 300
 
 export const metadata: Metadata = {
-  title: "Svi oglasi za posao s transparentnom plaćom",
+  title: "Svi oglasi za posao s plaćom",
   description:
     "Pregledaj sve oglase za posao u Hrvatskoj s vidljivom neto ili bruto plaćom u EUR. Filtriraj po gradu, kategoriji i portalu.",
   alternates: { canonical: `${SITE_URL}/jobs` },

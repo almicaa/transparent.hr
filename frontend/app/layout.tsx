@@ -13,9 +13,10 @@ const IS_PRODUCTION = process.env.NODE_ENV === "production"
 
 const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter" })
 
-const title = "Transparent.hr — Oglasi za posao s transparentnom plaćom u Hrvatskoj"
+// Leads with the phrase people actually search for; the brand goes last.
+const title = "Oglasi za posao s plaćom u Hrvatskoj | Transparent.hr"
 const description =
-  "Pronađi posao s vidljivom plaćom u Hrvatskoj. Oglasi s transparentno navedenom neto i bruto plaćom u EUR — filtrirano s posao.hr, mojposao.hr i ostalih portala."
+  "Svi oglasi za posao u Hrvatskoj s navedenom plaćom na jednom mjestu. Neto i bruto plaće u eurima s posao.hr, MojPosla i HZZ-a, po gradu, grani i iznosu."
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
