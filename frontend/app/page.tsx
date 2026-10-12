@@ -2,21 +2,23 @@ import Link from "next/link"
 import HeroSearch from "../components/home/HeroSearch"
 import HeroIllustration from "../components/ui/HeroIllustration"
 import { ArrowIcon } from "../components/ui/icons"
-import { getFilters, getStats } from "../lib/api"
+import { getFilters, getJobs, getStats } from "../lib/api"
 
 export const revalidate = 300
 
 async function getHomeData() {
-  const [stats, filterData] = await Promise.all([
+  const [stats, filterData, listed] = await Promise.all([
     getStats({ revalidate: 300 }).catch(() => null),
     getFilters({ revalidate: 300 }).catch(() => undefined),
+    // Same count the job list shows: ads posted once per location count once.
+    getJobs({ page: 1, per_page: 1, salary_shown: "yes" }, { revalidate: 300 }).catch(() => null),
   ])
-  return { stats, filterData }
+  return { stats, filterData, listedTotal: listed?.total ?? null }
 }
 
 export default async function HomePage() {
-  const { stats, filterData } = await getHomeData()
-  const withSalary = stats?.salary_shown ?? 0
+  const { stats, filterData, listedTotal } = await getHomeData()
+  const withSalary = listedTotal ?? stats?.salary_shown ?? 0
   const portals = stats?.sources?.length || 2
 
   const tiles = [
