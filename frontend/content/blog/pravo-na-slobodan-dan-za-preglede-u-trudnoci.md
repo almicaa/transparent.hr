@@ -9,6 +9,8 @@ Trudna radnica u Hrvatskoj ima pravo na jedan plaćeni slobodan dan mjesečno za
 
 Tijekom trudnoće išla sam na redovne preglede kao i svaka trudnica. Znala sam ujutro čekati u Petrovoj na vađenje krvi za antitijela, a onda žuriti na posao i danima nadoknađivati sate koje sam potrošila na pretrage. Nikome nije palo na pamet da za to postoji poseban, plaćeni slobodan dan. Ni meni, ni ljudima u računovodstvu, ni nadređenima.
 
+A taj dan ne mora biti jedan cijeli dan. Može biti dva sata ujutro za vađenje krvi, pa drugi dan dva sata ranije s posla na ultrazvuk, i tako kroz mjesec, sve do punog radnog dana, odnosno 8 sati. Svi ti sati su opravdani i plaćeni, samo se raspored dogovori s poslodavcem.
+
 Za to sam pravo saznala slučajno, kad mi više nije trebalo.
 
 ## Što točno kaže zakon
