@@ -27,10 +27,6 @@ class JobOut(BaseModel):
     scraped_at: datetime | None = None
     expires_at: datetime | None = None
     is_active: bool = True
-    salary_vs_category: float | None = None
-    """How far this job's salary midpoint is from the median of its category's
-    jobs with the same neto/bruto basis, in percent (+18.0 = 18% above). Only
-    set when that peer group is big enough to mean something."""
     group_count: int = 1
     """How many ads this entry stands for in a grouped list: the same job, pay
     and company posted separately per location (e.g. one ad per store)."""

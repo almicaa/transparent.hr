@@ -19,7 +19,6 @@ export interface Job {
   posted_at: string | null
   scraped_at: string | null
   expires_at: string | null
-  salary_vs_category: number | null
   /** In a grouped list: how many ads (same job, pay and company) this card stands for. */
   group_count?: number
   /** Cities of the grouped ads, when group_count > 1. */

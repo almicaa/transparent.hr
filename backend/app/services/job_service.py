@@ -1,7 +1,4 @@
-from statistics import median
-
-from app.models.job import Job
-from app.repositories.job_repository import OTHER_CATEGORY, JobRepository, match_countries
+from app.repositories.job_repository import OTHER_CATEGORY, JobRepository
 from app.schemas.job import (
     CityCount,
     FilterOption,
@@ -18,9 +15,6 @@ SALARY_BUCKET_SIZE = 250
 SALARY_HISTOGRAM_MIN = 500
 SALARY_HISTOGRAM_MAX = 4000
 """Everything at or above this lands in one open-ended top bucket."""
-
-# A category median needs this many same-basis peers before we compare against it.
-MIN_PEERS = 5
 
 
 class JobService:
@@ -66,7 +60,7 @@ class JobService:
             per_page=per_page,
             grouped=grouped,
         )
-        jobs = self._with_salary_context([job for job, _, _ in rows])
+        jobs = [JobOut.model_validate(job, from_attributes=True) for job, _, _ in rows]
         for out, (_, count, locations) in zip(jobs, rows):
             if count > 1:
                 out.group_count = count
@@ -75,30 +69,7 @@ class JobService:
 
     def get_job(self, job_id: int) -> JobOut | None:
         row = self.repo.get_by_id(job_id)
-        return self._with_salary_context([row])[0] if row else None
-
-    def _with_salary_context(self, rows: list[Job]) -> list[JobOut]:
-        """Serialize jobs, adding how each salary compares to its category.
-
-        Only compares neto to neto and bruto to bruto — a large share of ads
-        don't say which, and mixing them would make every bruto ad look generous.
-        Jobs abroad are left out entirely: German or Austrian pay against a
-        Croatian median just reads as "+140%"."""
-        groups: dict[tuple[str, str], list[float]] = {}
-        for category, basis, midpoint, is_foreign in self.repo.salary_points():
-            if category and basis and not is_foreign:
-                groups.setdefault((category, basis), []).append(midpoint)
-        medians = {key: median(values) for key, values in groups.items() if len(values) >= MIN_PEERS}
-
-        jobs = []
-        for row in rows:
-            job = JobOut.model_validate(row, from_attributes=True)
-            peer_median = medians.get((row.category, row.salary_basis))
-            if peer_median and row.salary_min is not None and not match_countries(row.location):
-                midpoint = (row.salary_min + (row.salary_max if row.salary_max is not None else row.salary_min)) / 2
-                job.salary_vs_category = round((midpoint / peer_median - 1) * 100, 1)
-            jobs.append(job)
-        return jobs
+        return JobOut.model_validate(row, from_attributes=True) if row else None
 
     def get_stats(self) -> Stats:
         total = self.repo.count_all()
