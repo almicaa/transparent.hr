@@ -190,6 +190,8 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                     break
                 try:
                     url_full = href if href.startswith("http") else ("https://www.posao.hr" + href)
+                    # Drop the portal's own tracking (?source=featured-ads) from the stored URL.
+                    url_full = url_full.split("?")[0].split("#")[0]
                     m = re.search(r"/(?:oglas|oglasi)/([^/\?#]+)", href)
                     external_id = m.group(1) if m else url_full
 
