@@ -16,7 +16,7 @@ Za to sam pravo saznala slučajno, kad mi više nije trebalo.
 Pravo je uređeno [Zakonom o rodiljnim i roditeljskim potporama](https://www.zakon.hr/z/214/zakon-o-rodiljnim-i-roditeljskim-potporama), a ne Zakonom o radu. Možda zato i promakne većini ljudi koji traže „prava radnika”.
 
 - **Koliko:** jedan slobodan radni dan mjesečno za prenatalne preglede ([Roda](https://www.roda.hr/media/attachments/udruga/programi/pravo/roditeljska_i_rodiljna_prava.pdf)).
-- **Plaća:** taj dan se smatra vremenom provedenim na radu, a poslodavac ga plaća kao redovan radni dan (TEB).
+- **Plaća:** taj dan se smatra vremenom provedenim na radu, a poslodavac ga plaća kao redovan radni dan.
 - **Od kada:** pravo je uvedeno izmjenama zakona iz [2011. godine](https://narodne-novine.nn.hr/clanci/sluzbeni/2011_03_34_767.html). Zadržao ga je i novi zakon koji vrijedi od 1. siječnja 2023.
 
 ## Kako ga iskoristiti
