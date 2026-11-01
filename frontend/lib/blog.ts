@@ -1,12 +1,23 @@
 import fs from "node:fs"
 import path from "node:path"
-import { marked } from "marked"
+import { marked, Renderer } from "marked"
 
 // Posts are Markdown files in content/blog/<slug>.md with a small front-matter
 // block (title, description, date, optional draft). Files starting with "_"
 // (like the writing guide) are skipped.
 const BLOG_DIR = path.join(process.cwd(), "content", "blog")
 const WORDS_PER_MINUTE = 200
+
+// Links to other sites open in a new tab; links within transparent.hr don't.
+const defaultRenderer = new Renderer()
+marked.use({
+  renderer: {
+    link(href, title, text) {
+      const html = defaultRenderer.link(href, title, text)
+      return /^https?:\/\//.test(href) ? html.replace(/^<a /, '<a target="_blank" rel="noopener" ') : html
+    },
+  },
+})
 
 export interface PostMeta {
   slug: string
