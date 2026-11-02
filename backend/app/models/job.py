@@ -37,3 +37,15 @@ class Job(Base):
     """Parsed from the portal's own 'N dana do isteka' countdown, when available."""
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     """Set False once expires_at has passed — hidden from the API by default."""
+
+    # Details as the portal states them (HZZ for now); all optional.
+    address_region: Mapped[str | None] = mapped_column(String)
+    """County, e.g. 'Zagrebačka županija'."""
+    contract_type: Mapped[str | None] = mapped_column(String)
+    """'Na određeno' / 'Na neodređeno' …"""
+    education: Mapped[str | None] = mapped_column(String)
+    """Required education level, e.g. 'Završena osnovna škola'."""
+    experience: Mapped[str | None] = mapped_column(String)
+    """Required experience, e.g. 'Nije važno', '1 godina'."""
+    openings: Mapped[int | None] = mapped_column(Integer)
+    """How many people the employer is hiring."""
