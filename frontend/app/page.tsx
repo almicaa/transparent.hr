@@ -3,8 +3,11 @@ import HeroSearch from "../components/home/HeroSearch"
 import HeroIllustration from "../components/ui/HeroIllustration"
 import { ArrowIcon } from "../components/ui/icons"
 import { getFilters, getJobs, getStats } from "../lib/api"
+import { HOME_DESCRIPTION, HOME_TITLE, pageMetadata } from "../lib/seo"
 
 export const revalidate = 300
+
+export const metadata = pageMetadata({ title: HOME_TITLE, description: HOME_DESCRIPTION, path: "/", titleTemplate: false })
 
 async function getHomeData() {
   const [stats, filterData, listed] = await Promise.all([

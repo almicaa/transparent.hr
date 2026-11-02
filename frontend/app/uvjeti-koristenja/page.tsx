@@ -1,8 +1,10 @@
-import type { Metadata } from "next"
+import { pageMetadata } from "../../lib/seo"
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Uvjeti korištenja",
-}
+  description: "Uvjeti korištenja Transparent.hr: odakle dolaze oglasi, točnost podataka i prijava na oglase na izvornim portalima.",
+  path: "/uvjeti-koristenja",
+})
 
 export default function TermsPage() {
   return (

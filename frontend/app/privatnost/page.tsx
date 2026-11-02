@@ -1,8 +1,10 @@
-import type { Metadata } from "next"
+import { pageMetadata } from "../../lib/seo"
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Politika privatnosti",
-}
+  description: "Koje podatke Transparent.hr prikuplja, kako koristi Google Analytics i kolačiće te kako nas kontaktirati.",
+  path: "/privatnost",
+})
 
 export default function PrivacyPage() {
   return (

@@ -1,13 +1,12 @@
-import type { Metadata } from "next"
 import Link from "next/link"
 import { formatPostDate, getAllPosts } from "../../lib/blog"
-import { SITE_URL } from "../../lib/seo"
+import { pageMetadata } from "../../lib/seo"
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Blog",
   description: "Bez uljepšavanja o zapošljavanju, plaćama, pravima radnika i nepravdama na tržištu rada u Hrvatskoj.",
-  alternates: { canonical: `${SITE_URL}/blog` },
-}
+  path: "/blog",
+})
 
 export default function BlogPage() {
   const posts = getAllPosts()

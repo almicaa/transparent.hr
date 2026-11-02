@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { formatPostDate, getAllPosts, getPost } from "../../../lib/blog"
-import { SITE_NAME, SITE_URL } from "../../../lib/seo"
+import { pageMetadata, SITE_NAME, SITE_URL } from "../../../lib/seo"
 
 // Only the posts that exist at build time; anything else is a 404.
 export const dynamicParams = false
@@ -14,22 +14,14 @@ export function generateStaticParams() {
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
   const post = getPost(params.slug)
   if (!post) return { title: "Članak nije pronađen" }
-  const url = `${SITE_URL}/blog/${post.slug}`
-  return {
+  return pageMetadata({
     title: post.title,
     description: post.description,
-    alternates: { canonical: url },
-    openGraph: {
-      title: post.title,
-      description: post.description,
-      url,
-      siteName: SITE_NAME,
-      type: "article",
-      publishedTime: post.date,
-    },
-    twitter: { card: "summary", title: post.title, description: post.description },
-    robots: post.draft ? { index: false } : undefined,
-  }
+    path: `/blog/${post.slug}`,
+    type: "article",
+    publishedTime: post.date,
+    index: !post.draft,
+  })
 }
 
 export default function BlogPostPage({ params }: { params: { slug: string } }) {

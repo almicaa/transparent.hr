@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import { pageMetadata } from "../../lib/seo"
 import { getStats, getTransparencyStats } from "../../lib/api"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
 import TransparencyChart from "../../components/ui/TransparencyChart"
@@ -6,9 +6,12 @@ import TransparencyChart from "../../components/ui/TransparencyChart"
 // Stats only change once per scraper run (every few hours).
 export const revalidate = 600
 
-export const metadata: Metadata = {
-  title: "Analitika",
-}
+export const metadata = pageMetadata({
+  title: "Udio oglasa s plaćom po portalima",
+  description:
+    "Dnevno mjerenje udjela oglasa s navedenom plaćom na hrvatskim portalima za posao, uz broj oglasa s plaćom na Transparent.hr.",
+  path: "/analitika",
+})
 
 const SOURCE_ORDER = ["posao", "mojposao"]
 

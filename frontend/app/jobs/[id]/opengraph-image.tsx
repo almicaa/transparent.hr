@@ -7,7 +7,7 @@ export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
 export default async function Image({ params }: { params: { id: string } }) {
-  const job = await getJob(params.id)
+  const job = /^\d+$/.test(params.id) ? await getJob(params.id).catch(() => null) : null
 
   return new ImageResponse(
     (

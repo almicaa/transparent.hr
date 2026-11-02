@@ -5,7 +5,7 @@ import Script from "next/script"
 import Header from "../components/layout/Header"
 import Footer from "../components/layout/Footer"
 import CookieConsent from "../components/analytics/CookieConsent"
-import { SITE_URL } from "../lib/seo"
+import { HOME_DESCRIPTION, HOME_TITLE, SITE_NAME, SITE_URL } from "../lib/seo"
 import { getAllPosts } from "../lib/blog"
 
 const GA_ID = "G-5PPM0Y3J1E"
@@ -13,15 +13,13 @@ const IS_PRODUCTION = process.env.NODE_ENV === "production"
 
 const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter" })
 
-// Leads with the phrase people actually search for; the brand goes last.
-const title = "Oglasi za posao s plaćom u Hrvatskoj | Transparent.hr"
-const description =
-  "Svi oglasi za posao u Hrvatskoj s navedenom plaćom na jednom mjestu. Neto i bruto plaće u eurima s posao.hr, MojPosla i HZZ-a, po gradu, grani i iznosu."
-
+// Fallbacks only (e.g. the 404 page). Every page sets its own title,
+// description, canonical and share tags through pageMetadata() in lib/seo.ts;
+// no url or title here, or a page that forgot would share as the homepage.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: title, template: "%s | Transparent.hr" },
-  description,
+  title: { default: HOME_TITLE, template: "%s | Transparent.hr" },
+  description: HOME_DESCRIPTION,
   keywords: [
     "transparentna plaća",
     "oglasi s plaćom",
@@ -33,18 +31,11 @@ export const metadata: Metadata = {
     "bruto neto plaća",
   ],
   openGraph: {
-    title,
-    description,
-    url: SITE_URL,
-    siteName: "Transparent.hr",
+    siteName: SITE_NAME,
     type: "website",
     locale: "hr_HR",
   },
-  twitter: {
-    card: "summary",
-    title,
-    description,
-  },
+  twitter: { card: "summary_large_image" },
   verification: {
     google: "kV1-7d8bJmasXX4KCWiXnRVvtEJAFiYkosLGNVp6sNQ",
   },
@@ -55,7 +46,7 @@ const jsonLd = {
   "@type": "WebSite",
   name: "Transparent.hr",
   url: SITE_URL,
-  description,
+  description: HOME_DESCRIPTION,
   inLanguage: "hr",
   potentialAction: {
     "@type": "SearchAction",

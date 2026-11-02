@@ -1,8 +1,8 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getJob } from "../../../lib/api"
-import { buildJobPostingJsonLd, jobDescription, SITE_URL } from "../../../lib/seo"
-import { displayTitle, formatDate } from "../../../lib/format"
+import { buildJobPostingJsonLd, jobMetaDescription, jobMetaTitle, pageMetadata } from "../../../lib/seo"
+import { formatDate } from "../../../lib/format"
 import NetCalculator from "../../../components/job/NetCalculator"
 import ApplyLink from "../../../components/job/ApplyLink"
 import SaveButton from "../../../components/job/SaveButton"
@@ -12,35 +12,33 @@ import type { Metadata } from "next"
 
 export const revalidate = 3600
 
+// No pages at build time; each job is rendered on its first visit and then
+// cached for `revalidate`. Without this, Next 14 renders the route on every
+// request (cache-control: no-store) despite `revalidate`.
+export function generateStaticParams() {
+  return []
+}
+
+/** The job for a route id, or null for unknown, expired and malformed ids
+ * ("/jobs/abc" would otherwise reach the API, get a 422 and fail with a 500). */
+async function loadJob(id: string) {
+  if (!/^\d+$/.test(id)) return null
+  return getJob(id, { revalidate: 3600 })
+}
+
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const job = await getJob(params.id, { revalidate: 3600 })
+  const job = await loadJob(params.id)
   if (!job) return { title: "Oglas nije pronađen" }
-
-  const title = `${displayTitle(job.title)}${job.company ? " — " + job.company : ""}`
-  const description = job.salary_text || jobDescription(job).slice(0, 160)
-  const url = `${SITE_URL}/jobs/${job.id}`
-
-  return {
-    title,
-    description,
-    alternates: { canonical: url },
-    openGraph: {
-      title,
-      description,
-      url,
-      siteName: "Transparent.hr",
-      type: "website",
-    },
-    twitter: {
-      card: "summary",
-      title,
-      description,
-    },
-  }
+  return pageMetadata({
+    title: jobMetaTitle(job),
+    description: jobMetaDescription(job),
+    path: `/jobs/${job.id}`,
+    ownImage: true,
+  })
 }
 
 export default async function JobDetailPage({ params }: { params: { id: string } }) {
-  const job = await getJob(params.id, { revalidate: 3600 })
+  const job = await loadJob(params.id)
   if (!job) notFound()
 
   const jsonLd = buildJobPostingJsonLd(job)

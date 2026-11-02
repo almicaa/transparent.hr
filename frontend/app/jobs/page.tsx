@@ -1,16 +1,15 @@
-import type { Metadata } from "next"
 import JobBrowser from "../../components/job/JobBrowser"
 import { getFilters, getJobs, JOBS_PER_PAGE } from "../../lib/api"
-import { SITE_URL } from "../../lib/seo"
+import { pageMetadata } from "../../lib/seo"
 
 export const revalidate = 300
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Svi oglasi za posao s plaćom",
   description:
     "Pregledaj sve oglase za posao u Hrvatskoj s vidljivom neto ili bruto plaćom u EUR. Filtriraj po gradu, kategoriji i portalu.",
-  alternates: { canonical: `${SITE_URL}/jobs` },
-}
+  path: "/jobs",
+})
 
 async function getJobsPageData() {
   const [jobsRes, filtersRes] = await Promise.all([

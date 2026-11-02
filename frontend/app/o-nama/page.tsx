@@ -1,15 +1,14 @@
-import type { Metadata } from "next"
 import Link from "next/link"
 import HeroIllustration from "../../components/ui/HeroIllustration"
 import { ArrowIcon } from "../../components/ui/icons"
 import { getPost } from "../../lib/blog"
-import { CONTACT_EMAIL, SITE_URL } from "../../lib/seo"
+import { CONTACT_EMAIL, pageMetadata } from "../../lib/seo"
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "O nama",
   description: "Transparent.hr skuplja oglase za posao u kojima je plaća navedena. Zašto je nastao i kako radi.",
-  alternates: { canonical: `${SITE_URL}/o-nama` },
-}
+  path: "/o-nama",
+})
 
 // The founding story in full lives on the blog; link it once it's published.
 const STORY_SLUG = "sedam-sati-selekcije"

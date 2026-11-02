@@ -1,11 +1,13 @@
-import type { Metadata } from "next"
+import { pageMetadata } from "../../lib/seo"
 import SavedJobs from "../../components/job/SavedJobs"
 
-export const metadata: Metadata = {
+// Per-visitor list from browser storage; nothing here for search engines.
+export const metadata = pageMetadata({
   title: "Spremljeni oglasi",
-  // Per-visitor list from browser storage; nothing here for search engines.
-  robots: { index: false },
-}
+  description: "Oglasi koje si spremio u ovom pregledniku, bez registracije.",
+  path: "/spremljeno",
+  index: false,
+})
 
 export default function SavedPage() {
   return (
