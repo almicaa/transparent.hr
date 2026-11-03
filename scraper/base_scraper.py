@@ -222,16 +222,6 @@ def check_robots(base_url):
         return {"crawl_delay": None, "disallow": []}
 
 
-_ADDED_JOB_COLUMNS = {
-    "category_raw": "TEXT",
-    "address_region": "TEXT",
-    "contract_type": "TEXT",
-    "education": "TEXT",
-    "experience": "TEXT",
-    "openings": "INTEGER",
-}
-
-
 def init_db():
     """Create tables for local SQLite dev. In production, Postgres schema is
     managed by Alembic migrations (backend/alembic) — this is a no-op there."""
@@ -261,20 +251,9 @@ def init_db():
                 posted_at    TEXT,
                 scraped_at   TEXT DEFAULT (datetime('now')),
                 expires_at   TEXT,
-                is_active    INTEGER DEFAULT 1,
-                address_region TEXT,
-                contract_type  TEXT,
-                education      TEXT,
-                experience     TEXT,
-                openings       INTEGER
+                is_active    INTEGER DEFAULT 1
             )
         """))
-        # Local databases created before a column existed (Alembic adds them
-        # in production).
-        existing = {row[1] for row in conn.execute(text("PRAGMA table_info(jobs)"))}
-        for column, sql_type in _ADDED_JOB_COLUMNS.items():
-            if column not in existing:
-                conn.execute(text(f"ALTER TABLE jobs ADD COLUMN {column} {sql_type}"))
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS market_stats (
                 source         TEXT PRIMARY KEY,
@@ -506,15 +485,6 @@ def parse_posao_deadline(content: str) -> datetime | None:
         return None
 
 
-def to_utc_iso(value: datetime) -> str:
-    """ISO timestamp in UTC for the jobs table. Its columns have no time zone,
-    so Postgres drops any offset and keeps the wall-clock time: 23:59+01:00
-    would be stored as 23:59 and then read back as UTC by the API."""
-    if value.tzinfo is not None:
-        value = value.astimezone(timezone.utc)
-    return value.isoformat()
-
-
 def parse_days_to_expiry(text_: str | None) -> int | None:
     """Parse posao.hr's own countdown ('N dana do isteka' / '1 dan do isteka')."""
     if not text_:
@@ -534,7 +504,7 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
     salary_max = job.get("salary_max")
 
     # Prefer an exact deadline; fall back to a "N dana do isteka" countdown.
-    expires_at = to_utc_iso(job["expires_at"]) if job.get("expires_at") else None
+    expires_at = job["expires_at"].isoformat() if job.get("expires_at") else None
     days_left = job.get("days_to_expiry")
     if expires_at is None and days_left is not None:
         expires_at = (datetime.now(timezone.utc) + timedelta(days=days_left)).isoformat()
@@ -546,14 +516,12 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
              salary_min, salary_max, salary_text, salary_shown,
              salary_currency, salary_basis, salary_type,
              category, category_raw,
-             url, source, posted_at, expires_at,
-             description, address_region, contract_type, education, experience, openings)
+             url, source, posted_at, expires_at)
             VALUES (:external_id, :title, :company, :location, :job_type,
                     :salary_min, :salary_max, :salary_text, :salary_shown,
                     :salary_currency, :salary_basis, :salary_type,
                     :category, :category_raw,
-                    :url, :source, :posted_at, :expires_at,
-                    :description, :address_region, :contract_type, :education, :experience, :openings)
+                    :url, :source, :posted_at, :expires_at)
             ON CONFLICT (external_id) DO NOTHING
             RETURNING id
         """),
@@ -576,12 +544,6 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
             "source": source,
             "posted_at": job.get("posted_at"),
             "expires_at": expires_at,
-            "description": job.get("description"),
-            "address_region": job.get("address_region"),
-            "contract_type": job.get("contract_type"),
-            "education": job.get("education"),
-            "experience": job.get("experience"),
-            "openings": job.get("openings"),
         },
     )
     inserted = result.fetchone() is not None
