@@ -50,6 +50,9 @@ def test_parse_salary_without_amount(text):
         ("€1500", "fixed"),
         ("od 1 200 € neto", "from"),
         ("Od 900 EUR", "from"),
+        # "do X" is a ceiling: the pay may be lower, so it is not a fixed amount.
+        ("do 2.500 €", "up_to"),
+        ("Do 1.800 EUR neto", "up_to"),
         ("od 1.500 do 2.000 EUR", "range"),
         ("1500-2000 EUR", "range"),
         ("3000+ EUR", "above"),

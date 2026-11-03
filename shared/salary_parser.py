@@ -64,12 +64,13 @@ def parse_salary_basis(text: str | None) -> str | None:
 
 
 def parse_salary_type(text: str | None, salary_min: float | None, salary_max: float | None) -> str | None:
-    """Classify a salary as one of: range, fixed, from, above.
+    """Classify a salary as one of: range, fixed, from, up_to, above.
 
     - "above": an explicit "X+" ceiling-less floor (e.g. "3000+ EUR")
     - "range": two distinct numbers ("od 1500 do 2000 EUR")
     - "from": Croatian listings phrase a single floor as "od X EUR" — a stated
       minimum, not a fixed amount
+    - "up_to": "do X EUR" — a stated maximum; the pay may be lower
     - "fixed": a single number with no "od" prefix — an exact stated amount
     """
     if salary_min is None:
@@ -80,6 +81,8 @@ def parse_salary_type(text: str | None, salary_min: float | None, salary_max: fl
         return "range"
     if text and re.match(r"(?i)^\s*od\b", text):
         return "from"
+    if text and re.match(r"(?i)^\s*do\b", text):
+        return "up_to"
     return "fixed"
 
 

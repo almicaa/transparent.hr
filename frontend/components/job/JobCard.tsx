@@ -37,6 +37,7 @@ function salaryAmount(job: Job): string | null {
   const { salary_min: lo, salary_max: hi } = job
   if (lo === null) return job.salary_shown ? cleanSalary(job.salary_text) : null
   if (job.salary_type === "from" || job.salary_type === "above") return `od ${amount(lo)} €`
+  if (job.salary_type === "up_to") return `do ${amount(hi ?? lo)} €`
   if (hi === null || hi === lo) return `${amount(lo)} €`
   return `${amount(lo)} – ${amount(hi)} €`
 }

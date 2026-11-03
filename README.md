@@ -14,7 +14,7 @@ Na hrvatskim portalima velik dio oglasa nema navedenu plaću ("po dogovoru"). tr
 
 - **524** aktivna oglasa s vidljivom plaćom (studeni 2026.)
 - **3** izvora: Posao.hr, MojPosao.hr, HZZ
-- **49** testova za parser plaća, pokreću se na svaki push
+- **51** test za parser plaća, pokreću se na svaki push
 <!-- TODO: dodati broj posjeta iz Google Analyticsa -->
 
 ### Arhitektura
@@ -41,7 +41,7 @@ flowchart LR
 
 ### Zanimljiviji dijelovi
 
-- **Parser plaća** ([shared/salary_parser.py](shared/salary_parser.py)) čita formate kao `1.450 €`, `1 450 €`, `od 1.500 do 2.000 EUR neto`, `3000+ EUR` i `€1500`. Razlikuje raspon, "od", "iznad" i fiksni iznos, te neto i bruto. Testovi su u [tests/test_salary_parser.py](tests/test_salary_parser.py).
+- **Parser plaća** ([shared/salary_parser.py](shared/salary_parser.py)) čita formate kao `1.450 €`, `1 450 €`, `od 1.500 do 2.000 EUR neto`, `3000+ EUR` i `€1500`. Razlikuje raspon, "od", "do", "iznad" i fiksni iznos, te neto i bruto. Testovi su u [tests/test_salary_parser.py](tests/test_salary_parser.py).
 - **Tri različita načina dohvata:** Posao.hr kroz headless Chromium, MojPosao kroz njihov search API, HZZ kroz RSS feedove po kategorijama i stranice detalja oglasa.
 - **Normalizacija:** grane i lokacije s različitih portala mapiraju se na zajedničke liste. Oglasi koji se razlikuju samo po lokaciji grupiraju se u jedan.
 - **Frontend:** Next.js App Router, strukturirani podaci `JobPosting` za Google, spremanje oglasa bez registracije, stranica s analitikom plaća i Markdown blog.
