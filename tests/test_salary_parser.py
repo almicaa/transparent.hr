@@ -12,6 +12,7 @@ from shared.salary_parser import (
     is_valid_salary,
     parse_salary,
     parse_salary_basis,
+    parse_salary_period,
     parse_salary_type,
 )
 
@@ -126,3 +127,24 @@ def test_cleaning_keeps_unrelated_numbers_out_of_the_salary():
     # Without cleaning, the park area would be read as the top of a range.
     assert parse_salary(raw) == (1200, 8000)
     assert parse_salary(clean_salary_snippet(raw)) == (1200, 1200)
+
+
+@pytest.mark.parametrize(
+    "text, salary_min, salary_max, expected",
+    [
+        # MojPosao's structured salary: no period field, only the numbers.
+        ("od 3 do 4 EUR bruto", 3, 4, "hour"),
+        ("Annual salary range: € 30.500,00 – 35.000,00", 30500, 35000, "year"),
+        ("Annual salary 12.000 €", 12000, 12000, "year"),
+        ("24.000 EUR", 24000, 24000, "year"),
+        # Monthly pay stays monthly (None).
+        ("1.450 €", 1450, 1450, None),
+        ("od 5000 do 8000 EUR bruto", 5000, 8000, None),
+        ("12.000 €", 12000, 12000, None),
+        # "godišnji" about something else doesn't make monthly pay yearly.
+        ("od 1.500 do 2.000 € + godišnji bonus", 1500, 2000, None),
+        ("Plaća po dogovoru", None, None, None),
+    ],
+)
+def test_parse_salary_period(text, salary_min, salary_max, expected):
+    assert parse_salary_period(text, salary_min, salary_max) == expected

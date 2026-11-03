@@ -161,18 +161,19 @@ export function buildJobPostingJsonLd(job: Job) {
   }
 
   if (job.salary_shown && job.salary_min) {
+    const unitText = job.salary_period === "hour" ? "HOUR" : job.salary_period === "year" ? "YEAR" : "MONTH"
     jsonLd.baseSalary = {
       "@type": "MonetaryAmount",
       currency: job.salary_currency || "EUR",
       // "do X €" only states a maximum, so don't claim X as the minimum too.
       value:
         job.salary_type === "up_to"
-          ? { "@type": "QuantitativeValue", maxValue: job.salary_max ?? job.salary_min, unitText: "MONTH" }
+          ? { "@type": "QuantitativeValue", maxValue: job.salary_max ?? job.salary_min, unitText }
           : {
               "@type": "QuantitativeValue",
               minValue: job.salary_min,
               maxValue: job.salary_max ?? job.salary_min,
-              unitText: "MONTH",
+              unitText,
             },
     }
   }

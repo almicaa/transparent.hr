@@ -38,7 +38,8 @@ export default function NetCalculator({ job }: { job: Job }) {
     [isRange, grossMax, rates, children, dependents],
   )
 
-  if (job.salary_basis !== "bruto" || job.salary_min === null) return null
+  // The calculator works on monthly pay.
+  if (job.salary_basis !== "bruto" || job.salary_min === null || job.salary_period) return null
 
   return (
     <>

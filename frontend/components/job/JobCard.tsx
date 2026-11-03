@@ -32,14 +32,17 @@ function amount(n: number): string {
   return Math.round(n).toLocaleString("hr-HR")
 }
 
-/** "1.100 – 1.500 €", "od 2.000 €", "1.400 €" from the parsed numbers; falls back to the ad's own text. */
+const PERIOD_SUFFIX: Record<string, string> = { hour: "/h", year: "/god." }
+
+/** "1.100 – 1.500 €", "od 2.000 €", "3 – 4 €/h" from the parsed numbers; falls back to the ad's own text. */
 function salaryAmount(job: Job): string | null {
   const { salary_min: lo, salary_max: hi } = job
   if (lo === null) return job.salary_shown ? cleanSalary(job.salary_text) : null
-  if (job.salary_type === "from" || job.salary_type === "above") return `od ${amount(lo)} €`
-  if (job.salary_type === "up_to") return `do ${amount(hi ?? lo)} €`
-  if (hi === null || hi === lo) return `${amount(lo)} €`
-  return `${amount(lo)} – ${amount(hi)} €`
+  const unit = `€${PERIOD_SUFFIX[job.salary_period ?? ""] ?? ""}`
+  if (job.salary_type === "from" || job.salary_type === "above") return `od ${amount(lo)} ${unit}`
+  if (job.salary_type === "up_to") return `do ${amount(hi ?? lo)} ${unit}`
+  if (hi === null || hi === lo) return `${amount(lo)} ${unit}`
+  return `${amount(lo)} – ${amount(hi)} ${unit}`
 }
 
 // How many city names to spell out on a grouped card before "i još N".

@@ -27,7 +27,9 @@ class Job(Base):
     salary_basis: Mapped[str | None] = mapped_column(String)
     """'neto' | 'bruto' | None (unstated)"""
     salary_type: Mapped[str | None] = mapped_column(String)
-    """'range' | 'fixed' | 'from' | 'above' | None"""
+    """'range' | 'fixed' | 'from' | 'up_to' | 'above' | None"""
+    salary_period: Mapped[str | None] = mapped_column(String)
+    """'hour' | 'year' | None (monthly). Only monthly amounts feed salary filters, sorting and stats."""
     description: Mapped[str | None] = mapped_column(String)
     url: Mapped[str | None] = mapped_column(String)
     source: Mapped[str | None] = mapped_column(String)

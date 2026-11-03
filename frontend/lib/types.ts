@@ -13,6 +13,8 @@ export interface Job {
   salary_currency: string | null
   salary_basis: string | null
   salary_type: string | null
+  /** "hour" | "year" | null (monthly) */
+  salary_period?: string | null
   description: string | null
   url: string | null
   source: string | null

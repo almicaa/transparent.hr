@@ -3,7 +3,7 @@ import sys
 from collections import Counter
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.db.session import utcnow
@@ -63,14 +63,18 @@ class JobRepository:
         stmt = select(Job).where(_live())
 
         # "from"-type salaries ("od 2000 €") only have a lower bound, so fall back to it.
-        salary_top = func.coalesce(Job.salary_max, Job.salary_min)
+        # Hourly and yearly pay don't compare with monthly amounts: they match
+        # no salary filter and sort as if no amount were given.
+        monthly = Job.salary_period.is_(None)
+        salary_top = case((monthly, func.coalesce(Job.salary_max, Job.salary_min)))
+        salary_low = case((monthly, Job.salary_min))
 
         if salary_shown is not None:
             stmt = stmt.where(Job.salary_shown == int(salary_shown))
         if salary_min is not None:
             stmt = stmt.where(salary_top >= salary_min)
         if salary_max is not None:
-            stmt = stmt.where(Job.salary_min <= salary_max)
+            stmt = stmt.where(salary_low <= salary_max)
         if city:
             # Same parsing as the per-city counts (option_counts), so "Split (11)"
             # in the dropdown gives 11 results — a plain ILIKE '%Split%' would
@@ -112,7 +116,7 @@ class JobRepository:
         order_map = {
             "newest": Job.scraped_at.desc(),
             "salary_desc": salary_top.desc().nulls_last(),
-            "salary_asc": Job.salary_min.asc().nulls_last(),
+            "salary_asc": salary_low.asc().nulls_last(),
         }
         stmt = stmt.order_by(order_map.get(sort, Job.scraped_at.desc()), Job.id.desc())
         stmt = stmt.offset((page - 1) * per_page).limit(per_page)
@@ -126,7 +130,7 @@ class JobRepository:
         rows = self.db.execute(
             stmt.with_only_columns(
                 Job.id, Job.title, Job.company, Job.salary_min, Job.salary_max,
-                Job.salary_basis, Job.source, Job.scraped_at, Job.location,
+                Job.salary_basis, Job.salary_period, Job.source, Job.scraped_at, Job.location,
             )
         ).all()
 
@@ -135,7 +139,7 @@ class JobRepository:
             key = (
                 " ".join((r.title or "").lower().split()),
                 (r.company or "").strip().lower(),
-                r.salary_min, r.salary_max, r.salary_basis, r.source,
+                r.salary_min, r.salary_max, r.salary_basis, r.salary_period, r.source,
             )
             groups.setdefault(key, []).append(r)
 
@@ -149,13 +153,18 @@ class JobRepository:
             entries.append((rep, len(members), locations))
 
         def top(r):
+            if r.salary_period is not None:
+                return None
             return r.salary_max if r.salary_max is not None else r.salary_min
+
+        def low(r):
+            return None if r.salary_period is not None else r.salary_min
 
         # Missing amounts sort last either way; ties go to the newer ad.
         if sort == "salary_desc":
             entries.sort(key=lambda e: (top(e[0]) is None, -(top(e[0]) or 0), -e[0].id))
         elif sort == "salary_asc":
-            entries.sort(key=lambda e: (e[0].salary_min is None, e[0].salary_min or 0, -e[0].id))
+            entries.sort(key=lambda e: (low(e[0]) is None, low(e[0]) or 0, -e[0].id))
         else:
             entries.sort(key=lambda e: (e[0].scraped_at or oldest, e[0].id), reverse=True)
 
@@ -244,10 +253,10 @@ class JobRepository:
 
     def salary_points(self) -> list[tuple[str | None, str | None, float, bool]]:
         """(category, salary_basis, monthly midpoint, is_foreign) for every live
-        job with a parsed amount — the raw material for the histogram and
+        job with a parsed monthly amount — the raw material for the histogram and
         category medians."""
         stmt = select(Job.category, Job.salary_basis, Job.salary_min, Job.salary_max, Job.location).where(
-            _live(), Job.salary_shown == 1, Job.salary_min.is_not(None)
+            _live(), Job.salary_shown == 1, Job.salary_min.is_not(None), Job.salary_period.is_(None)
         )
         return [
             (category, basis, (lo + (hi if hi is not None else lo)) / 2, bool(match_countries(location)))

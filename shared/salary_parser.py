@@ -100,3 +100,33 @@ def is_valid_salary(text: str) -> bool:
     if not text:
         return False
     return bool(_AMOUNT_WITH_CURRENCY.search(text))
+
+
+
+_YEARLY_WORDS = re.compile(r"(?i)godišnj|godisnj|/\s*god\b|per\s+year|per\s+annum|annual|yearly")
+
+# No monthly salary is under 100 €. Above 20.000 € it is a year's pay; with
+# the text saying so ("Annual salary"), above 10.000 €. Words alone don't
+# decide: "1.500 € + godišnji bonus" is still monthly.
+_MAX_HOURLY = 100
+_MIN_YEARLY = 20000
+_MIN_YEARLY_STATED = 10000
+
+
+def parse_salary_period(text: str | None, salary_min: float | None, salary_max: float | None) -> str | None:
+    """'hour' or 'year' when the pay isn't monthly; None for monthly (the default).
+
+    MojPosao's structured salary has no period field, so an ad for "3–4 EUR"
+    reaches us as plain numbers that can only mean per hour.
+    """
+    if salary_min is None and salary_max is None:
+        return None
+    top = salary_max if salary_max is not None else salary_min
+    low = salary_min if salary_min is not None else top
+    if top < _MAX_HOURLY:
+        return "hour"
+    if low >= _MIN_YEARLY:
+        return "year"
+    if low >= _MIN_YEARLY_STATED and text and _YEARLY_WORDS.search(text):
+        return "year"
+    return None

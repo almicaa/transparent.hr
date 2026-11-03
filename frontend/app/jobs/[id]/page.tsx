@@ -57,7 +57,10 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
       {job.salary_shown && job.salary_text ? (
         <div className="job-detail__pay">
-          <div className="job-detail__salary">{job.salary_text}</div>
+          <div className="job-detail__salary">
+            {job.salary_text}
+            {job.salary_period === "hour" ? " (po satu)" : job.salary_period === "year" ? " (godišnje)" : ""}
+          </div>
           <NetCalculator job={job} />
         </div>
       ) : null}

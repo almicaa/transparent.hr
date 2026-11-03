@@ -24,6 +24,7 @@ from shared.salary_parser import (  # noqa: E402,F401
     parse_salary,
     parse_salary_basis,
     parse_salary_type,
+    parse_salary_period,
     is_valid_salary,
     clean_salary_snippet,
 )
@@ -229,6 +230,7 @@ _ADDED_JOB_COLUMNS = {
     "education": "TEXT",
     "experience": "TEXT",
     "openings": "INTEGER",
+    "salary_period": "TEXT",
 }
 
 
@@ -255,6 +257,7 @@ def init_db():
                 salary_currency TEXT,
                 salary_basis TEXT,
                 salary_type  TEXT,
+                salary_period TEXT,
                 description  TEXT,
                 url          TEXT,
                 source       TEXT,
@@ -544,13 +547,13 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
             INSERT INTO jobs
             (external_id, title, company, location, job_type,
              salary_min, salary_max, salary_text, salary_shown,
-             salary_currency, salary_basis, salary_type,
+             salary_currency, salary_basis, salary_type, salary_period,
              category, category_raw,
              url, source, posted_at, expires_at,
              description, address_region, contract_type, education, experience, openings)
             VALUES (:external_id, :title, :company, :location, :job_type,
                     :salary_min, :salary_max, :salary_text, :salary_shown,
-                    :salary_currency, :salary_basis, :salary_type,
+                    :salary_currency, :salary_basis, :salary_type, :salary_period,
                     :category, :category_raw,
                     :url, :source, :posted_at, :expires_at,
                     :description, :address_region, :contract_type, :education, :experience, :openings)
@@ -570,6 +573,7 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
             "salary_currency": "EUR" if salary_min is not None else None,
             "salary_basis": parse_salary_basis(salary_text),
             "salary_type": parse_salary_type(salary_text, salary_min, salary_max),
+            "salary_period": parse_salary_period(salary_text, salary_min, salary_max),
             "category": normalize_category(job.get("category_raw")),
             "category_raw": job.get("category_raw"),
             "url": job.get("url"),

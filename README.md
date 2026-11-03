@@ -14,7 +14,7 @@ Na hrvatskim portalima velik dio oglasa nema navedenu plaću ("po dogovoru"). tr
 
 - **524** aktivna oglasa s vidljivom plaćom (studeni 2026.)
 - **3** izvora: Posao.hr, MojPosao.hr, HZZ
-- **51** test za parser plaća, pokreću se na svaki push
+- **60** testova za parser plaća, pokreću se na svaki push
 <!-- TODO: dodati broj posjeta iz Google Analyticsa -->
 
 ### Arhitektura

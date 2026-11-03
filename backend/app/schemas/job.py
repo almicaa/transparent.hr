@@ -20,6 +20,7 @@ class JobOut(BaseModel):
     salary_currency: str | None = None
     salary_basis: str | None = None
     salary_type: str | None = None
+    salary_period: str | None = None
     description: str | None = None
     url: str | None = None
     source: str | None = None
