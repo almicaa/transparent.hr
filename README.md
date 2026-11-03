@@ -1,6 +1,54 @@
-# Transparent.hr — setup upute
+# transparent.hr
 
-Job agregator za Hrvatsku fokusiran isključivo na oglase s transparentnom plaćom u EUR.
+[![Tests](https://github.com/almicaa/transparent.hr/actions/workflows/tests.yml/badge.svg)](https://github.com/almicaa/transparent.hr/actions/workflows/tests.yml)
+
+**Oglasi za posao u Hrvatskoj, ali samo oni u kojima piše plaća.** → [www.transparent.hr](https://www.transparent.hr)
+
+Na hrvatskim portalima velik dio oglasa nema navedenu plaću ("po dogovoru"). transparent.hr redovito skuplja oglase s Posao.hr, MojPosao.hr i HZZ burze rada, zadržava samo one sa stvarnim iznosom u EUR i prikazuje ih na jednom mjestu, s filtrima po plaći, grani i gradu.
+
+![Popis oglasa na transparent.hr](docs/screenshot-jobs.png)
+
+<p align="center"><img src="docs/screenshot-mobile.png" alt="Naslovnica na mobitelu" width="260"></p>
+
+### U brojkama
+
+- **524** aktivna oglasa s vidljivom plaćom (studeni 2026.)
+- **3** izvora: Posao.hr, MojPosao.hr, HZZ
+- **49** testova za parser plaća, pokreću se na svaki push
+<!-- TODO: dodati broj posjeta iz Google Analyticsa -->
+
+### Arhitektura
+
+```mermaid
+flowchart LR
+    subgraph Izvori
+        P[Posao.hr]
+        M[MojPosao.hr]
+        H[HZZ burza rada]
+    end
+    subgraph Scraper["Scraper (Python, cron)"]
+        S[Playwright / HTTP<br/>dohvat oglasa]
+        N["Parser plaća i normalizacija<br/>(shared/)"]
+    end
+    DB[(PostgreSQL<br/>Neon)]
+    API[FastAPI<br/>Render]
+    WEB[Next.js<br/>Vercel]
+    U((Korisnik))
+
+    P & M & H --> S --> N -->|samo oglasi s plaćom u EUR| DB
+    DB --> API --> WEB --> U
+```
+
+### Zanimljiviji dijelovi
+
+- **Parser plaća** ([shared/salary_parser.py](shared/salary_parser.py)) čita formate kao `1.450 €`, `1 450 €`, `od 1.500 do 2.000 EUR neto`, `3000+ EUR` i `€1500`. Razlikuje raspon, "od", "iznad" i fiksni iznos, te neto i bruto. Testovi su u [tests/test_salary_parser.py](tests/test_salary_parser.py).
+- **Tri različita načina dohvata:** Posao.hr kroz headless Chromium, MojPosao kroz njihov search API, HZZ kroz RSS feedove po kategorijama i stranice detalja oglasa.
+- **Normalizacija:** grane i lokacije s različitih portala mapiraju se na zajedničke liste. Oglasi koji se razlikuju samo po lokaciji grupiraju se u jedan.
+- **Frontend:** Next.js App Router, strukturirani podaci `JobPosting` za Google, spremanje oglasa bez registracije, stranica s analitikom plaća i Markdown blog.
+
+---
+
+# Setup upute
 
 ## Struktura
 
@@ -8,8 +56,9 @@ Job agregator za Hrvatsku fokusiran isključivo na oglase s transparentnom plać
 transparent.hr/
   backend/    FastAPI, clean architecture (api/core/models/schemas/services/repositories)
   frontend/   Next.js 14 App Router, TypeScript
-  scraper/    Playwright scraperi: posao.hr, mojposao.hr
-  shared/     salary parser zajednički za scraper i backend
+  scraper/    scraperi: posao.hr, mojposao.hr, HZZ
+  shared/     parser plaća i normalizacija (grane, lokacije) za scraper i backend
+  tests/      pytest testovi
   infra/      deploy konfiguracija (Render, Vercel, Neon)
 ```
 
@@ -38,8 +87,7 @@ python run_all_scrapers.py --max_jobs 20
 ```
 
 Scraper će:
-- Otvoriti headless Chromium
-- Skenirati Posao.hr i MojPosao.hr
+- Skenirati Posao.hr (headless Chromium), MojPosao.hr (API) i HZZ (RSS + detalji oglasa)
 - Zadržati samo oglase s vidljivom plaćom (EUR)
 - Spremiti ih u `backend/jobs.db`
 
@@ -66,6 +114,7 @@ Endpointi:
 - `GET /api/jobs` — filteri: `salary_shown`, `city`, `category`, `job_type`, `source`, `search`, `sort`, `page`, `per_page`
 - `GET /api/jobs/{id}`
 - `GET /api/stats`
+- `GET /api/analitika/transparency`
 - `GET /api/filters`
 - `GET /health`
 
@@ -97,6 +146,16 @@ crontab -e
 ```
 0 */6 * * * /home/tvoje_ime/jobsrh/.venv/bin/python /home/tvoje_ime/jobsrh/run_all_scrapers.py >> /home/tvoje_ime/jobsrh/scraper.log 2>&1
 ```
+
+## Testovi
+
+```bash
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+pytest
+```
+
+GitHub Actions ([.github/workflows/tests.yml](.github/workflows/tests.yml)) pokreće testove na svaki push na `main` i na svaki pull request.
 
 ## Deploy
 
