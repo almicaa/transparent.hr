@@ -14,7 +14,7 @@ export const CONTACT_EMAIL = "info@transparent.hr"
 // Leads with the phrase people actually search for; the brand goes last.
 export const HOME_TITLE = "Oglasi za posao s plaćom u Hrvatskoj | Transparent.hr"
 export const HOME_DESCRIPTION =
-  "Svi oglasi za posao u Hrvatskoj s navedenom plaćom na jednom mjestu. Neto i bruto plaće u eurima s posao.hr, MojPosla i HZZ-a, po gradu, grani i iznosu."
+  "Svi oglasi za posao u Hrvatskoj s navedenom plaćom na jednom mjestu. Neto i bruto plaće u eurima s Posao.hr, MojPosao.hr i HZZ-a, po gradu, grani i iznosu."
 
 /** The site-wide share image, app/opengraph-image.tsx. */
 const DEFAULT_SHARE_IMAGE = { url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630, alt: SITE_NAME }
