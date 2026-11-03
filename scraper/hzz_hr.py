@@ -96,12 +96,36 @@ def _parse_feed(xml: str, category: str) -> list[dict]:
     return items
 
 
-def _span(page: str, element_id: str) -> str | None:
+def _span(page: str, element_id: str, multiline: bool = False) -> str | None:
+    """Text of a detail-page field. With `multiline`, keeps the employer's line
+    breaks (job descriptions are usually "- task" lists)."""
     m = re.search(rf'id="ctl00_MainContent_{element_id}"[^>]*>(.*?)</span>', page, re.S)
     if not m:
         return None
-    value = html.unescape(re.sub(r"<[^>]+>", " ", m.group(1)))
-    return re.sub(r"\s+", " ", value).strip() or None
+    value = html.unescape(re.sub(r"<br\s*/?>", "\n", m.group(1)))
+    value = re.sub(r"<[^>]+>", " ", value)
+    if not multiline:
+        return re.sub(r"\s+", " ", value).strip() or None
+    lines = (re.sub(r"[ \t\r\f\v]+", " ", line).strip() for line in value.split("\n"))
+    return "\n".join(line for line in lines if line) or None
+
+
+def _region(raw: str | None) -> str | None:
+    """'BOBOVICA, ZAGREBAČKA ŽUPANIJA' -> 'Zagrebačka županija'; 'ZAGREB, GRAD ZAGREB' -> 'Grad Zagreb'."""
+    if not raw or "," not in raw:
+        return None
+    region = raw.split(",", 1)[1].strip()
+    if not region:
+        return None
+    if region.upper() == "GRAD ZAGREB":
+        return "Grad Zagreb"
+    lower = region.lower()
+    return lower[0].upper() + lower[1:]
+
+
+def _int(raw: str | None) -> int | None:
+    m = re.match(r"\d+", raw or "")
+    return int(m.group(0)) if m else None
 
 
 def _place(raw: str | None) -> str | None:
@@ -126,15 +150,27 @@ def _deadline(raw: str | None) -> datetime | None:
 def parse_detail(page: str) -> dict:
     title = re.search(r"<h3>(.*?)</h3>", page, re.S)
     salary = _span(page, "lblPlaca")
+    place = _span(page, "lblMjestoRada")
     return {
         "title": re.sub(r"\s+", " ", html.unescape(title.group(1))).strip() if title else None,
         "company": _span(page, "lblNazivPoslodavca"),
-        "location": _place(_span(page, "lblMjestoRada")),
+        "location": _place(place),
+        "address_region": _region(place),
         "expires_at": _deadline(_span(page, "lblVrijediDo")),
         "job_type": _span(page, "lblRadnoVrijeme"),
+        "contract_type": _span(page, "lblVrstaZaposlenja"),
+        "description": _span(page, "lblOpisPosla", multiline=True),
+        "education": _span(page, "lblRazinaObrazovanja"),
+        "experience": _span(page, "lblRadnoIskustvo"),
+        "openings": _int(_span(page, "lblBrojRadnika")),
         # The field is labelled "Bruto plaća", so the basis is always bruto.
         "salary_text": f"{salary} bruto" if salary and re.search(r"\d", salary) else None,
     }
+
+
+# Columns parse_detail fills that backfill may set on jobs saved before the
+# scraper read them.
+DETAIL_FIELDS = ("company", "address_region", "contract_type", "description", "education", "experience", "openings")
 
 
 async def _fetch_feeds(http_client) -> list[dict] | None:

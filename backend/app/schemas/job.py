@@ -27,6 +27,11 @@ class JobOut(BaseModel):
     scraped_at: datetime | None = None
     expires_at: datetime | None = None
     is_active: bool = True
+    address_region: str | None = None
+    contract_type: str | None = None
+    education: str | None = None
+    experience: str | None = None
+    openings: int | None = None
     group_count: int = 1
     """How many ads this entry stands for in a grouped list: the same job, pay
     and company posted separately per location (e.g. one ad per store)."""

@@ -12,10 +12,15 @@ overwritten.
 With --remap, skips the network entirely and just recomputes `category` from
 the stored `category_raw` — run that after changing the category rules.
 
+With --hzz-details, re-reads HZZ jobs with a salary but no description and
+fills the description, county, contract type, education, experience and
+number of openings.
+
 Usage:
   python -m scraper.backfill --dry-run
   python -m scraper.backfill --limit 50
   python -m scraper.backfill --remap
+  python -m scraper.backfill --hzz-details --dry-run --limit 5
 """
 
 import argparse
@@ -27,8 +32,10 @@ from sqlalchemy import text
 
 try:
     from scraper import base_scraper as base
+    from scraper import hzz_hr
 except Exception:
     import base_scraper as base
+    import hzz_hr
 
 from shared.category_normalizer import normalize_category
 
@@ -102,7 +109,7 @@ async def fetch_missing(limit: int | None, dry_run: bool) -> None:
                         updates["category"] = normalize_category(raw)
                         categories[updates["category"]] += 1
                     if deadline and not current_expiry:
-                        updates["expires_at"] = deadline.isoformat()
+                        updates["expires_at"] = base.to_utc_iso(deadline)
                         deadlines += 1
                     print(f"{prefix} {updates.get('category', '-')} | rok: {deadline.date() if deadline else '-'}")
 
@@ -120,13 +127,67 @@ async def fetch_missing(limit: int | None, dry_run: bool) -> None:
         print(f"  {cnt:4}  {category}")
 
 
+async def fetch_hzz_details(limit: int | None, dry_run: bool) -> None:
+    """Re-read live HZZ jobs with a salary that were saved before the scraper
+    kept the description and the other detail fields. Only empty columns are
+    filled. Ads gone from HZZ are left to the scraper's feed reconciliation."""
+    with base.get_connection() as conn:
+        query = """
+            SELECT id, url, {cols} FROM jobs
+            WHERE source = 'hzz' AND is_active = :active AND salary_shown = 1
+              AND url IS NOT NULL AND description IS NULL
+            ORDER BY id DESC
+        """.format(cols=", ".join(hzz_hr.DETAIL_FIELDS))
+        if limit:
+            query += f" LIMIT {int(limit)}"
+        rows = conn.execute(text(query), {"active": True}).fetchall()
+        print(f"{len(rows)} HZZ jobs without a description.")
+
+        filled = Counter()
+        failed = 0
+        async with base.new_http_client() as client:
+            # Prime HZZ's cookie-support redirect once, like the scraper does.
+            await base.retry_with_backoff(client.get, hzz_hr.SITE + "/RSS.aspx")
+            for i, row in enumerate(rows, 1):
+                job_id, url, current = row[0], row[1], dict(zip(hzz_hr.DETAIL_FIELDS, row[2:]))
+                prefix = f"  [{i}/{len(rows)}] {job_id}:"
+                try:
+                    resp = await base.retry_with_backoff(client.get, url)
+                    detail = hzz_hr.parse_detail(resp.text)
+                except Exception as e:
+                    failed += 1
+                    print(f"{prefix} fetch failed ({e.__class__.__name__})")
+                    await base.sleep_jitter(*hzz_hr.DETAIL_DELAY)
+                    continue
+
+                updates = {
+                    col: detail[col]
+                    for col in hzz_hr.DETAIL_FIELDS
+                    if detail.get(col) is not None and current[col] is None
+                }
+                filled.update(updates.keys())
+                print(f"{prefix} {', '.join(updates) or 'nothing new'}")
+                if updates and not dry_run:
+                    assignments = ", ".join(f"{col} = :{col}" for col in updates)
+                    conn.execute(text(f"UPDATE jobs SET {assignments} WHERE id = :id"), {**updates, "id": job_id})
+                    conn.commit()
+                await base.sleep_jitter(*hzz_hr.DETAIL_DELAY)
+
+    print(f"\nDone{' (dry run)' if dry_run else ''}: {failed} failed fetches. Filled per column:")
+    for col in hzz_hr.DETAIL_FIELDS:
+        print(f"  {filled[col]:4}  {col}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--remap", action="store_true", help="Recompute category from stored category_raw, no fetching.")
+    parser.add_argument("--hzz-details", dest="hzz_details", action="store_true", help="Fill description and other detail fields of HZZ jobs.")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--dry-run", dest="dry_run", action="store_true")
     args = parser.parse_args()
     if args.remap:
         remap(args.dry_run)
+    elif args.hzz_details:
+        asyncio.run(fetch_hzz_details(args.limit, args.dry_run))
     else:
         asyncio.run(fetch_missing(args.limit, args.dry_run))
