@@ -75,3 +75,5 @@ Ako ste poslodavac koji već objavljuje plaće, [javite nam se](/o-nama#kontakt)
 Država je pokazala da može biti brza kad je nešto prioritet. Transparentnost plaća zaslužuje biti jedan od njih.
 
 > Stanje zakonodavstva na dan objave: listopad 2026.
+
+> Ažurirano 4. studenoga 2026.: Ministarstvo je predstavilo nacrt izmjena Zakona o radu. [Što donosi i što su špekulacije](/blog/placa-prije-razgovora-izmjene-zakona-o-radu).
