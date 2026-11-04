@@ -330,7 +330,8 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .hero-art__shapes{position:absolute;left:-30px;top:-40px;width:210px;height:210px;transform:rotate(-8deg)}
 /* Job list: a short hero band holding just the search bar, then filters on
    the left and jobs on the right (the filters become a drawer below 1024px). */
-.jobs-hero{padding:40px max(8px,calc(50vw - 582px)) 36px}
+/* Above the job list, so the Što/Gdje dropdowns open over the cards. */
+.jobs-hero{z-index:3;padding:40px max(8px,calc(50vw - 582px)) 36px}
 .jobs-hero .filters{position:relative;z-index:2}
 .jobs-hero .finder{box-shadow:0 18px 44px rgba(8,80,80,0.16)}
 .jobs-hero .active-filter{background:rgba(255,255,255,0.85)}
