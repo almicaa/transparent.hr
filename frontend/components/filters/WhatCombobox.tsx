@@ -11,6 +11,8 @@ interface WhatComboboxProps {
   onSearch: (search: string) => void
   onCategory: (category: string) => void
   categoryOptions: FilterOption[]
+  /** Open the full grana menu on an empty field. Off on /jobs, where the sidebar lists the grane. */
+  megaMenu?: boolean
 }
 
 /**
@@ -18,7 +20,14 @@ interface WhatComboboxProps {
  * field picks a grana. Focusing it with nothing typed opens a mega menu of all
  * grane; typing narrows it to matching ones while the text search runs as usual.
  */
-export default function WhatCombobox({ search, category, onSearch, onCategory, categoryOptions }: WhatComboboxProps) {
+export default function WhatCombobox({
+  search,
+  category,
+  onSearch,
+  onCategory,
+  categoryOptions,
+  megaMenu = true,
+}: WhatComboboxProps) {
   const [open, setOpen] = useState(false)
   // -1: nothing highlighted, so Enter submits the text search instead of picking a grana.
   const [highlight, setHighlight] = useState(-1)
@@ -37,8 +46,8 @@ export default function WhatCombobox({ search, category, onSearch, onCategory, c
 
   const q = fold(search.trim())
   const options = useMemo(
-    () => (q ? categoryOptions.filter((o) => fold(o.value).includes(q)) : categoryOptions),
-    [q, categoryOptions],
+    () => (q ? categoryOptions.filter((o) => fold(o.value).includes(q)) : megaMenu ? categoryOptions : []),
+    [q, categoryOptions, megaMenu],
   )
   const isMega = !q
 

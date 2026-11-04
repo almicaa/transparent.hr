@@ -21,8 +21,11 @@ async function getHomeData() {
 
 export default async function HomePage() {
   const { stats, filterData, listedTotal } = await getHomeData()
-  const withSalary = listedTotal ?? stats?.salary_shown ?? 0
-  const portals = stats?.sources?.length || 2
+  // Only the job list's own count: stats.salary_shown counts every ad, before
+  // per-location duplicates are grouped, so it never matches /jobs. Without
+  // it the tile says "100 %" and the button has no number.
+  const withSalary = listedTotal ?? 0
+  const portals = stats?.sources?.length || 3
 
   const tiles = [
     {

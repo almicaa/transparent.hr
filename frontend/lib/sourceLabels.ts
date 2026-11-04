@@ -1,5 +1,5 @@
 export const SOURCE_LABELS: Record<string, string> = {
-  posao: "posao.hr",
-  mojposao: "mojposao.hr",
+  posao: "Posao.hr",
+  mojposao: "MojPosao.hr",
   hzz: "HZZ",
 }

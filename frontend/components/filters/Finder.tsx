@@ -66,6 +66,7 @@ export default function Finder({
           onSearch={(search) => onChange({ search })}
           onCategory={(category) => onChange({ category })}
           categoryOptions={categoryOptions}
+          megaMenu={placement !== "oglasi"}
         />
       </div>
 

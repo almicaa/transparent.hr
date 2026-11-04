@@ -9,6 +9,9 @@ import SalaryRange from "./SalaryRange"
 // Portals we actually scrape (SOURCE_LABELS also covers ones we don't, yet).
 const SOURCES = ["posao", "mojposao", "hzz"]
 
+// Grane shown before "Prikaži još": the list runs past twenty.
+const VISIBLE_CATEGORIES = 8
+
 // Matches the CSS breakpoint where the filter drawer becomes a fixed sidebar.
 const SIDEBAR_QUERY = "(min-width: 1024px)"
 
@@ -108,6 +111,14 @@ export function FilterPanel({
 }: FilterPanelProps) {
   const isSidebar = useMediaQuery(SIDEBAR_QUERY)
   const count = panelFilterCount(filters)
+  const [allCategories, setAllCategories] = useState(false)
+  // A selected grana further down the list stays visible when collapsed.
+  const selectedIndex = categoryOptions.findIndex((o) => o.value === filters.category)
+  const shownCategories =
+    allCategories || categoryOptions.length <= VISIBLE_CATEGORIES + 2
+      ? categoryOptions
+      : categoryOptions.filter((_, i) => i < VISIBLE_CATEGORIES || i === selectedIndex)
+  const hiddenCount = categoryOptions.length - shownCategories.length
 
   useEffect(() => {
     if (!drawerOpen || isSidebar) return
@@ -167,7 +178,7 @@ export function FilterPanel({
           <section className="drawer__section">
             <h3>Grana</h3>
             <div className="option-list" role="radiogroup" aria-label="Grana">
-              {[{ value: "", count: undefined as number | undefined }, ...categoryOptions].map((o) => (
+              {[{ value: "", count: undefined as number | undefined }, ...shownCategories].map((o) => (
                 <label key={o.value || "all"} className="option-list__item">
                   <input
                     type="radio"
@@ -180,18 +191,24 @@ export function FilterPanel({
                 </label>
               ))}
             </div>
+            {hiddenCount > 0 || allCategories ? (
+              <button type="button" className="option-list__more" onClick={() => setAllCategories(!allCategories)}>
+                {allCategories ? "Prikaži manje" : `Prikaži još ${hiddenCount}`}
+              </button>
+            ) : null}
           </section>
 
           <section className="drawer__section">
             <h3>Izvor</h3>
-            <div className="segmented" role="radiogroup" aria-label="Izvor">
+            {/* Chips wrap onto a second row instead of scrolling sideways. */}
+            <div className="chip-group" role="radiogroup" aria-label="Izvor">
               {["", ...SOURCES].map((s) => (
                 <button
                   key={s || "all"}
                   type="button"
                   role="radio"
                   aria-checked={filters.source === s}
-                  className={filters.source === s ? "segmented__option is-selected" : "segmented__option"}
+                  className={filters.source === s ? "chip is-selected" : "chip"}
                   onClick={() => onChange({ source: s })}
                 >
                   {s ? SOURCE_LABELS[s] : "Svi"}
