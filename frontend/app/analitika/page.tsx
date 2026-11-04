@@ -1,5 +1,5 @@
 import { pageMetadata } from "../../lib/seo"
-import { getStats, getTransparencyStats } from "../../lib/api"
+import { getJobs, getStats, getTransparencyStats } from "../../lib/api"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
 import TransparencyChart from "../../components/ui/TransparencyChart"
 
@@ -23,7 +23,13 @@ const SOURCE_ORDER = ["posao", "mojposao"]
 const POSAO_VALID_FROM = "2026-09-24"
 
 export default async function AnalyticsPage() {
-  const [stats, rawTransparency] = await Promise.all([getStats({ revalidate: 600 }), getTransparencyStats({ revalidate: 600 })])
+  const [stats, rawTransparency, listed] = await Promise.all([
+    getStats({ revalidate: 600 }),
+    getTransparencyStats({ revalidate: 600 }),
+    // The job list's own count (an ad posted per location counts once), so
+    // this matches /jobs and the home page; stats.salary_shown counts every row.
+    getJobs({ page: 1, per_page: 1, salary_shown: "yes" }, { revalidate: 600 }).catch(() => null),
+  ])
   const transparency = rawTransparency.filter((r) => r.source !== "posao" || r.date >= POSAO_VALID_FROM)
 
   // Group by date for the table
@@ -38,11 +44,11 @@ export default async function AnalyticsPage() {
 
       <div className="stats">
         <div className="stat">
-          <div className="stat__value">{stats?.salary_shown ?? "-"}</div>
-          <div className="meta">Oglasa s plaćom u bazi</div>
+          <div className="stat__value">{listed ? listed.total.toLocaleString("hr-HR") : "-"}</div>
+          <div className="meta">Oglasa s plaćom</div>
         </div>
         <div className="stat">
-          <div className="stat__value">{stats?.sources?.length ?? "-"}</div>
+          <div className="stat__value">{stats?.sources?.length || 3}</div>
           <div className="meta">Broj portala</div>
         </div>
       </div>
