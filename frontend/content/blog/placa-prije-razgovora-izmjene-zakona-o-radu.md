@@ -103,4 +103,4 @@ Do tada krenite od oglasa koji vam odmah kažu koliko vrijedi vaš rad.
 - [Direktiva (EU) 2023/970 o transparentnosti plaća](https://eur-lex.europa.eu/legal-content/HR/TXT/?uri=CELEX:32023L0970) (EUR-Lex)
 - [DCI: The transposition deadline has passed](https://blog.dciconsult.com/the-transposition-deadline-has-passed)
 
-> Napomena: tekst nije pravni savjet. Stanje na dan objave: 4. studenoga 2026. Članak ćemo ažurirati kad Sabor donese zakon.
+> Napomena: tekst nije pravni savjet. Stanje na dan objave: 4. studenoga 2026.
