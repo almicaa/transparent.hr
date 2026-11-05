@@ -32,6 +32,16 @@ def _live():
     return and_(Job.is_active.is_(True), or_(Job.expires_at.is_(None), Job.expires_at > utcnow()))
 
 
+def _group_key(r) -> tuple:
+    """Ads with the same title, company, pay and source are one list card
+    (a chain posting one ad per store)."""
+    return (
+        " ".join((r.title or "").lower().split()),
+        (r.company or "").strip().lower(),
+        r.salary_min, r.salary_max, r.salary_basis, r.salary_period, r.source,
+    )
+
+
 class JobRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -136,12 +146,7 @@ class JobRepository:
 
         groups: dict[tuple, list] = {}
         for r in rows:
-            key = (
-                " ".join((r.title or "").lower().split()),
-                (r.company or "").strip().lower(),
-                r.salary_min, r.salary_max, r.salary_basis, r.salary_period, r.source,
-            )
-            groups.setdefault(key, []).append(r)
+            groups.setdefault(_group_key(r), []).append(r)
 
         oldest = datetime.min
         entries = []
@@ -267,17 +272,31 @@ class JobRepository:
         """Per-category, per-region ('hr' / 'foreign'), per-city and per-country
         counts of live jobs with a salary — the set the job browser lists — for
         filter dropdowns. A job listing several cities counts toward each,
-        matching the city filter's substring match."""
-        stmt = select(Job.category, Job.location).where(_live(), Job.salary_shown == 1)
-        categories, regions, cities, countries = Counter(), Counter(), Counter(), Counter()
-        for category, location in self.db.execute(stmt):
-            if category:
-                categories[category] += 1
-            job_countries = match_countries(location)
+        matching the city filter's substring match. Like the list, ads that
+        differ only by location count once per option, so "Prodaja (63)" gives
+        63 results."""
+        stmt = select(
+            Job.category, Job.location, Job.title, Job.company, Job.salary_min, Job.salary_max,
+            Job.salary_basis, Job.salary_period, Job.source,
+        ).where(_live(), Job.salary_shown == 1)
+        # option -> the groups (list cards) it matches
+        seen: tuple[dict, dict, dict, dict] = ({}, {}, {}, {})
+        for r in self.db.execute(stmt):
+            key = _group_key(r)
+            job_countries = match_countries(r.location)
             # Same split as the API's region filter: foreign iff a country is named.
-            regions["foreign" if job_countries else "hr"] += 1
-            cities.update(split_cities(location))
-            countries.update(job_countries)
+            matches = (
+                [r.category] if r.category else [],
+                ["foreign" if job_countries else "hr"],
+                split_cities(r.location),
+                job_countries,
+            )
+            for found, values in zip(seen, matches):
+                for v in values:
+                    found.setdefault(v, set()).add(key)
+        categories, regions, cities, countries = (
+            Counter({v: len(keys) for v, keys in found.items()}) for found in seen
+        )
         return categories, regions, cities, countries
 
     def market_estimates(self) -> list[tuple[str, float]]:
