@@ -114,8 +114,10 @@ export function FilterPanel({
   const [allCategories, setAllCategories] = useState(false)
   // A selected grana further down the list stays visible when collapsed.
   const selectedIndex = categoryOptions.findIndex((o) => o.value === filters.category)
+  // Only the desktop sidebar collapses the list; on phones the drawer scrolls
+  // anyway, and smaller grane (IT) were hidden behind "Prikaži još".
   const shownCategories =
-    allCategories || categoryOptions.length <= VISIBLE_CATEGORIES + 2
+    allCategories || !isSidebar || categoryOptions.length <= VISIBLE_CATEGORIES + 2
       ? categoryOptions
       : categoryOptions.filter((_, i) => i < VISIBLE_CATEGORIES || i === selectedIndex)
   const hiddenCount = categoryOptions.length - shownCategories.length
