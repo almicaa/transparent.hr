@@ -133,11 +133,10 @@ export default function WhatCombobox({
                 aria-selected={o.value === category}
                 className={i === highlight ? "what-combobox__option is-highlighted" : "what-combobox__option"}
                 onPointerEnter={() => setHighlight(i)}
-                // pointerdown, not click: fires before the input's blur handling.
-                onPointerDown={(e) => {
-                  e.preventDefault()
-                  choose(o.value)
-                }}
+                // Keep focus in the input on a mouse press; pick on click, which a
+                // touch only fires on a tap, so swiping to scroll the list picks nothing.
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => choose(o.value)}
               >
                 <span>{o.value}</span>
                 <span className="what-combobox__count">{o.count}</span>

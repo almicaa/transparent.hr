@@ -157,11 +157,10 @@ export default function LocationCombobox({
                 aria-selected={s.value === value}
                 className={i === highlight ? "location-combobox__option is-highlighted" : "location-combobox__option"}
                 onPointerEnter={() => setHighlight(i)}
-                // pointerdown, not click: fires before the input's blur handling.
-                onPointerDown={(e) => {
-                  e.preventDefault()
-                  choose(s.value)
-                }}
+                // Keep focus in the input on a mouse press; pick on click, which a
+                // touch only fires on a tap, so swiping to scroll the list picks nothing.
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => choose(s.value)}
               >
                 <span>{s.label}</span>
                 {s.count !== undefined ? <span className="location-combobox__count">{s.count}</span> : null}
