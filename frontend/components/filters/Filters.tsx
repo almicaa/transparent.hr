@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { SIDEBAR_QUERY, useMediaQuery } from "../../lib/useMediaQuery"
 import { EMPTY_FILTERS, FilterOption, JobFilters, SalaryBucket } from "../../lib/types"
 import { jobCountLabel } from "../../lib/format"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
@@ -11,9 +12,6 @@ const SOURCES = ["posao", "mojposao", "hzz"]
 
 // Grane shown before "Prikaži još": the list runs past twenty.
 const VISIBLE_CATEGORIES = 8
-
-// Matches the CSS breakpoint where the filter drawer becomes a fixed sidebar.
-const SIDEBAR_QUERY = "(min-width: 1024px)"
 
 function euro(n: string): string {
   return `${Number(n).toLocaleString("hr-HR")} €`
@@ -75,18 +73,6 @@ export function SearchBar({ filters, onChange, onSubmit, ...options }: SearchBar
       ) : null}
     </div>
   )
-}
-
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false)
-  useEffect(() => {
-    const mq = window.matchMedia(query)
-    setMatches(mq.matches)
-    const onChange = () => setMatches(mq.matches)
-    mq.addEventListener("change", onChange)
-    return () => mq.removeEventListener("change", onChange)
-  }, [query])
-  return matches
 }
 
 interface FilterPanelProps {
