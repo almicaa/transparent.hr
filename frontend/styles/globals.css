@@ -371,8 +371,8 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .blog-card--dark .blog-card__desc{color:rgba(255,255,255,0.85)}
 .blog-card--dark .blog-card__meta{color:#9fe3dc}
 .blog-card--dark .blog-card__more{color:#FBC48F}
-.blog-card--orange{background:var(--accent)}
-.blog-card--orange::before{background:#FFC08A}
+.blog-card--orange{background:var(--peach)}
+.blog-card--orange::before{background:#FFD3AA}
 .blog-card--orange .blog-card__title a{color:#2b1300}
 .blog-card--orange .blog-card__desc,.blog-card--orange .blog-card__meta{color:#3d1d05}
 .blog-card--orange .blog-card__more{color:#2b1300}
