@@ -20,7 +20,8 @@ export interface CityRates {
   higher: number
 }
 
-/** 2026 rates for the larger cities; anything else falls back to the common 20% / 30%. */
+/** 2026 rates for the larger cities, from Porezna uprava's "Tablica poreznih stopa godišnjeg
+ * poreza na dohodak za 2026." (checked November 2026). Anything else falls back to 20% / 30%. */
 export const CITY_RATES: CityRates[] = [
   { city: "Zagreb", lower: 0.23, higher: 0.33 },
   { city: "Split", lower: 0.215, higher: 0.32 },
@@ -30,9 +31,9 @@ export const CITY_RATES: CityRates[] = [
   { city: "Pula", lower: 0.22, higher: 0.32 },
   { city: "Varaždin", lower: 0.21, higher: 0.32 },
   { city: "Bjelovar", lower: 0.18, higher: 0.25 },
-  { city: "Karlovac", lower: 0.2, higher: 0.3 },
+  { city: "Karlovac", lower: 0.19, higher: 0.29 },
   { city: "Šibenik", lower: 0.2, higher: 0.3 },
-  { city: "Sisak", lower: 0.2, higher: 0.3 },
+  { city: "Sisak", lower: 0.216, higher: 0.316 },
   { city: "Dubrovnik", lower: 0.2, higher: 0.3 },
   { city: "Velika Gorica", lower: 0.2, higher: 0.3 },
   { city: "Slavonski Brod", lower: 0.2, higher: 0.3 },
