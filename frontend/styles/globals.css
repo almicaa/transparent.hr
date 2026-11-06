@@ -1,15 +1,15 @@
 :root{
   --max-width: 1180px;
-  --primary: #1D9E9E;
+  --primary: #0FA9A0;
   --dark: #085050;
   /* --primary is only ~3.3:1 on white — fine for borders, fills and large
      type, too faint for small text. Small teal text uses this (~5:1). */
   --primary-text: #137C7C;
   /* Orange is the secondary accent: small doses (new-job dot, counts,
      hero warmth) next to the teal, never a competing main color. */
-  --accent: #F08A24;
+  --accent: #FF7F1F;
   --accent-strong: #C2410C;
-  --accent-soft: #FFF1E3;
+  --accent-soft: #FFE4CC;
 
   /* White/neutral dominate — teal is an accent only, used for salary,
      links, buttons and the logo, not as a background color. Page bg is a
@@ -20,13 +20,20 @@
   --badge-bg: #f1f3f2;
 
   --salary-highlight: #085050;
-  --salary-bg: #E1F5EE;
+  --salary-bg: #C8F0E6;
   --salary-text: #ffffff;
 
   /* Notion-style neutral grays — never pure black */
   --text: #2b2f2e;
   --text-secondary: #6b7470;
   --muted: #6b7470;
+
+  /* Brand surfaces: tinted panels, the mint and peach tiles, and the
+     marker-style highlight behind hero titles. */
+  --tint: #d9f2ec;
+  --mint: #74d9cc;
+  --peach: #FFA45C;
+  --highlight: rgba(255,150,60,0.75);
 }
 
 *{box-sizing:border-box}
@@ -250,7 +257,7 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .saved-empty{display:flex;flex-direction:column;align-items:flex-start;gap:16px;margin:40px 0;color:var(--text-secondary);font-size:17px}
 .saved-empty p{margin:0}
 .saved{margin:8px 0 24px}
-.saved-expired{margin-top:40px;padding:20px 22px;border-radius:18px;background:#eef5f2}
+.saved-expired{margin-top:40px;padding:20px 22px;border-radius:18px;background:var(--tint)}
 .saved-expired__head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .saved-expired h3{margin:0;font-size:17px;color:var(--text)}
 .saved-expired ul{margin:12px 0 0;padding:0;list-style:none}
@@ -315,12 +322,12 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
    wave sweeping up to the right — with the search bar inside it. */
 .hero-surface{position:relative;margin:-12px calc(50% - 50vw + 12px) 0;border-radius:24px;isolation:isolate;
   background:
-    radial-gradient(40% 65% at 100% 0%,rgba(127,211,203,0.75),transparent 72%),
-    linear-gradient(115deg,#7fd3cb 0%,#c4ebe4 30%,#eef6f1 55%,#e9f6f2 100%)}
+    radial-gradient(40% 65% at 100% 0%,rgba(40,200,185,0.85),transparent 72%),
+    linear-gradient(115deg,#3cc8bb 0%,#93e2d8 30%,#dcf5ef 55%,#e3f6f1 100%)}
 .hero--home{padding:88px max(24px,calc(50vw - 590px)) 56px;overflow:visible;gap:18px}
 .hero--home h1{max-width:820px;font-size:56px;color:var(--dark);z-index:1}
 .hero--home .hero__lead{margin:0;color:#3f4a47;z-index:1}
-.hero--home .hero__title-accent{color:var(--dark);background:linear-gradient(transparent 62%,rgba(251,190,130,0.9) 62%,rgba(251,190,130,0.9) 92%,transparent 92%);padding:0 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.hero--home .hero__title-accent{color:var(--dark);background:linear-gradient(transparent 62%,var(--highlight) 62%,var(--highlight) 92%,transparent 92%);padding:0 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .hero__search{position:relative;z-index:2;width:100%;max-width:1000px;margin-top:14px;text-align:left}
 .hero__search .finder{box-shadow:0 18px 44px rgba(8,80,80,0.16)}
 .hero__all{position:relative;z-index:1;margin-top:4px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,0.7);font-size:15px;font-weight:700;text-decoration:none;backdrop-filter:blur(4px)}
@@ -351,6 +358,29 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .blog-card__title a::after{content:"";position:absolute;inset:0;border-radius:inherit}
 .blog-card__desc{margin:0;color:var(--text-secondary);line-height:1.55}
 .blog-card__more{margin-top:auto;color:var(--primary-text);font-weight:700;font-size:14px}
+/* Home page: the latest three posts side by side, stacked below 900px. */
+.blog-list--home{grid-template-columns:repeat(3,minmax(0,1fr));margin:0}
+.blog-list--home .blog-card__title{font-size:19px}
+/* Bold, solid-colour cards on the home page (dark petrol, orange, mint). */
+.blog-list--home .blog-card{overflow:hidden;min-height:250px;padding:26px;border:none;border-radius:22px}
+.blog-list--home .blog-card::before{content:"";position:absolute;right:-34px;bottom:-34px;width:120px;height:120px;border-radius:30px;transform:rotate(-14deg);opacity:.35;pointer-events:none}
+.blog-list--home .blog-card:hover{border-color:transparent;box-shadow:0 16px 34px rgba(8,80,80,0.22);transform:translateY(-3px)}
+.blog-card--dark{background:var(--dark)}
+.blog-card--dark::before{background:var(--primary)}
+.blog-card--dark .blog-card__title a{color:#fff}
+.blog-card--dark .blog-card__desc{color:rgba(255,255,255,0.85)}
+.blog-card--dark .blog-card__meta{color:#9fe3dc}
+.blog-card--dark .blog-card__more{color:#FBC48F}
+.blog-card--orange{background:var(--accent)}
+.blog-card--orange::before{background:#FFC08A}
+.blog-card--orange .blog-card__title a{color:#2b1300}
+.blog-card--orange .blog-card__desc,.blog-card--orange .blog-card__meta{color:#3d1d05}
+.blog-card--orange .blog-card__more{color:#2b1300}
+.blog-card--mint{background:var(--mint)}
+.blog-card--mint::before{background:var(--primary)}
+.blog-card--mint .blog-card__title a{color:#063b3b}
+.blog-card--mint .blog-card__desc,.blog-card--mint .blog-card__meta{color:#0b4545}
+.blog-card--mint .blog-card__more{color:var(--dark)}
 .blog-draft{padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-strong);font-size:12px;font-weight:700}
 .blog-post{max-width:720px;margin:0 auto;padding:16px 0 24px}
 .blog-post__back{color:var(--text-secondary);font-size:14px;font-weight:600;text-decoration:none}
@@ -374,19 +404,19 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .prose th{color:var(--dark)}
 .prose code{padding:2px 6px;border-radius:6px;background:var(--badge-bg);font-size:.9em}
 .prose hr{margin:32px 0;border:none;border-top:1px solid var(--border)}
-.blog-post__cta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-top:40px;padding:22px 24px;border-radius:18px;background:#eef5f2}
+.blog-post__cta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-top:40px;padding:22px 24px;border-radius:18px;background:var(--tint)}
 .blog-post__cta p{margin:0;font-weight:700;color:var(--dark)}
 .blog-post__cta .why-tile__button{margin-top:0}
 /* O nama: hero band, the story beside a big "7 h" figure, numbered steps,
    and a dark contact panel — deliberately not the blog's single text column. */
 .about-hero{display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:72px max(24px,calc(50vw - 582px)) 64px}
 .about-hero h1{position:relative;z-index:1;max-width:760px;margin:0;font-size:48px;font-weight:800;line-height:1.12;letter-spacing:-0.02em;color:var(--dark)}
-.about-hero .hero__title-accent{color:var(--dark);background:linear-gradient(transparent 62%,rgba(251,190,130,0.9) 62%,rgba(251,190,130,0.9) 92%,transparent 92%);padding:0 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.about-hero .hero__title-accent{color:var(--dark);background:linear-gradient(transparent 62%,var(--highlight) 62%,var(--highlight) 92%,transparent 92%);padding:0 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .about-hero .hero-art__shapes{display:none}
 .about-hero__eyebrow{position:relative;z-index:1;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,0.75);color:var(--dark);font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .about-story{max-width:760px;margin:64px 0}
 .about-story p{margin:0 0 16px;color:var(--text);font-size:18px;line-height:1.7}
-.about-quote{position:relative;margin:28px 0 32px;padding:30px 32px 26px 76px;border-radius:22px;background:#eef5f2}
+.about-quote{position:relative;margin:28px 0 32px;padding:30px 32px 26px 76px;border-radius:22px;background:var(--tint)}
 .about-quote::before{content:"“";position:absolute;left:24px;top:14px;color:var(--accent);font-size:84px;font-weight:800;line-height:1}
 .about-quote blockquote{margin:0;color:var(--dark);font-size:26px;font-weight:800;line-height:1.3;letter-spacing:-0.01em}
 .about-quote figcaption{margin-top:12px;color:var(--text-secondary);font-size:15px}
@@ -394,8 +424,8 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .about-story h2,.about-steps h2,.about-contact h2{margin:0 0 14px;font-size:30px;letter-spacing:-0.01em;color:var(--dark)}
 .about-steps{margin:0 0 64px}
 .about-steps__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:24px 0 0;padding:0;list-style:none}
-.about-step{padding:24px 22px;border-radius:20px;background:#eef5f2}
-.about-step:nth-child(2){background:#b9e6de}
+.about-step{padding:24px 22px;border-radius:20px;background:var(--tint)}
+.about-step:nth-child(2){background:var(--mint)}
 .about-step__num{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--dark);color:#fff;font-size:14px;font-weight:800}
 .about-step:nth-child(4) .about-step__num{background:var(--accent-strong)}
 .about-step h3{margin:18px 0 8px;font-size:19px;color:var(--text)}
@@ -446,11 +476,11 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 /* "Zašto transparent.hr": number tiles — a colored block with a big figure,
    the pitch beside it — plus a call-to-action tile into the job list. */
 .why-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
-.why-tile{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;padding:14px;border-radius:22px;background:#eef5f2}
+.why-tile{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;padding:14px;border-radius:22px;background:var(--tint)}
 .why-tile__block{display:flex;flex-direction:column;justify-content:space-between;gap:24px;min-height:220px;padding:24px;border-radius:16px}
 .why-tile__block--teal{background:var(--dark);color:#fff}
-.why-tile__block--mint{background:#b9e6de;color:var(--dark)}
-.why-tile__block--orange{background:#FBC48F;color:#6b2d05}
+.why-tile__block--mint{background:var(--mint);color:var(--dark)}
+.why-tile__block--orange{background:var(--peach);color:#4a1d02}
 .why-tile__value{font-size:52px;font-weight:800;line-height:1;letter-spacing:-0.03em}
 .why-tile__label{font-size:15px;font-weight:600;line-height:1.35}
 .why-tile__body{padding:14px 10px 14px 0}
@@ -517,6 +547,7 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .job-detail__description{margin-top:8px;white-space:pre-wrap;color:var(--text-secondary)}
 
 @media (max-width:900px){
+  .blog-list--home{grid-template-columns:1fr}
   .is-mega .what-combobox__list{grid-template-columns:repeat(2,1fr)}
   .jobs-layout{grid-template-columns:1fr}
   .grid{grid-template-columns:repeat(2,1fr)}

@@ -1,11 +1,16 @@
 import Link from "next/link"
+import BlogCard from "../components/blog/BlogCard"
 import HeroSearch from "../components/home/HeroSearch"
 import HeroIllustration from "../components/ui/HeroIllustration"
 import { ArrowIcon } from "../components/ui/icons"
 import { getFilters, getJobs, getStats } from "../lib/api"
+import { getAllPosts } from "../lib/blog"
 import { HOME_DESCRIPTION, HOME_TITLE, pageMetadata } from "../lib/seo"
 
 export const revalidate = 300
+
+// Colour of each home-page blog card, in order.
+const BLOG_TONES = ["dark", "orange", "mint"]
 
 export const metadata = pageMetadata({ title: HOME_TITLE, description: HOME_DESCRIPTION, path: "/", titleTemplate: false })
 
@@ -26,6 +31,7 @@ export default async function HomePage() {
   // it the tile says "100 %" and the button has no number.
   const withSalary = listedTotal ?? 0
   const portals = stats?.sources?.length || 3
+  const latestPosts = getAllPosts().slice(0, 3)
 
   const tiles = [
     {
@@ -99,6 +105,23 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {latestPosts.length ? (
+        <section className="home-section">
+          <div className="home-section__header">
+            <h2>Iz bloga</h2>
+            <Link href="/blog" className="link-with-icon">
+              Svi članci
+              <ArrowIcon />
+            </Link>
+          </div>
+          <div className="blog-list blog-list--home">
+            {latestPosts.map((p, i) => (
+              <BlogCard key={p.slug} post={p} headingLevel={3} className={`blog-card--${BLOG_TONES[i % BLOG_TONES.length]}`} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </main>
   )
 }
