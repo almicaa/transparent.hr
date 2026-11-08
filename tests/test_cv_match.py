@@ -183,3 +183,20 @@ def test_mojposao_ad_text():
     nuxt = {"description": "- traženje kandidata\r\n", "requirements": "- poželjan njemački", "benefits": ""}
     assert base_scraper.mojposao_ad_text(nuxt) == "Opis posla:\n- traženje kandidata\nUvjeti:\n- poželjan njemački"
     assert base_scraper.mojposao_ad_text(None) is None
+
+
+def test_posao_salary_row():
+    page = ('<div class="single_job_ad salary single_job_ad_left">Plaća:</div><div class="date single_job_ad">'
+            'od 3 000 € bruto&nbsp; <small><a href="/kalkulator-place-brutto-netto/">(Kalkulator plaće)</a></small></div>')
+    assert base_scraper.extract_posao_salary(page) == "od 3 000 € bruto"
+    assert base_scraper.clean_salary_snippet("od 3 000 € bruto").endswith("bruto")
+    assert base_scraper.extract_posao_salary("<html></html>") is None
+
+
+def test_basis_from_ad_text():
+    assert base_scraper.basis_from_ad_text("Nudimo:\n- početna plaća 1500 EUR neto, dalje po dogovoru") == "neto"
+    assert base_scraper.basis_from_ad_text("3.940 – 4.730 EUR bruto mjesečno") == "bruto"
+    assert base_scraper.basis_from_ad_text("Mjesečna bruto plaća iznosi 2.000 €") == "bruto"
+    # "neto" far from any pay figure doesn't count
+    assert base_scraper.basis_from_ad_text("Plaća po dogovoru. " + "x " * 40 + "neto rezultat tima") is None
+    assert base_scraper.basis_from_ad_text(None) is None

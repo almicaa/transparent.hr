@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { getJob } from "../../../lib/api"
 import { buildJobPostingJsonLd, jobMetaDescription, jobMetaTitle, pageMetadata } from "../../../lib/seo"
 import { formatDate } from "../../../lib/format"
+import SalaryBasis from "../../../components/job/SalaryBasis"
 import NetCalculator from "../../../components/job/NetCalculator"
 import ApplyLink from "../../../components/job/ApplyLink"
 import SaveButton from "../../../components/job/SaveButton"
@@ -60,6 +61,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           <div className="job-detail__salary">
             {job.salary_text}
             {job.salary_period === "hour" ? " (po satu)" : job.salary_period === "year" ? " (godišnje)" : ""}
+            {/neto|bruto/i.test(job.salary_text) ? null : <SalaryBasis job={job} />}
           </div>
           <NetCalculator job={job} />
         </div>

@@ -531,6 +531,36 @@ def extract_posao_ad_text(content: str) -> str | None:
     return _tidy_text("\n".join(texts))
 
 
+def extract_posao_salary(content: str) -> str | None:
+    """The salary row of a posao.hr detail page's summary box, e.g.
+    <div class="single_job_ad salary ...">Plaća:</div><div ...>od 3 000 € bruto&nbsp;
+    <small><a ...>(Kalkulator plaće)</a></small></div> -> "od 3 000 € bruto"."""
+    m = re.search(r"Pla[ćc]a:</div>\s*<div[^>]*>(.*?)<small|Pla[ćc]a:</div>\s*<div[^>]*>(.*?)</div>", content, re.S)
+    if not m:
+        return None
+    value = html.unescape(re.sub(r"<[^>]+>", " ", m.group(1) or m.group(2)))
+    return re.sub(r"\s+", " ", value).strip() or None
+
+
+_MONEY = r"\d[\d.,\s]*\s?(?:€|eur|eura)"
+
+
+def basis_from_ad_text(ad_text: str | None) -> str | None:
+    """neto/bruto stated next to the pay in the ad body, for ads whose salary
+    field leaves it out ("početna plaća 1500 EUR neto", "bruto plaća: 1.650 €").
+    Only looks at words within a few words of an amount or of "plaća", so a
+    stray "neto" elsewhere in the ad doesn't count."""
+    if not ad_text:
+        return None
+    t = re.sub(r"\s+", " ", ad_text)
+    near = rf"(?:{_MONEY}|\bpla[ćc]\w*|\bsalary\b)"
+    for word in ("neto", "bruto"):
+        w = rf"\b{word}\b"
+        if re.search(rf"(?i){near}.{{0,40}}{w}|{w}.{{0,40}}{near}", t):
+            return word
+    return None
+
+
 def extract_posao_category(content: str) -> str | None:
     """First category from a posao.hr detail page's "Kategorija:" row, e.g.
     <div class="... category ...">Kategorija:</div><div ...><a href=".../djelatnosti/...">
@@ -621,7 +651,7 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
             "salary_text": salary_text,
             "salary_shown": int(bool(job.get("salary_shown"))),
             "salary_currency": "EUR" if salary_min is not None else None,
-            "salary_basis": parse_salary_basis(salary_text),
+            "salary_basis": parse_salary_basis(salary_text) or basis_from_ad_text(job.get("ad_text")),
             "salary_type": parse_salary_type(salary_text, salary_min, salary_max),
             "salary_period": parse_salary_period(salary_text, salary_min, salary_max),
             "category": normalize_category(job.get("category_raw")),

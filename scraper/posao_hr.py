@@ -318,8 +318,11 @@ async def scrape_posao(max_pages=None, max_jobs=None):
                         # \b boundaries so this only matches the standalone word "Plaća"
                         # (the salary heading), not a substring inside e.g. "plaćanje"
                         # (referral-bonus disclaimer text that happens to contain "plaća").
+                        summary_sal = base.extract_posao_salary(content)
                         m = re.search(r"(?i)\bPla[ćc]a\b[:\s]*([^<\n]{1,200})", content)
-                        if m and base.is_valid_salary(m.group(1)):
+                        if summary_sal and base.is_valid_salary(summary_sal):
+                            det_sal = summary_sal
+                        elif m and base.is_valid_salary(m.group(1)):
                             det_sal = m.group(1).strip()
                         else:
                             m2 = re.search(r"(\d[\d\.,\s]{0,30}\s*(?:EUR|€|HRK|kn))", content, re.IGNORECASE)

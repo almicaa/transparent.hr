@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Job } from "../../lib/types"
 import { daysUntil, formatDate, parseApiDate } from "../../lib/format"
 import JobTitle from "./JobTitle"
+import SalaryBasis from "./SalaryBasis"
 import NetCalculator from "./NetCalculator"
 import SaveButton from "./SaveButton"
 import { PinIcon } from "../ui/icons"
@@ -106,7 +107,7 @@ export default function JobCard({ job }: { job: Job }) {
       {pay ? (
         <div className="job__pay">
           <span className="job__amount">{pay}</span>
-          {job.salary_basis ? <span className="job__basis">{job.salary_basis}</span> : null}
+          <SalaryBasis job={job} />
           <NetCalculator job={job} />
         </div>
       ) : null}

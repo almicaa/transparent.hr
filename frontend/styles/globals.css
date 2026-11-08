@@ -237,6 +237,8 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .job__pay{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin:4px 0 14px;padding:10px 12px;border-radius:10px;background:var(--salary-bg)}
 .job__amount{color:var(--dark);font-size:18px;font-weight:800;letter-spacing:-0.01em;line-height:1.2}
 .job__basis{color:var(--primary-text);font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.job__basis--unknown{color:var(--text-secondary);font-weight:700;cursor:help}
+.job-detail__salary .job__basis{margin-left:10px;vertical-align:middle}
 /* Save (heart) button: icon-only in a card's top-right corner, above the
    card-wide title link; with a label on the job page. */
 .save-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;background:none;color:var(--text-secondary);cursor:pointer;transition:color .15s ease,background .15s ease,transform .15s ease}

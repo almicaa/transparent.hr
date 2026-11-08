@@ -188,24 +188,30 @@ def _ad_text(source: str, content: str) -> str | None:
     return base.mojposao_ad_text(base.extract_nuxt_payload(content))
 
 
+def _basis(source: str, content: str, ad_text: str | None) -> str | None:
+    """neto/bruto from the salary row (posao.hr) or, failing that, the ad body."""
+    sal = base.extract_posao_salary(content) if source == "posao" else None
+    return base.parse_salary_basis(sal) or base.basis_from_ad_text(ad_text)
+
+
 async def fetch_ad_texts(limit: int | None, dry_run: bool) -> None:
-    """Fill ad_text for live posao.hr / mojposao jobs with a salary. Removed
-    ads are deactivated, like in fetch_missing."""
+    """Fill ad_text and a missing neto/bruto for live posao.hr / mojposao jobs
+    with a salary. Removed ads are deactivated, like in fetch_missing."""
     with base.get_connection() as conn:
         query = """
-            SELECT id, source, url FROM jobs
+            SELECT id, source, url, ad_text IS NULL, salary_basis IS NULL FROM jobs
             WHERE source IN ('posao', 'mojposao') AND is_active = :active AND salary_shown = 1
-              AND url IS NOT NULL AND ad_text IS NULL
+              AND url IS NOT NULL AND (ad_text IS NULL OR salary_basis IS NULL)
             ORDER BY id DESC
         """
         if limit:
             query += f" LIMIT {int(limit)}"
         rows = conn.execute(text(query), {"active": True}).fetchall()
-        print(f"{len(rows)} jobs without the ad text.")
+        print(f"{len(rows)} jobs without the ad text or neto/bruto.")
 
-        filled = removed = empty = failed = 0
+        filled = based = removed = empty = failed = 0
         async with base.new_http_client() as client:
-            for i, (job_id, source, url) in enumerate(rows, 1):
+            for i, (job_id, source, url, needs_text, needs_basis) in enumerate(rows, 1):
                 prefix = f"  [{i}/{len(rows)}] {job_id} ({source}):"
                 try:
                     resp = await base.retry_with_backoff(client.get, url)
@@ -222,12 +228,17 @@ async def fetch_ad_texts(limit: int | None, dry_run: bool) -> None:
                     print(f"{prefix} removed — deactivating")
                 else:
                     ad_text = _ad_text(source, resp.text)
-                    if ad_text:
-                        filled += 1
-                        updates["ad_text"] = ad_text
-                    else:
-                        empty += 1
-                    print(f"{prefix} {len(ad_text or '')} chars")
+                    if needs_text:
+                        if ad_text:
+                            filled += 1
+                            updates["ad_text"] = ad_text
+                        else:
+                            empty += 1
+                    basis = _basis(source, resp.text, ad_text) if needs_basis else None
+                    if basis:
+                        based += 1
+                        updates["salary_basis"] = basis
+                    print(f"{prefix} {len(ad_text or '')} chars, {basis or '-'}")
 
                 if updates and not dry_run:
                     assignments = ", ".join(f"{col} = :{col}" for col in updates)
@@ -236,7 +247,7 @@ async def fetch_ad_texts(limit: int | None, dry_run: bool) -> None:
                 await base.sleep_jitter(1.0, 2.5)
 
     print(
-        f"\nDone{' (dry run)' if dry_run else ''}: {filled} filled, {empty} without text, "
+        f"\nDone{' (dry run)' if dry_run else ''}: {filled} filled, {empty} without text, {based} neto/bruto set, "
         f"{removed} removed ads deactivated, {failed} failed fetches."
     )
 
@@ -245,7 +256,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--remap", action="store_true", help="Recompute category from stored category_raw, no fetching.")
     parser.add_argument("--hzz-details", dest="hzz_details", action="store_true", help="Fill description and other detail fields of HZZ jobs.")
-    parser.add_argument("--ad-text", dest="ad_text", action="store_true", help="Fill the ad text of posao.hr / mojposao jobs.")
+    parser.add_argument("--ad-text", dest="ad_text", action="store_true", help="Fill the ad text and missing neto/bruto of posao.hr / mojposao jobs.")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--dry-run", dest="dry_run", action="store_true")
     args = parser.parse_args()
