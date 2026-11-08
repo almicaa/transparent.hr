@@ -42,7 +42,7 @@ export default function PrivacyPage() {
 
       <h2>Pretraga po životopisu</h2>
       <p>
-        Na stranici <a href="/cv">Poslovi po CV-u</a> možeš učitati svoj životopis. Datoteku šaljemo AI modelu{" "}
+        Na stranici <a href="/cv">Pametna pretraga</a> možeš učitati svoj životopis. Datoteku šaljemo AI modelu{" "}
         <strong>Claude</strong> tvrtke Anthropic, isključivo da bi među oglasima izabrao one koji ti odgovaraju. Mi
         životopis <strong>ne spremamo</strong>: obrađuje se u memoriji i briše čim stigne odgovor, a ne spremamo ni
         rezultate. Anthropic podatke poslane preko API-ja ne koristi za treniranje modela; više u{" "}

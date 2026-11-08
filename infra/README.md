@@ -5,7 +5,7 @@
 - **Frontend** — Vercel, deployed directly from `frontend/`. Set `NEXT_PUBLIC_API_URL` to the Render backend URL.
 - **Scraper** — runs on a schedule (cron / GitHub Actions / local runner) calling `run_all_scrapers.py`, writing to the same `DATABASE_URL`.
 
-## Poslovi po CV-u (`/cv`)
+## Pametna pretraga po CV-u (`/cv`)
 
 Na Renderu (backend) postavi:
 
