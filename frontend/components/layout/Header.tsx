@@ -33,6 +33,9 @@ export default function Header({ showBlog = false }: { showBlog?: boolean }) {
           <Link href="/jobs" onClick={() => setOpen(false)}>
             Oglasi
           </Link>
+          <Link href="/cv" onClick={() => setOpen(false)}>
+            Poslovi po CV-u
+          </Link>
           <Link href="/o-nama" onClick={() => setOpen(false)}>
             O nama
           </Link>

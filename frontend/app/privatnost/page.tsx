@@ -10,7 +10,7 @@ export default function PrivacyPage() {
   return (
     <main className="legal">
       <h1>Politika privatnosti</h1>
-      <p className="meta">Posljednje ažurirano: lipanj 2026.</p>
+      <p className="meta">Posljednje ažurirano: studeni 2026.</p>
 
       <h2>Tko smo</h2>
       <p>
@@ -36,8 +36,20 @@ export default function PrivacyPage() {
       <h2>Podaci koje prikazujemo</h2>
       <p>
         Podaci o oglasima za posao (naziv radnog mjesta, plaća, lokacija, naziv poslodavca) prikupljeni su iz javno
-        dostupnih oglasa na trećim stranicama. Ne prikupljamo niti obrađujemo osobne podatke fizičkih osoba — oglasi
-        sadrže samo podatke o poslovnim pozicijama i poslodavcima, ne o pojedincima.
+        dostupnih oglasa na trećim stranicama. Oglasi ne sadrže osobne podatke fizičkih osoba, samo
+        podatke o poslovnim pozicijama i poslodavcima.
+      </p>
+
+      <h2>Pretraga po životopisu</h2>
+      <p>
+        Na stranici <a href="/cv">Poslovi po CV-u</a> možeš učitati svoj životopis. Datoteku šaljemo AI modelu{" "}
+        <strong>Claude</strong> tvrtke Anthropic, isključivo da bi među oglasima izabrao one koji ti odgovaraju. Mi
+        životopis <strong>ne spremamo</strong>: obrađuje se u memoriji i briše čim stigne odgovor, a ne spremamo ni
+        rezultate. Anthropic podatke poslane preko API-ja ne koristi za treniranje modela; više u{" "}
+        <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer">
+          Anthropic Privacy Policy
+        </a>
+        . Ako ne želiš da tvoj CV obrađuje AI, nemoj koristiti ovu opciju.
       </p>
 
       <h2>Vanjski linkovi</h2>

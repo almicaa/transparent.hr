@@ -628,3 +628,22 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 @keyframes cookie-in{from{opacity:0;transform:translateY(12px)}}
 @media (prefers-reduced-motion:reduce){.cookie-banner{animation:none}}
 @media (max-width:600px){.cookie-banner{left:16px;right:16px;bottom:16px;width:auto}}
+
+/* Poslovi po CV-u (/cv) */
+.cv{margin:24px 0 40px}
+.cv-drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:180px;padding:28px 20px;border:2px dashed var(--mint);border-radius:18px;background:var(--card-bg);text-align:center;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.cv-drop:hover,.cv-drop.is-dragging{border-color:var(--primary);background:var(--tint)}
+.cv-drop.is-loading{cursor:progress;border-style:solid}
+.cv-drop input{position:absolute;inset:0;opacity:0;cursor:inherit}
+.cv-drop strong{font-size:19px;color:var(--dark)}
+.cv-drop span{color:var(--text-secondary);font-size:15px}
+.cv-drop__spinner{width:28px;height:28px;margin-bottom:6px;border:3px solid var(--tint);border-top-color:var(--primary);border-radius:50%;animation:cv-spin .8s linear infinite}
+@keyframes cv-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.cv-drop__spinner{animation-duration:2.4s}}
+.cv__privacy{margin:12px 0 0;color:var(--text-secondary);font-size:14px}
+.cv__privacy a{color:var(--primary-text)}
+.cv__error{margin:20px 0 0;padding:14px 16px;border-radius:12px;background:var(--accent-soft);color:var(--accent-strong);font-weight:600}
+.cv-results{margin-top:32px}
+.cv-results__summary{margin:0 0 8px;padding:16px 18px;border-radius:14px;background:var(--tint);color:var(--dark);font-size:16px}
+.cv-results__list{list-style:none;margin:0;padding:0;display:grid;gap:20px}
+.cv-match__reason{margin:0 0 8px;padding-left:12px;border-left:3px solid var(--accent);color:var(--text);font-size:15px}

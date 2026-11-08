@@ -116,6 +116,7 @@ Endpointi:
 - `GET /api/stats`
 - `GET /api/analitika/transparency`
 - `GET /api/filters`
+- `POST /api/cv-match` — učitaj CV (PDF/.docx, `file` polje); Claude vrati do 10 oglasa s objašnjenjem. CV se ne sprema.
 - `GET /health`
 
 ### Migracije (Alembic)

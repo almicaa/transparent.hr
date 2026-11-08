@@ -1,4 +1,4 @@
-import { Filters, Job, JobList, JobSort, Stats } from "./types"
+import { CvMatchResult, Filters, Job, JobList, JobSort, Stats } from "./types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
@@ -88,5 +88,26 @@ export async function getTransparencyStats(opts: FetchOptions = {}): Promise<Sal
 export async function getFilters(opts: FetchOptions = {}): Promise<Filters> {
   const res = await fetch(`${API_URL}/api/filters`, cacheInit(opts))
   if (!res.ok) throw new Error(`Failed to load filters: ${res.status}`)
+  return res.json()
+}
+
+/** Upload a CV (PDF or .docx) and get AI-picked matching jobs. Throws with a
+ * user-facing Croatian message on failure. Nothing is stored on the server. */
+export async function matchCv(file: File): Promise<CvMatchResult> {
+  const body = new FormData()
+  body.append("file", file)
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}/api/cv-match`, { method: "POST", body })
+  } catch {
+    throw new Error("Nema veze sa serverom. Provjeri internet i pokušaj ponovno.")
+  }
+  if (!res.ok) {
+    const detail = await res
+      .json()
+      .then((d) => (typeof d?.detail === "string" ? d.detail : null))
+      .catch(() => null)
+    throw new Error(detail || "Nešto je pošlo po zlu. Pokušaj ponovno.")
+  }
   return res.json()
 }

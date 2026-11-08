@@ -109,3 +109,14 @@ export const EMPTY_FILTERS: JobFilters = {
   source: "",
   newOnly: false,
 }
+
+export interface CvMatch {
+  job: Job
+  /** One sentence from the AI on why this job fits the CV. */
+  reason: string
+}
+
+export interface CvMatchResult {
+  profile_summary: string
+  matches: CvMatch[]
+}
