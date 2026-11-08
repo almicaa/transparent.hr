@@ -1,5 +1,4 @@
 import { trackEvent } from "../../lib/analytics"
-import { SIDEBAR_QUERY, useMediaQuery } from "../../lib/useMediaQuery"
 import { FilterOption, JobFilters } from "../../lib/types"
 import { locationLabel } from "./LocationCombobox"
 import LocationCombobox from "./LocationCombobox"
@@ -35,9 +34,6 @@ export default function Finder({
   countryOptions,
   placement,
 }: FinderProps) {
-  // On /jobs the sidebar lists every grana, so the empty "Što" field skips the
-  // full menu there, but phones have no sidebar and still need it.
-  const hasSidebar = useMediaQuery(SIDEBAR_QUERY)
   // A slider-picked minimum (e.g. 1.750 €) still needs to show in the quick-pick select.
   const salarySteps =
     filters.salaryMin && !SALARY_STEPS.includes(filters.salaryMin)
@@ -70,7 +66,6 @@ export default function Finder({
           onSearch={(search) => onChange({ search })}
           onCategory={(category) => onChange({ category })}
           categoryOptions={categoryOptions}
-          megaMenu={placement !== "oglasi" || !hasSidebar}
         />
       </div>
 
