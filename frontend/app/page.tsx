@@ -92,6 +92,17 @@ export default async function HomePage() {
               </div>
             </div>
           ))}
+          <div className="why-tile why-tile--cta">
+            <svg className="why-tile__mark" width="34" height="34" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+              <rect x="3" y="3" width="20" height="20" rx="6" stroke="#085050" strokeWidth="2.4" />
+              <rect x="13" y="13" width="20" height="20" rx="6" fill="#F08A24" fillOpacity="0.7" />
+            </svg>
+            <p>Zanima te koliko se plaća u tvojoj struci? Pregledaj oglase po grani, gradu i plaći.</p>
+            <Link href="/jobs" className="why-tile__button">
+              Pregledaj oglase
+              <ArrowIcon />
+            </Link>
+          </div>
           <div className="why-tile why-tile--smart">
             <div className="why-smart__copy">
               <span className="why-tile__badge">Novo · Pametna pretraga</span>
