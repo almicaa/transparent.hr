@@ -650,33 +650,10 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .cv-match__reason{margin:0;color:var(--text);font-size:15px}
 .cv-match__missing{margin:4px 0 0;color:var(--accent-strong);font-size:14px;font-weight:600}
 
-/* Naslovnica: Pametna pretraga */
-.smart{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:center;padding:36px;border-radius:24px;background:var(--dark);color:#fff;overflow:hidden}
-.smart__badge{display:inline-block;margin-bottom:12px;padding:4px 10px;border-radius:999px;background:var(--peach);color:#2b1300;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
-.home-section .smart h2{margin:0;font-size:30px;line-height:1.15;letter-spacing:-0.02em;color:#fff}
-.smart__lead{margin:12px 0 0;max-width:480px;color:rgba(255,255,255,0.88);font-size:17px;line-height:1.5}
-.smart__steps{margin:20px 0 24px;padding:0;list-style:none;counter-reset:step;display:grid;gap:10px}
-.smart__steps li{counter-increment:step;display:flex;align-items:center;gap:12px;color:#fff;font-size:15px;font-weight:600}
-.smart__steps li::before{content:counter(step);flex:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--mint);color:var(--dark);font-size:13px;font-weight:800}
-.smart__button{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:10px;background:var(--peach);color:#2b1300;font-weight:800;font-size:15px;text-decoration:none;transition:background .15s ease}
-.smart__button:hover{background:#FFB57A}
-.smart__button:hover .arrow-icon{transform:translateX(2px)}
-.smart__note{margin:12px 0 0;color:#9fe3dc;font-size:13px}
-.smart__preview{position:relative;display:grid;gap:14px;padding:20px;border-radius:18px;background:rgba(255,255,255,0.08)}
-.smart__example{color:#9fe3dc;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-.smart__match{padding:14px 16px;border-radius:14px;background:#fff;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,0.18)}
-.smart__match--faded{opacity:.85;transform:translateX(18px)}
-.smart__reason{margin:0 0 10px;padding-left:10px;border-left:3px solid var(--accent);font-size:14px;line-height:1.4}
-.smart__job{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
-.smart__job strong{flex-basis:100%;font-size:15px;color:var(--dark)}
-.smart__job span{color:var(--text-secondary);font-size:13px}
-.smart__job .smart__salary{margin-left:auto;padding:3px 8px;border-radius:8px;background:var(--salary-bg);color:var(--dark);font-weight:800}
-.smart__missing{margin:8px 0 0;color:var(--accent-strong);font-size:13px;font-weight:600}
-@media (max-width:900px){
-  .smart{grid-template-columns:1fr;padding:28px 22px}
-  .smart__match--faded{transform:none}
-}
-@media (max-width:600px){
-  .home-section .smart h2{font-size:25px}
-  .smart__preview{padding:14px}
-}
+/* Naslovnica: Pametna pretraga tile in "Zašto transparent.hr" */
+.why-tile--smart{background:var(--dark);color:#fff}
+.why-tile--smart h3{margin:0;font-size:22px;line-height:1.2;letter-spacing:-0.01em;color:#fff}
+.why-tile--smart p{color:rgba(255,255,255,0.88);font-size:16px}
+.why-tile__badge{padding:4px 10px;border-radius:999px;background:var(--peach);color:#2b1300;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.why-tile--smart .why-tile__button{background:var(--peach);color:#2b1300}
+.why-tile--smart .why-tile__button:hover{background:#FFB57A}

@@ -78,50 +78,6 @@ export default async function HomePage() {
       </section>
 
       <section className="home-section">
-        <div className="smart">
-          <div className="smart__copy">
-            <span className="smart__badge">Novo</span>
-            <h2>Pametna pretraga po tvom CV-u</h2>
-            <p className="smart__lead">
-              Ne znaš što tražiti? Učitaj životopis, a AI će pročitati sve oglase s plaćom i izabrati one koji ti stvarno
-              odgovaraju.
-            </p>
-            <ol className="smart__steps">
-              <li>Učitaj CV u PDF-u ili Wordu</li>
-              <li>AI usporedi tvoje iskustvo s uvjetima iz oglasa</li>
-              <li>Dobiješ popis poslova i za svaki zašto ti paše</li>
-            </ol>
-            <Link href="/cv" className="smart__button">
-              Isprobaj pametnu pretragu
-              <ArrowIcon />
-            </Link>
-            <p className="smart__note">Besplatno i bez registracije. CV ne spremamo.</p>
-          </div>
-
-          <div className="smart__preview" aria-hidden="true">
-            <span className="smart__example">Primjer rezultata</span>
-            <div className="smart__match">
-              <p className="smart__reason">Imaš 4 godine iskustva u skladištu i položen ispit za viličar.</p>
-              <div className="smart__job">
-                <strong>Skladištar / viličarist (m/ž)</strong>
-                <span>Zagreb</span>
-                <span className="smart__salary">1.400 € neto</span>
-              </div>
-            </div>
-            <div className="smart__match smart__match--faded">
-              <p className="smart__reason">Radila si s robom i zalihama, a oglas traži upravo to.</p>
-              <div className="smart__job">
-                <strong>Djelatnik u logistici (m/ž)</strong>
-                <span>Velika Gorica</span>
-                <span className="smart__salary">1.250 € neto</span>
-              </div>
-              <p className="smart__missing">Nedostaje ti: poželjan njemački jezik.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="home-section">
         <h2>Zašto transparent.hr</h2>
         <div className="why-grid">
           {tiles.map((t) => (
@@ -136,14 +92,15 @@ export default async function HomePage() {
               </div>
             </div>
           ))}
-          <div className="why-tile why-tile--cta">
-            <svg className="why-tile__mark" width="34" height="34" viewBox="0 0 38 38" fill="none" aria-hidden="true">
-              <rect x="3" y="3" width="20" height="20" rx="6" stroke="#085050" strokeWidth="2.4" />
-              <rect x="13" y="13" width="20" height="20" rx="6" fill="#F08A24" fillOpacity="0.7" />
-            </svg>
-            <p>Zanima te koliko se plaća u tvojoj struci? Pregledaj oglase po grani, gradu i plaći.</p>
-            <Link href="/jobs" className="why-tile__button">
-              Pregledaj oglase
+          <div className="why-tile why-tile--cta why-tile--smart">
+            <span className="why-tile__badge">Novo · Pametna pretraga</span>
+            <h3>Ne znaš što tražiti? Učitaj CV.</h3>
+            <p>
+              AI pročita sve oglase s plaćom, usporedi ih s tvojim iskustvom i za svaki posao napiše zašto ti paše.
+              Bez registracije, a CV ne spremamo.
+            </p>
+            <Link href="/cv" className="why-tile__button">
+              Isprobaj pametnu pretragu
               <ArrowIcon />
             </Link>
           </div>
