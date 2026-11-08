@@ -92,17 +92,26 @@ export default async function HomePage() {
               </div>
             </div>
           ))}
-          <div className="why-tile why-tile--cta why-tile--smart">
-            <span className="why-tile__badge">Novo · Pametna pretraga</span>
-            <h3>Ne znaš što tražiti? Učitaj CV.</h3>
-            <p>
-              AI pročita sve oglase s plaćom, usporedi ih s tvojim iskustvom i za svaki posao napiše zašto ti paše.
-              Bez registracije, a CV ne spremamo.
-            </p>
-            <Link href="/cv" className="why-tile__button">
-              Isprobaj pametnu pretragu
-              <ArrowIcon />
-            </Link>
+          <div className="why-tile why-tile--smart">
+            <div className="why-smart__copy">
+              <span className="why-tile__badge">Novo · Pametna pretraga</span>
+              <h3>Ne znaš što tražiti? Učitaj CV.</h3>
+              <p>
+                AI pročita sve oglase s plaćom, usporedi ih s tvojim iskustvom i za svaki posao napiše zašto ti paše.
+                Bez registracije, a CV ne spremamo.
+              </p>
+            </div>
+            <div className="why-smart__action">
+              <ol className="why-smart__steps">
+                <li>Učitaj CV u PDF-u ili Wordu</li>
+                <li>AI usporedi tvoje iskustvo s uvjetima iz oglasa</li>
+                <li>Dobiješ popis poslova i za svaki zašto ti paše</li>
+              </ol>
+              <Link href="/cv" className="why-tile__button">
+                Isprobaj pametnu pretragu
+                <ArrowIcon />
+              </Link>
+            </div>
           </div>
         </div>
       </section>

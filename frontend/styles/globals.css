@@ -650,10 +650,21 @@ a.stat:hover{box-shadow:0 6px 18px rgba(8,80,80,0.14)}
 .cv-match__reason{margin:0;color:var(--text);font-size:15px}
 .cv-match__missing{margin:4px 0 0;color:var(--accent-strong);font-size:14px;font-weight:600}
 
-/* Naslovnica: Pametna pretraga tile in "Zašto transparent.hr" */
-.why-tile--smart{background:var(--dark);color:#fff}
-.why-tile--smart h3{margin:0;font-size:22px;line-height:1.2;letter-spacing:-0.01em;color:#fff}
-.why-tile--smart p{color:rgba(255,255,255,0.88);font-size:16px}
+/* Naslovnica: Pametna pretraga, a full-width row under the three "Zašto" tiles */
+@media (min-width:1100px){.why-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:901px) and (max-width:1099px){.why-grid{grid-template-columns:1fr}}
+.why-tile--smart{grid-column:1/-1;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:center;padding:32px 36px;background:var(--dark);color:#fff}
+.why-smart__copy{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+.why-tile--smart h3{margin:0;font-size:26px;line-height:1.2;letter-spacing:-0.02em;color:#fff}
+.why-tile--smart p{margin:0;max-width:520px;color:rgba(255,255,255,0.88);font-size:16px;line-height:1.55}
 .why-tile__badge{padding:4px 10px;border-radius:999px;background:var(--peach);color:#2b1300;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
-.why-tile--smart .why-tile__button{background:var(--peach);color:#2b1300}
+.why-smart__action{display:flex;flex-direction:column;align-items:flex-start;gap:20px}
+.why-smart__steps{margin:0;padding:0;list-style:none;counter-reset:step;display:grid;gap:10px}
+.why-smart__steps li{counter-increment:step;display:flex;align-items:center;gap:12px;font-size:15px;font-weight:600}
+.why-smart__steps li::before{content:counter(step);flex:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--mint);color:var(--dark);font-size:13px;font-weight:800}
+.why-tile--smart .why-tile__button{margin-top:0;background:var(--peach);color:#2b1300}
 .why-tile--smart .why-tile__button:hover{background:#FFB57A}
+@media (max-width:900px){
+  .why-tile--smart{grid-template-columns:1fr;gap:22px;padding:26px 22px}
+  .why-tile--smart h3{font-size:22px}
+}
