@@ -16,11 +16,15 @@ With --hzz-details, re-reads HZZ jobs with a salary but no description and
 fills the description, county, contract type, education, experience and
 number of openings.
 
+With --ad-text, re-reads live posao.hr and mojposao jobs saved without the
+ad's own text (duties, requirements, offer), which the CV matching reads.
+
 Usage:
   python -m scraper.backfill --dry-run
   python -m scraper.backfill --limit 50
   python -m scraper.backfill --remap
   python -m scraper.backfill --hzz-details --dry-run --limit 5
+  python -m scraper.backfill --ad-text --dry-run --limit 5
 """
 
 import argparse
@@ -178,15 +182,77 @@ async def fetch_hzz_details(limit: int | None, dry_run: bool) -> None:
         print(f"  {filled[col]:4}  {col}")
 
 
+def _ad_text(source: str, content: str) -> str | None:
+    if source == "posao":
+        return base.extract_posao_ad_text(content)
+    return base.mojposao_ad_text(base.extract_nuxt_payload(content))
+
+
+async def fetch_ad_texts(limit: int | None, dry_run: bool) -> None:
+    """Fill ad_text for live posao.hr / mojposao jobs with a salary. Removed
+    ads are deactivated, like in fetch_missing."""
+    with base.get_connection() as conn:
+        query = """
+            SELECT id, source, url FROM jobs
+            WHERE source IN ('posao', 'mojposao') AND is_active = :active AND salary_shown = 1
+              AND url IS NOT NULL AND ad_text IS NULL
+            ORDER BY id DESC
+        """
+        if limit:
+            query += f" LIMIT {int(limit)}"
+        rows = conn.execute(text(query), {"active": True}).fetchall()
+        print(f"{len(rows)} jobs without the ad text.")
+
+        filled = removed = empty = failed = 0
+        async with base.new_http_client() as client:
+            for i, (job_id, source, url) in enumerate(rows, 1):
+                prefix = f"  [{i}/{len(rows)}] {job_id} ({source}):"
+                try:
+                    resp = await base.retry_with_backoff(client.get, url)
+                except Exception as e:
+                    failed += 1
+                    print(f"{prefix} fetch failed ({e.__class__.__name__})")
+                    await base.sleep_jitter(1.0, 2.5)
+                    continue
+
+                updates = {}
+                if _is_removed(resp):
+                    removed += 1
+                    updates["is_active"] = False
+                    print(f"{prefix} removed — deactivating")
+                else:
+                    ad_text = _ad_text(source, resp.text)
+                    if ad_text:
+                        filled += 1
+                        updates["ad_text"] = ad_text
+                    else:
+                        empty += 1
+                    print(f"{prefix} {len(ad_text or '')} chars")
+
+                if updates and not dry_run:
+                    assignments = ", ".join(f"{col} = :{col}" for col in updates)
+                    conn.execute(text(f"UPDATE jobs SET {assignments} WHERE id = :id"), {**updates, "id": job_id})
+                    conn.commit()
+                await base.sleep_jitter(1.0, 2.5)
+
+    print(
+        f"\nDone{' (dry run)' if dry_run else ''}: {filled} filled, {empty} without text, "
+        f"{removed} removed ads deactivated, {failed} failed fetches."
+    )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--remap", action="store_true", help="Recompute category from stored category_raw, no fetching.")
     parser.add_argument("--hzz-details", dest="hzz_details", action="store_true", help="Fill description and other detail fields of HZZ jobs.")
+    parser.add_argument("--ad-text", dest="ad_text", action="store_true", help="Fill the ad text of posao.hr / mojposao jobs.")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--dry-run", dest="dry_run", action="store_true")
     args = parser.parse_args()
     if args.remap:
         remap(args.dry_run)
+    elif args.ad_text:
+        asyncio.run(fetch_ad_texts(args.limit, args.dry_run))
     elif args.hzz_details:
         asyncio.run(fetch_hzz_details(args.limit, args.dry_run))
     else:

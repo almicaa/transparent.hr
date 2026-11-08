@@ -31,6 +31,9 @@ class Job(Base):
     salary_period: Mapped[str | None] = mapped_column(String)
     """'hour' | 'year' | None (monthly). Only monthly amounts feed salary filters, sorting and stats."""
     description: Mapped[str | None] = mapped_column(String)
+    ad_text: Mapped[str | None] = mapped_column(String)
+    """The ad's own text (duties, requirements, offer) from posao.hr / mojposao.
+    Only feeds the CV matching; not served by the API."""
     url: Mapped[str | None] = mapped_column(String)
     source: Mapped[str | None] = mapped_column(String)
     posted_at: Mapped[str | None] = mapped_column(String)

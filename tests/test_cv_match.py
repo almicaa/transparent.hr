@@ -21,7 +21,7 @@ from app.db.session import Base  # noqa: E402
 from app.models.job import Job  # noqa: E402
 from app.repositories.job_repository import JobRepository  # noqa: E402
 from app.services import cv_match  # noqa: E402
-from app.services.cv_match import CvError, _Answer, _Match, detect_type, docx_text, match_cv  # noqa: E402
+from app.services.cv_match import CvError, _Answer, _Match, _Shortlist, detect_type, docx_text, match_cv  # noqa: E402
 
 
 def make_docx(paragraphs: list[str]) -> bytes:
@@ -45,7 +45,8 @@ def repo():
     db.add_all(
         [
             Job(id=1, title="Skladištar", company="A d.o.o.", location="Zagreb", category="Logistika",
-                salary_min=1200, salary_max=1400, salary_shown=1, salary_basis="neto"),
+                salary_min=1200, salary_max=1400, salary_shown=1, salary_basis="neto",
+                ad_text="Uvjeti:\n- položen ispit za viličar"),
             Job(id=2, title="Programer", company="B d.o.o.", location="Split", category="IT",
                 salary_min=2500, salary_shown=1),
             Job(id=3, title="Inaktivan", company="C", location="Zagreb", salary_min=1000, salary_shown=1, is_active=False),
@@ -56,23 +57,27 @@ def repo():
 
 
 class FakeClient:
-    """Stands in for anthropic.Anthropic; records the request and returns `answer`."""
+    """Stands in for anthropic.Anthropic: records each request and returns the
+    next of `answers` (round 1 shortlist, round 2 final picks)."""
 
-    def __init__(self, answer, stop_reason="end_turn"):
+    def __init__(self, *answers, stop_reason="end_turn"):
         self.calls = []
-        messages = SimpleNamespace(parse=self._parse)
-        self.beta = SimpleNamespace(messages=messages)
-        self._answer, self._stop = answer, stop_reason
+        self.beta = SimpleNamespace(messages=SimpleNamespace(parse=self._parse))
+        self._answers, self._stop = list(answers), stop_reason
 
     def _parse(self, **params):
         self.calls.append(params)
-        return SimpleNamespace(parsed_output=self._answer, stop_reason=self._stop)
+        return SimpleNamespace(parsed_output=self._answers.pop(0), stop_reason=self._stop)
 
 
-def use_fake(monkeypatch, answer, **kw) -> FakeClient:
-    fake = FakeClient(answer, **kw)
+def use_fake(monkeypatch, *answers, **kw) -> FakeClient:
+    fake = FakeClient(*answers, **kw)
     monkeypatch.setattr(cv_match, "_client", lambda: fake)
     return fake
+
+
+def shortlist(*ids, is_cv=True):
+    return _Shortlist(is_cv=is_cv, profile_summary="Skladištarka s 4 godine iskustva.", candidate_ids=list(ids))
 
 
 def test_docx_text_reads_paragraphs():
@@ -88,40 +93,53 @@ def test_detect_type():
         detect_type("stuff.zip", "application/zip", b"PK\x03\x04")
 
 
-def test_match_returns_jobs_with_reasons(monkeypatch, repo):
-    answer = _Answer(
-        is_cv=True,
-        profile_summary="Skladištarka s 4 godine iskustva.",
+def test_two_rounds(monkeypatch, repo):
+    final = _Answer(
         matches=[
-            _Match(job_id=1, reason="Imaš 4 godine u skladištu."),
-            _Match(job_id=999, reason="Ne postoji."),  # made-up id: dropped
-            _Match(job_id=3, reason="Neaktivan."),  # not in the live list: dropped
-            _Match(job_id=1, reason="Duplikat."),  # repeat: dropped
-        ],
+            _Match(job_id=1, reason="Imaš 4 godine u skladištu.", missing=" "),
+            _Match(job_id=2, reason="Nije bio u užem izboru.", missing=None),  # not shortlisted: dropped
+            _Match(job_id=1, reason="Duplikat.", missing=None),  # repeat: dropped
+        ]
     )
-    fake = use_fake(monkeypatch, answer)
+    # 999 is made up and 3 is inactive: neither reaches round 2.
+    fake = use_fake(monkeypatch, shortlist(999, 1, 3, 1), final)
 
     result = match_cv(repo, "cv.docx", None, CV_DOCX)
 
     assert [m.job.id for m in result.matches] == [1]
     assert result.matches[0].reason == "Imaš 4 godine u skladištu."
+    assert result.matches[0].missing is None
     assert result.profile_summary == "Skladištarka s 4 godine iskustva."
 
-    sent = fake.calls[0]
-    job_list = sent["system"][1]["text"]
+    round1, round2 = fake.calls
+    job_list = round1["system"][1]["text"]
     assert "Skladištar" in job_list and "Programer" in job_list and "Inaktivan" not in job_list
-    assert "skladištarka" in sent["messages"][0]["content"][0]["text"]
+    assert "skladištarka" in round1["messages"][0]["content"][0]["text"]
+    # Round 2 gets the full ad text of the shortlisted job only.
+    ads = round2["messages"][0]["content"][1]["text"]
+    assert '<oglas id="1">' in ads and "položen ispit za viličar" in ads and "Programer" not in ads
+
+
+def test_missing_note_is_kept(monkeypatch, repo):
+    use_fake(monkeypatch, shortlist(1), _Answer(matches=[_Match(job_id=1, reason="Odgovara.", missing="Poželjan njemački jezik.")]))
+    assert match_cv(repo, "cv.docx", None, CV_DOCX).matches[0].missing == "Poželjan njemački jezik."
+
+
+def test_empty_shortlist_skips_round_two(monkeypatch, repo):
+    fake = use_fake(monkeypatch, shortlist())
+    assert match_cv(repo, "cv.docx", None, CV_DOCX).matches == []
+    assert len(fake.calls) == 1
 
 
 def test_pdf_is_sent_as_document(monkeypatch, repo):
-    fake = use_fake(monkeypatch, _Answer(is_cv=True, profile_summary="x", matches=[]))
+    fake = use_fake(monkeypatch, shortlist())
     match_cv(repo, "cv.pdf", "application/pdf", b"%PDF-1.4 fake")
     block = fake.calls[0]["messages"][0]["content"][0]
     assert block["type"] == "document" and block["source"]["media_type"] == "application/pdf"
 
 
 def test_not_a_cv(monkeypatch, repo):
-    use_fake(monkeypatch, _Answer(is_cv=False, profile_summary="", matches=[]))
+    use_fake(monkeypatch, shortlist(is_cv=False))
     with pytest.raises(CvError, match="životopis"):
         match_cv(repo, "cv.docx", None, CV_DOCX)
 
@@ -141,3 +159,27 @@ def test_missing_api_key(monkeypatch, repo):
     monkeypatch.setattr(cv_match.settings, "anthropic_api_key", None)
     with pytest.raises(CvError, match="nije dostupna"):
         match_cv(repo, "cv.docx", None, CV_DOCX)
+
+
+# Ad text extraction in the scrapers (scraper/base_scraper.py).
+from scraper import base_scraper  # noqa: E402
+
+POSAO_PAGE = """<html><body><div class="ad_mask">
+<main class="radial_single_job">Pogonski radnik Poslodavac: X</main>
+<div><p>Opis posla:</p><ul><li>rad na stroju</li></ul><p>Uvjeti:</p><ul><li>njemački jezik B1</li></ul>
+<script>var x = 1;</script></div>
+<div class="application radial_single_job">Brza prijava</div>
+<div class="similar_jobs">Možda će vas zanimati</div>
+</div></body></html>"""
+
+
+def test_posao_ad_text():
+    text = base_scraper.extract_posao_ad_text(POSAO_PAGE)
+    assert text == "Opis posla:\nrad na stroju\nUvjeti:\nnjemački jezik B1"
+    assert base_scraper.extract_posao_ad_text("<html></html>") is None
+
+
+def test_mojposao_ad_text():
+    nuxt = {"description": "- traženje kandidata\r\n", "requirements": "- poželjan njemački", "benefits": ""}
+    assert base_scraper.mojposao_ad_text(nuxt) == "Opis posla:\n- traženje kandidata\nUvjeti:\n- poželjan njemački"
+    assert base_scraper.mojposao_ad_text(None) is None

@@ -231,6 +231,7 @@ _ADDED_JOB_COLUMNS = {
     "experience": "TEXT",
     "openings": "INTEGER",
     "salary_period": "TEXT",
+    "ad_text": "TEXT",
 }
 
 
@@ -471,6 +472,7 @@ def extract_nuxt_payload(content: str) -> dict | None:
         return {
             "title": resolve_key("title"),
             "description": resolve_key("description"),
+            "requirements": resolve_key("requirements"),
             "benefits": resolve_key("benefits"),
             "salary": salary,
             "location": location,
@@ -479,6 +481,54 @@ def extract_nuxt_payload(content: str) -> dict | None:
         }
     except Exception:
         return None
+
+
+AD_TEXT_MAX_CHARS = 8000
+"""Plenty for a job ad; keeps a page of boilerplate from bloating the row."""
+
+
+def _tidy_text(t: str | None) -> str | None:
+    if not t:
+        return None
+    lines = [" ".join(line.split()) for line in t.replace("\r", "").splitlines()]
+    out = "\n".join(line for line in lines if line).strip()
+    return out[:AD_TEXT_MAX_CHARS] or None
+
+
+def mojposao_ad_text(nuxt: dict | None) -> str | None:
+    """The ad's own text from mojposao's Nuxt payload: duties, requirements
+    (languages, experience, licences …) and what the employer offers."""
+    if not nuxt:
+        return None
+    parts = [
+        f"{label}:\n{nuxt[key].strip()}"
+        for key, label in (("description", "Opis posla"), ("requirements", "Uvjeti"), ("benefits", "Nudimo"))
+        if isinstance(nuxt.get(key), str) and nuxt[key].strip()
+    ]
+    return _tidy_text("\n\n".join(parts))
+
+
+def extract_posao_ad_text(content: str) -> str | None:
+    """The ad body on a posao.hr detail page. The page's div.ad_mask holds the
+    summary box (<main>), then the employer's own ad, then the "Prijava" box and
+    similar jobs; the ad is everything between the summary and "Prijava"."""
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(content, "html.parser")
+    mask = soup.select_one("div.ad_mask")
+    if not mask:
+        return None
+    texts = []
+    for child in mask.find_all(recursive=False):
+        classes = child.get("class") or []
+        if child.name == "main":
+            continue
+        if "application" in classes or "similar_jobs" in classes:
+            break
+        for tag in child(["script", "style", "noscript"]):
+            tag.decompose()
+        texts.append(child.get_text("\n"))
+    return _tidy_text("\n".join(texts))
 
 
 def extract_posao_category(content: str) -> str | None:
@@ -550,13 +600,13 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
              salary_currency, salary_basis, salary_type, salary_period,
              category, category_raw,
              url, source, posted_at, expires_at,
-             description, address_region, contract_type, education, experience, openings)
+             description, ad_text, address_region, contract_type, education, experience, openings)
             VALUES (:external_id, :title, :company, :location, :job_type,
                     :salary_min, :salary_max, :salary_text, :salary_shown,
                     :salary_currency, :salary_basis, :salary_type, :salary_period,
                     :category, :category_raw,
                     :url, :source, :posted_at, :expires_at,
-                    :description, :address_region, :contract_type, :education, :experience, :openings)
+                    :description, :ad_text, :address_region, :contract_type, :education, :experience, :openings)
             ON CONFLICT (external_id) DO NOTHING
             RETURNING id
         """),
@@ -581,6 +631,7 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
             "posted_at": job.get("posted_at"),
             "expires_at": expires_at,
             "description": job.get("description"),
+            "ad_text": job.get("ad_text"),
             "address_region": job.get("address_region"),
             "contract_type": job.get("contract_type"),
             "education": job.get("education"),

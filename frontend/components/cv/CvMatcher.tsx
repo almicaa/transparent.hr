@@ -100,9 +100,12 @@ export default function CvMatcher() {
                   <h2>Oglasi koji ti odgovaraju</h2>
                 </div>
                 <ol className="cv-results__list">
-                  {state.result.matches.map(({ job, reason }) => (
+                  {state.result.matches.map(({ job, reason, missing }) => (
                     <li key={job.id} className="cv-match">
-                      <p className="cv-match__reason">{reason}</p>
+                      <div className="cv-match__note">
+                        <p className="cv-match__reason">{reason}</p>
+                        {missing ? <p className="cv-match__missing">Nedostaje ti: {missing}</p> : null}
+                      </div>
                       <JobCard job={job} />
                     </li>
                   ))}

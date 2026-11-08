@@ -114,6 +114,8 @@ export interface CvMatch {
   job: Job
   /** One sentence from the AI on why this job fits the CV. */
   reason: string
+  /** Something the ad would like (e.g. a language) that the CV doesn't show. */
+  missing: string | null
 }
 
 export interface CvMatchResult {

@@ -244,6 +244,7 @@ async def scrape_jobs(max_pages=None, max_jobs=None):
                         pass
                     if nuxt:
                         job["category_raw"] = nuxt.get("category")
+                        job["ad_text"] = base.mojposao_ad_text(nuxt)
 
                     salary_text = salary_min = salary_max = None
                     sal = jd.get("salary") or {}
