@@ -13,12 +13,12 @@ class Settings(BaseSettings):
 
     # CV matching (/api/cv-match). Without a key the endpoint answers with a friendly error.
     anthropic_api_key: str | None = None
-    cv_match_model: str = "claude-opus-5-5"
-    """Set to claude-haiku-5-5 for a much cheaper (and somewhat less careful) match."""
+    cv_match_model: str = "claude-haiku-5-5"
+    """claude-opus-5-5 picks more carefully, at ~30x the cost per CV."""
     cv_match_effort: str = "low"
     cv_match_per_hour: int = 5
     """Uploads allowed per visitor IP per hour."""
-    cv_match_per_day: int = 300
+    cv_match_per_day: int = 20
     """Uploads allowed site-wide per UTC day, as a cost ceiling."""
 
     @property

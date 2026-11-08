@@ -10,5 +10,5 @@
 Na Renderu (backend) postavi:
 
 - `ANTHROPIC_API_KEY` — ključ s console.anthropic.com. Bez njega stranica `/cv` javlja da pretraga trenutno nije dostupna.
-- `CV_MATCH_MODEL` (neobavezno) — zadano `claude-opus-5-5`. `claude-haiku-5-5` je ~40× jeftiniji, ali manje pažljivo bira.
-- `CV_MATCH_PER_HOUR` / `CV_MATCH_PER_DAY` (neobavezno) — zadano 5 po IP-u na sat i 300 dnevno za cijelu stranicu, kao gornja granica troška.
+- `CV_MATCH_MODEL` (neobavezno) — zadano `claude-haiku-5-5` (~0,4 centa po CV-u). `claude-opus-5-5` pažljivije bira, ali je ~30× skuplji.
+- `CV_MATCH_PER_HOUR` / `CV_MATCH_PER_DAY` (neobavezno) — zadano 5 po IP-u na sat i 20 dnevno za cijelu stranicu, kao gornja granica troška.
