@@ -4,7 +4,7 @@
   --dark: #085050;
   /* --primary is only ~3.3:1 on white — fine for borders, fills and large
      type, too faint for small text. Small teal text uses this (~5:1). */
-  --primary-text: #137C7C;
+  --primary-text: #0F6B6B;
   /* Orange is the secondary accent: small doses (new-job dot, counts,
      hero warmth) next to the teal, never a competing main color. */
   --accent: #FF7F1F;
@@ -25,8 +25,8 @@
 
   /* Notion-style neutral grays — never pure black */
   --text: #2b2f2e;
-  --text-secondary: #6b7470;
-  --muted: #6b7470;
+  --text-secondary: #5f6864;
+  --muted: #5f6864;
 
   /* Brand surfaces: tinted panels, the mint and peach tiles, and the
      marker-style highlight behind hero titles. */
