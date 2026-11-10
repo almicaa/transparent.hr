@@ -44,7 +44,9 @@ class CvError(Exception):
 # What Claude returns; job ids are checked against the lists we sent.
 class _Shortlist(BaseModel):
     is_cv: bool = Field(description="False ako dokument nije životopis.")
-    profile_summary: str = Field(description="1-2 rečenice na hrvatskom: tko je osoba i kakav posao traži, u 2. licu.")
+    profile_summary: str = Field(
+        description="1-2 kratke rečenice na hrvatskom, u 2. licu: tko je osoba i kakvi joj poslovi odgovaraju. Samo pozitivno, bez poslova koji joj ne odgovaraju."
+    )
     candidate_ids: list[int] = Field(description=f"Do {SHORTLIST_SIZE} id-jeva oglasa koji bi mogli odgovarati, najbolji prvi.")
 
 
@@ -88,7 +90,7 @@ id | naziv | poslodavac | lokacija | grana | plaća | obrazovanje / iskustvo
 
 Ovo je prvi krug: izaberi do {SHORTLIST_SIZE} oglasa koji bi mogli odgovarati osobi po iskustvu, vještinama, obrazovanju i razini senioriteta. Cijele oglase (s uvjetima) pročitat ćeš u drugom krugu, pa ovdje radije uzmi koji oglas više. Ako životopis spominje grad ili željenu plaću, daj prednost takvim oglasima; ako ne, ne pretpostavljaj.
 
-Napiši i kratak sažetak profila (profile_summary). Ako dokument nije životopis, postavi is_cv na false i vrati prazan popis.
+Napiši i kratak sažetak profila (profile_summary): tko je osoba i kakvi joj poslovi odgovaraju. Ne nabrajaj poslove ili struke koji joj ne odgovaraju (npr. "a ne fizički poslovi") i ne prepričavaj cijeli životopis. Ako dokument nije životopis, postavi is_cv na false i vrati prazan popis.
 
 {GROUND_RULES}"""
 
