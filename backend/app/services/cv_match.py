@@ -48,16 +48,31 @@ class _Shortlist(BaseModel):
     candidate_ids: list[int] = Field(description=f"Do {SHORTLIST_SIZE} id-jeva oglasa koji bi mogli odgovarati, najbolji prvi.")
 
 
+class _Gap(BaseModel):
+    requirement: str = Field(description="Uvjet iz oglasa, prepisan onako kako piše, s cijelim popisom primjera ako ga ima.")
+    cv_evidence: str | None = Field(
+        description=(
+            "Što iz životopisa pokriva ovaj uvjet: isti alat ili vještina, bilo koji drugi primjer iz istog popisa, "
+            "ili nešto iz iste skupine (npr. Gemini za \"AI alati\"). Navedi točno što piše u životopisu. "
+            "null samo ako u životopisu nema baš ništa od toga."
+        )
+    )
+    note: str = Field(description="Kratka napomena za osobu, točno onako strogo kako piše u oglasu, npr. \"Poželjan njemački jezik.\".")
+
+
 class _Match(BaseModel):
     job_id: int
     reason: str = Field(description="Jedna kratka rečenica na hrvatskom, u 2. licu (\"Imaš…\", \"Radila si…\"): zašto ovaj posao odgovara.")
-    missing: str | None = Field(
-        description=(
-            "Samo ako oglas jasno traži ili navodi kao prednost konkretnu vještinu, jezik ili kvalifikaciju, a u životopisu nema ni nje ni "
-            "ičeg srodnog: kratko to navedi, onako kako piše u oglasu, npr. \"Poželjan njemački jezik.\". "
-            "Alati ili tehnologije navedeni kao primjer (\"npr.\", \"poput\", \"i sl.\", \"ili\") nisu zahtjev. U sumnji vrati null."
-        )
+    gaps: list[_Gap] = Field(
+        default_factory=list,
+        description="Uvjeti iz oglasa (obavezni ili poželjni) za koje nije očito da ih osoba ispunjava. Za svaki provjeri životopis. Prazan popis ako ih nema.",
     )
+
+    @property
+    def missing(self) -> str | None:
+        """Notes for the gaps the CV doesn't cover; a gap with any CV evidence isn't shown."""
+        notes = [g.note.strip() for g in self.gaps if not (g.cv_evidence or "").strip() and g.note.strip()]
+        return " ".join(notes) or None
 
 
 class _Answer(BaseModel):
@@ -82,12 +97,11 @@ FINAL_INSTRUCTIONS = f"""Ti si savjetnik za zapošljavanje na transparent.hr, st
 Korisnik ti šalje svoj životopis i cijeli tekst nekoliko oglasa. Pažljivo pročitaj uvjete svakog oglasa i usporedi ih sa životopisom.
 
 - Izbaci oglas ako osobi očito nedostaje nešto što oglas traži kao obavezno: jezik, vozačka ili druga dozvola, certifikat, struka, razina obrazovanja ili znatno više godina iskustva.
-- Ono što oglas navodi kao "poželjno" ili "prednost" nije razlog za izbacivanje, ali ako to u životopisu nema, navedi to u polju missing.
-- Polje missing služi samo za stvarne praznine, ne za popis svega što u životopisu ne piše doslovno:
-  - Kad oglas nabraja alate ili tehnologije kao primjere ("npr.", "poput", "kao što su", "i sl.", "ili", "jedan od") ili kao skupinu ("AI alati", "neki od CI/CD alata"), dovoljno je da osoba ima iskustva s bilo čim iz te skupine ili s nečim srodnim. Ne traži svaki navedeni alat.
-  - Ne navodi konkretan alat ako životopis pokazuje srodnu vještinu ili iskustvo iz kojeg se to razumno podrazumijeva.
-  - Ako nešto ipak navedeš, prenesi točno koliko je oglas strog: "Oglas spominje iskustvo s AI alatima (npr. Cursor, Copilot)." umjesto "Oglas traži Cursor ili GitHub Copilot.".
-  - Ako ništa važno ne nedostaje ili nisi siguran, vrati null.
+- Ono što oglas navodi kao "poželjno" ili "prednost" nije razlog za izbacivanje, ali ga upiši u gaps.
+- U gaps upiši uvjete iz oglasa za koje nije očito da ih osoba ispunjava, i za svaki u cv_evidence napiši što iz životopisa ga pokriva:
+  - Kad oglas nabraja alate kao primjere ("npr.", "poput", "ili sličnih", "i sl.", zagrada s popisom) ili traži skupinu ("AI alati", "neki od CI/CD alata"), uvjet je ispunjen ako životopis spominje bilo koji alat s tog popisa ili iz te skupine. Npr. oglas traži "AI alate (ChatGPT, Claude, Cursor ili slične)", a životopis spominje Gemini: cv_evidence je "Gemini".
+  - Pažljivo pročitaj cijeli životopis prije nego upišeš null; null znači da u životopisu nema baš ništa što pokriva uvjet.
+  - Osobi se prikazuju samo napomene s praznim cv_evidence.
 - Ne miješaj različite stvari: vozačka B kategorija nije dozvola za viličar, rad na računalu nije programiranje.
 - Vrati do {MAX_MATCHES} oglasa koji stvarno odgovaraju, najbolji prvi. Bolje manje nego oglasi koji ne odgovaraju; smiješ vratiti i prazan popis.
 

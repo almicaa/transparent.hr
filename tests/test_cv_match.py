@@ -21,7 +21,7 @@ from app.db.session import Base  # noqa: E402
 from app.models.job import Job  # noqa: E402
 from app.repositories.job_repository import JobRepository  # noqa: E402
 from app.services import cv_match  # noqa: E402
-from app.services.cv_match import CvError, _Answer, _Match, _Shortlist, detect_type, docx_text, match_cv  # noqa: E402
+from app.services.cv_match import CvError, _Answer, _Gap, _Match, _Shortlist, detect_type, docx_text, match_cv  # noqa: E402
 
 
 def make_docx(paragraphs: list[str]) -> bytes:
@@ -96,9 +96,9 @@ def test_detect_type():
 def test_two_rounds(monkeypatch, repo):
     final = _Answer(
         matches=[
-            _Match(job_id=1, reason="Imaš 4 godine u skladištu.", missing=" "),
-            _Match(job_id=2, reason="Nije bio u užem izboru.", missing=None),  # not shortlisted: dropped
-            _Match(job_id=1, reason="Duplikat.", missing=None),  # repeat: dropped
+            _Match(job_id=1, reason="Imaš 4 godine u skladištu."),
+            _Match(job_id=2, reason="Nije bio u užem izboru."),  # not shortlisted: dropped
+            _Match(job_id=1, reason="Duplikat."),  # repeat: dropped
         ]
     )
     # 999 is made up and 3 is inactive: neither reaches round 2.
@@ -120,8 +120,12 @@ def test_two_rounds(monkeypatch, repo):
     assert '<oglas id="1">' in ads and "položen ispit za viličar" in ads and "Programer" not in ads
 
 
-def test_missing_note_is_kept(monkeypatch, repo):
-    use_fake(monkeypatch, shortlist(1), _Answer(matches=[_Match(job_id=1, reason="Odgovara.", missing="Poželjan njemački jezik.")]))
+def test_missing_note_only_for_gaps_the_cv_doesnt_cover(monkeypatch, repo):
+    gaps = [
+        _Gap(requirement="Poželjan njemački jezik", cv_evidence=None, note="Poželjan njemački jezik."),
+        _Gap(requirement="AI alati (ChatGPT, Claude, Cursor ili slični)", cv_evidence="Gemini, Claude", note="Oglas traži AI alate."),
+    ]
+    use_fake(monkeypatch, shortlist(1), _Answer(matches=[_Match(job_id=1, reason="Odgovara.", gaps=gaps)]))
     assert match_cv(repo, "cv.docx", None, CV_DOCX).matches[0].missing == "Poželjan njemački jezik."
 
 
