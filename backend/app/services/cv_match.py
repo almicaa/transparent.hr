@@ -52,7 +52,11 @@ class _Match(BaseModel):
     job_id: int
     reason: str = Field(description="Jedna kratka rečenica na hrvatskom, u 2. licu (\"Imaš…\", \"Radila si…\"): zašto ovaj posao odgovara.")
     missing: str | None = Field(
-        description="Ako oglas traži nešto poželjno što u životopisu nema (npr. jezik), kratko to navedi, npr. \"Poželjan njemački jezik.\". Inače null."
+        description=(
+            "Samo ako oglas jasno traži ili navodi kao prednost konkretnu vještinu, jezik ili kvalifikaciju, a u životopisu nema ni nje ni "
+            "ičeg srodnog: kratko to navedi, onako kako piše u oglasu, npr. \"Poželjan njemački jezik.\". "
+            "Alati ili tehnologije navedeni kao primjer (\"npr.\", \"poput\", \"i sl.\", \"ili\") nisu zahtjev. U sumnji vrati null."
+        )
     )
 
 
@@ -79,6 +83,11 @@ Korisnik ti šalje svoj životopis i cijeli tekst nekoliko oglasa. Pažljivo pro
 
 - Izbaci oglas ako osobi očito nedostaje nešto što oglas traži kao obavezno: jezik, vozačka ili druga dozvola, certifikat, struka, razina obrazovanja ili znatno više godina iskustva.
 - Ono što oglas navodi kao "poželjno" ili "prednost" nije razlog za izbacivanje, ali ako to u životopisu nema, navedi to u polju missing.
+- Polje missing služi samo za stvarne praznine, ne za popis svega što u životopisu ne piše doslovno:
+  - Kad oglas nabraja alate ili tehnologije kao primjere ("npr.", "poput", "kao što su", "i sl.", "ili", "jedan od") ili kao skupinu ("AI alati", "neki od CI/CD alata"), dovoljno je da osoba ima iskustva s bilo čim iz te skupine ili s nečim srodnim. Ne traži svaki navedeni alat.
+  - Ne navodi konkretan alat ako životopis pokazuje srodnu vještinu ili iskustvo iz kojeg se to razumno podrazumijeva.
+  - Ako nešto ipak navedeš, prenesi točno koliko je oglas strog: "Oglas spominje iskustvo s AI alatima (npr. Cursor, Copilot)." umjesto "Oglas traži Cursor ili GitHub Copilot.".
+  - Ako ništa važno ne nedostaje ili nisi siguran, vrati null.
 - Ne miješaj različite stvari: vozačka B kategorija nije dozvola za viličar, rad na računalu nije programiranje.
 - Vrati do {MAX_MATCHES} oglasa koji stvarno odgovaraju, najbolji prvi. Bolje manje nego oglasi koji ne odgovaraju; smiješ vratiti i prazan popis.
 
