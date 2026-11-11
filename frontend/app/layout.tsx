@@ -1,6 +1,5 @@
 import "../styles/globals.css"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 import Script from "next/script"
 import Header from "../components/layout/Header"
 import Footer from "../components/layout/Footer"
@@ -10,8 +9,6 @@ import { getAllPosts } from "../lib/blog"
 
 const GA_ID = "G-5PPM0Y3J1E"
 const IS_PRODUCTION = process.env.NODE_ENV === "production"
-
-const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter" })
 
 // Fallbacks only (e.g. the 404 page). Every page sets its own title,
 // description, canonical and share tags through pageMetadata() in lib/seo.ts;
@@ -57,7 +54,11 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="hr" className={inter.variable}>
+    <html lang="hr">
+      <head>
+        {/* Inter is self-hosted (see globals.css); start the main file early. */}
+        <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+      </head>
       <body>
         <script
           type="application/ld+json"
