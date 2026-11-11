@@ -43,7 +43,11 @@ export const DEFAULT_RATES: CityRates = { city: "Ostalo", lower: 0.2, higher: 0.
 /** Best guess at the tax city from a free-text job location ("Zagreb (Sesvete)" → Zagreb). */
 export function ratesForLocation(location: string | null): CityRates {
   const lower = (location ?? "").toLowerCase()
-  return CITY_RATES.find((r) => lower.includes(r.city.toLowerCase())) ?? DEFAULT_RATES
+  // Whole words only, so "Zagrebačka županija" doesn't get Zagreb's rates.
+  return (
+    CITY_RATES.find((r) => new RegExp(`(?<!\\p{L})${r.city.toLowerCase()}(?!\\p{L})`, "u").test(lower)) ??
+    DEFAULT_RATES
+  )
 }
 
 export interface NetBreakdown {
