@@ -29,7 +29,7 @@ export default function AboutPage() {
         <HeroIllustration />
         <span className="about-hero__eyebrow">O nama</span>
         <h1>
-          Oglasi za posao u kojima je plaća navedena. <span className="hero__title-accent">Samo njih.</span>
+          Samo oglasi za posao <span className="hero__title-accent">u kojima piše plaća.</span>
         </h1>
       </section>
 
