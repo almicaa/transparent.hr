@@ -83,6 +83,6 @@ Kad stupe na snagu, brojke iz ove analize trebale bi se promijeniti. Zanima nas 
 
 ## Zaključak
 
-U Hrvatskoj je skrivanje plaće norma. Tražiti posao znači u 90 do 95 % slučajeva prijaviti se, a da ne znaš koliko ćeš zarađivati.
+Brojke su jasne: plaća u oglasu i dalje je iznimka. Na gotovo svaki oglas kandidat se prijavljuje naslijepo, a iznos saznaje tek na razgovoru, ako i tada.
 
 Zato smo napravili Transparent.hr: na jednom mjestu prikazuje samo oglase u kojima piše plaća. Bez „po dogovoru”. [Pogledaj oglase](/jobs).
