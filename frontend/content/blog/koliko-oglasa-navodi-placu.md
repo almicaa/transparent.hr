@@ -1,6 +1,6 @@
 ---
 title: "Plaću navodi tek 5 do 12 % oglasa za posao: što pokazuju podaci s hrvatskih portala"
-description: Svaki dan sam brojala oglase na tri najveća izvora. Plaću navodi tek 5 do 12 % oglasa, a u obrazovanju samo jedan od 3.463.
+description: Svaki dan sam brojala oglase na portalima posao.hr i MojPosao te na HZZ-u. Plaću navodi tek 5 do 12 % oglasa, a u obrazovanju samo jedan od 3.463.
 date: 2026-11-11
 draft: false
 ---
