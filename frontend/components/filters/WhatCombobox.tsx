@@ -8,8 +8,8 @@ function fold(text: string): string {
 interface WhatComboboxProps {
   search: string
   category: string
-  onSearch: (search: string) => void
-  onCategory: (category: string) => void
+  /** One call per user action, so picking a grana and clearing the text can't overwrite each other. */
+  onChange: (patch: { search?: string; category?: string }) => void
   categoryOptions: FilterOption[]
 }
 
@@ -21,8 +21,7 @@ interface WhatComboboxProps {
 export default function WhatCombobox({
   search,
   category,
-  onSearch,
-  onCategory,
+  onChange,
   categoryOptions,
 }: WhatComboboxProps) {
   const [open, setOpen] = useState(false)
@@ -51,9 +50,8 @@ export default function WhatCombobox({
   useEffect(() => setHighlight(-1), [q])
 
   function choose(next: string) {
-    onCategory(next)
     // The text was only typed to find the grana, so it shouldn't also filter.
-    if (q) onSearch("")
+    onChange(q ? { category: next, search: "" } : { category: next })
     setOpen(false)
   }
 
@@ -75,7 +73,7 @@ export default function WhatCombobox({
     } else if (e.key === "Escape") {
       setOpen(false)
     } else if (e.key === "Backspace" && !search && category) {
-      onCategory("")
+      onChange({ category: "" })
     }
   }
 
@@ -88,7 +86,7 @@ export default function WhatCombobox({
             className="what-combobox__chip"
             aria-label={`Ukloni granu ${category}`}
             onClick={() => {
-              onCategory("")
+              onChange({ category: "" })
               inputRef.current?.focus()
             }}
           >
@@ -111,7 +109,7 @@ export default function WhatCombobox({
           // Clicking an already-focused field (e.g. right after picking) must reopen it too.
           onClick={() => setOpen(true)}
           onChange={(e) => {
-            onSearch(e.target.value)
+            onChange({ search: e.target.value })
             setOpen(true)
           }}
           onKeyDown={onKeyDown}

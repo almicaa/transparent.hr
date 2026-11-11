@@ -63,8 +63,7 @@ export default function Finder({
         <WhatCombobox
           search={filters.search}
           category={filters.category}
-          onSearch={(search) => onChange({ search })}
-          onCategory={(category) => onChange({ category })}
+          onChange={onChange}
           categoryOptions={categoryOptions}
         />
       </div>

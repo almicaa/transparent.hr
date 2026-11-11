@@ -104,6 +104,10 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
   const [filterData, setFilterData] = useState<FilterData>(initialFilterData ?? EMPTY_FILTER_DATA)
   const [loading, setLoading] = useState(!hasInitialJobs)
   const [filters, setFilters] = useState<JobFilters>(EMPTY_FILTERS)
+  // Latest filters, so updates fired back to back (or from a delayed callback)
+  // build on each other instead of on a stale render's copy.
+  const filtersRef = useRef(filters)
+  filtersRef.current = filters
   // How many pages of PER_PAGE are loaded; "Prikaži još" appends the next one.
   const [pages, setPages] = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -167,9 +171,11 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
   const drawerCount = panelFilterCount(filters)
 
   function updateFilters(patch: Partial<JobFilters>) {
-    const next = { ...filters, ...patch }
-    if (patch.category && patch.category !== filters.category) trackEvent("select_category", { category: patch.category })
+    const prev = filtersRef.current
+    const next = { ...prev, ...patch }
+    if (patch.category && patch.category !== prev.category) trackEvent("select_category", { category: patch.category })
     restorePages.current = 1
+    filtersRef.current = next
     setFilters(next)
     syncUrl(next, 1)
   }
