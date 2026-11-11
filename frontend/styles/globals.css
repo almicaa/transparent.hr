@@ -39,9 +39,9 @@
 *{box-sizing:border-box}
 html,body,#root{height:100%}
 html,body{overflow-x:clip;max-width:100%}
-/* Default for --font-sans; next/font's class on <html> overrides it. If that class and the CSS ever get out of sync, text stays sans-serif instead of the browser's serif. */
-html{--font-sans:ui-sans-serif,system-ui,sans-serif}
-body{font-family:var(--font-sans),ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.5;margin:0;background:var(--page-bg);color:var(--text);-webkit-font-smoothing:antialiased}
+/* Default for --font-inter; next/font's class on <html> overrides it. If that class and the CSS ever get out of sync, text stays sans-serif instead of the browser's serif. */
+html{--font-inter:ui-sans-serif,system-ui,sans-serif}
+body{font-family:var(--font-inter),ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;line-height:1.5;margin:0;background:var(--page-bg);color:var(--text);-webkit-font-smoothing:antialiased}
 .container{max-width:var(--max-width);margin:0 auto;padding:0 20px}
 .page-content{padding:24px 20px}
 a{color:var(--dark)}

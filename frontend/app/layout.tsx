@@ -11,7 +11,7 @@ import { getAllPosts } from "../lib/blog"
 const GA_ID = "G-5PPM0Y3J1E"
 const IS_PRODUCTION = process.env.NODE_ENV === "production"
 
-const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-sans" })
+const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter" })
 
 // Fallbacks only (e.g. the 404 page). Every page sets its own title,
 // description, canonical and share tags through pageMetadata() in lib/seo.ts;
