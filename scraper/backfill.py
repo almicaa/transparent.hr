@@ -207,44 +207,50 @@ async def fetch_ad_texts(limit: int | None, dry_run: bool) -> None:
         if limit:
             query += f" LIMIT {int(limit)}"
         rows = conn.execute(text(query), {"active": True}).fetchall()
-        print(f"{len(rows)} jobs without the ad text or neto/bruto.")
+    print(f"{len(rows)} jobs without the ad text or neto/bruto.")
 
-        filled = based = removed = empty = failed = 0
-        async with base.new_http_client() as client:
-            for i, (job_id, source, url, needs_text, needs_basis) in enumerate(rows, 1):
-                prefix = f"  [{i}/{len(rows)}] {job_id} ({source}):"
-                try:
-                    resp = await base.retry_with_backoff(client.get, url)
-                except Exception as e:
-                    failed += 1
-                    print(f"{prefix} fetch failed ({e.__class__.__name__})")
-                    await base.sleep_jitter(1.0, 2.5)
-                    continue
+    # The run takes many minutes and Neon drops a connection left idle that
+    # long, so each write below opens its own short connection.
+    filled = based = removed = empty = failed = 0
+    async with base.new_http_client() as client:
+        for i, (job_id, source, url, needs_text, needs_basis) in enumerate(rows, 1):
+            prefix = f"  [{i}/{len(rows)}] {job_id} ({source}):"
+            try:
+                resp = await base.retry_with_backoff(client.get, url)
+            except Exception as e:
+                failed += 1
+                print(f"{prefix} fetch failed ({e.__class__.__name__})")
+                await base.sleep_jitter(1.0, 2.5)
+                continue
 
-                updates = {}
-                if _is_removed(resp):
-                    removed += 1
-                    updates["is_active"] = False
-                    print(f"{prefix} removed — deactivating")
-                else:
-                    ad_text = _ad_text(source, resp.text)
-                    if needs_text:
-                        if ad_text:
-                            filled += 1
-                            updates["ad_text"] = ad_text
-                        else:
-                            empty += 1
-                    basis = _basis(source, resp.text, ad_text) if needs_basis else None
-                    if basis:
-                        based += 1
-                        updates["salary_basis"] = basis
-                    print(f"{prefix} {len(ad_text or '')} chars, {basis or '-'}")
+            updates = {}
+            if _is_removed(resp):
+                removed += 1
+                updates["is_active"] = False
+                print(f"{prefix} removed — deactivating")
+            else:
+                ad_text = _ad_text(source, resp.text)
+                if needs_text:
+                    if ad_text:
+                        filled += 1
+                        updates["ad_text"] = ad_text
+                    else:
+                        empty += 1
+                basis = _basis(source, resp.text, ad_text) if needs_basis else None
+                if basis:
+                    based += 1
+                    updates["salary_basis"] = basis
+                print(f"{prefix} {len(ad_text or '')} chars, {basis or '-'}")
+                hint = base.missed_basis_hint(ad_text) if needs_basis and not basis else None
+                if hint:
+                    print(f"    ⚠ neto/bruto nije prepoznat, a oglas spominje: …{hint}…")
 
-                if updates and not dry_run:
-                    assignments = ", ".join(f"{col} = :{col}" for col in updates)
+            if updates and not dry_run:
+                assignments = ", ".join(f"{col} = :{col}" for col in updates)
+                with base.get_connection() as conn:
                     conn.execute(text(f"UPDATE jobs SET {assignments} WHERE id = :id"), {**updates, "id": job_id})
                     conn.commit()
-                await base.sleep_jitter(1.0, 2.5)
+            await base.sleep_jitter(1.0, 2.5)
 
     print(
         f"\nDone{' (dry run)' if dry_run else ''}: {filled} filled, {empty} without text, {based} neto/bruto set, "

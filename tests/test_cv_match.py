@@ -201,6 +201,20 @@ def test_basis_from_ad_text():
     assert base_scraper.basis_from_ad_text("Nudimo:\n- početna plaća 1500 EUR neto, dalje po dogovoru") == "neto"
     assert base_scraper.basis_from_ad_text("3.940 – 4.730 EUR bruto mjesečno") == "bruto"
     assert base_scraper.basis_from_ad_text("Mjesečna bruto plaća iznosi 2.000 €") == "bruto"
+    assert base_scraper.basis_from_ad_text("- Net salary of up to 1.500 euro + performance-based growth") == "neto"
+    assert base_scraper.basis_from_ad_text("Gross salary: 2.000 EUR") == "bruto"
+    # ".NET" next to a salary isn't the tax basis
+    assert base_scraper.basis_from_ad_text("ASP.NET developer, salary 2.000 EUR") is None
     # "neto" far from any pay figure doesn't count
     assert base_scraper.basis_from_ad_text("Plaća po dogovoru. " + "x " * 40 + "neto rezultat tima") is None
     assert base_scraper.basis_from_ad_text(None) is None
+    assert base_scraper.basis_from_ad_text("Monthly pay: 1.800 EUR after taxes") == "neto"
+    assert base_scraper.basis_from_ad_text("Plaća 1.200 € na ruke") == "neto"
+
+
+def test_missed_basis_hint():
+    # A basis word too far from the pay isn't trusted, but is flagged for review.
+    ad = "Plaća po dogovoru. " + "x " * 40 + "neto rezultat tima"
+    assert "neto" in base_scraper.missed_basis_hint(ad)
+    assert base_scraper.missed_basis_hint("ASP.NET developer, 2.000 EUR") is None
+    assert base_scraper.missed_basis_hint(None) is None

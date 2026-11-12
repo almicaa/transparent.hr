@@ -52,14 +52,22 @@ def clean_salary_snippet(text: str | None) -> str | None:
     return t.rstrip(". \t").strip()
 
 
+# Every way an ad says the pay is after / before tax — Croatian, English and
+# German spellings. One vocabulary for both the salary field and the ad body,
+# so a new word only has to be added here. "(?<!\.)" keeps ".NET" from
+# reading as neto.
+NET_PATTERN = r"(?<!\.)\b(?:neto|netto|nett?|na\s+ruke|after[\s-]+tax(?:es)?)\b"
+GROSS_PATTERN = r"\b(?:bruto|brutto|gross|before[\s-]+tax(?:es)?|pre[\s-]+tax)\b"
+BASIS_PATTERNS = (("neto", NET_PATTERN), ("bruto", GROSS_PATTERN))
+
+
 def parse_salary_basis(text: str | None) -> str | None:
     """Detect whether a salary snippet states neto or bruto. None if unstated."""
     if not text:
         return None
-    if re.search(r"(?i)\bneto\b", text):
-        return "neto"
-    if re.search(r"(?i)\bbruto\b", text):
-        return "bruto"
+    for basis, pattern in BASIS_PATTERNS:
+        if re.search(pattern, text, re.IGNORECASE):
+            return basis
     return None
 
 

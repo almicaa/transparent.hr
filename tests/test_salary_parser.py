@@ -75,6 +75,17 @@ def test_parse_salary_type(text, expected):
         (None, None),
         # Whole words only.
         ("1.450 € netovrijednost", None),
+        ("1.450 € internet", None),
+        # English and German ads.
+        ("1500 EUR net", "neto"),
+        ("Gross 2.000 €", "bruto"),
+        ("2.000 € netto", "neto"),
+        ("2.000 € brutto", "bruto"),
+        ("2.000 € after tax", "neto"),
+        ("2.000 € before-tax", "bruto"),
+        ("1.200 € na ruke", "neto"),
+        # ".NET" is a technology, not neto.
+        ("ASP.NET 2.000 €", None),
     ],
 )
 def test_parse_salary_basis(text, expected):

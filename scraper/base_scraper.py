@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), ".."
 from shared.salary_parser import (  # noqa: E402,F401
     parse_salary,
     parse_salary_basis,
+    BASIS_PATTERNS,
     parse_salary_type,
     parse_salary_period,
     is_valid_salary,
@@ -542,22 +543,36 @@ def extract_posao_salary(content: str) -> str | None:
     return re.sub(r"\s+", " ", value).strip() or None
 
 
-_MONEY = r"\d[\d.,\s]*\s?(?:€|eur|eura)"
+_MONEY = r"\d[\d.,\s]*\s?(?:€|eur\w*)"
 
 
 def basis_from_ad_text(ad_text: str | None) -> str | None:
     """neto/bruto stated next to the pay in the ad body, for ads whose salary
-    field leaves it out ("početna plaća 1500 EUR neto", "bruto plaća: 1.650 €").
-    Only looks at words within a few words of an amount or of "plaća", so a
-    stray "neto" elsewhere in the ad doesn't count."""
+    field leaves it out ("početna plaća 1500 EUR neto", "bruto plaća: 1.650 €",
+    "Net salary of up to 1.500 euro"). Only looks at words within a few words
+    of an amount or of "plaća", so a stray "neto" elsewhere in the ad doesn't
+    count."""
     if not ad_text:
         return None
     t = re.sub(r"\s+", " ", ad_text)
-    near = rf"(?:{_MONEY}|\bpla[ćc]\w*|\bsalary\b)"
-    for word in ("neto", "bruto"):
-        w = rf"\b{word}\b"
-        if re.search(rf"(?i){near}.{{0,40}}{w}|{w}.{{0,40}}{near}", t):
-            return word
+    near = rf"(?:{_MONEY}|\bpla[ćc]\w*|\bsalary\b|\bpay\b|\bwage\w*)"
+    for basis, word in BASIS_PATTERNS:
+        if re.search(rf"{near}.{{0,40}}{word}|{word}.{{0,40}}{near}", t, re.IGNORECASE):
+            return basis
+    return None
+
+
+def missed_basis_hint(ad_text: str | None) -> str | None:
+    """A neto/bruto word anywhere in an ad whose basis wasn't detected — the
+    phrasing may be one basis_from_ad_text doesn't cover yet. Returns the
+    surrounding snippet so the scraper log shows what to teach it."""
+    if not ad_text:
+        return None
+    t = re.sub(r"\s+", " ", ad_text)
+    for _, word in BASIS_PATTERNS:
+        m = re.search(word, t, re.IGNORECASE)
+        if m:
+            return t[max(0, m.start() - 50) : m.end() + 50].strip()
     return None
 
 
@@ -622,6 +637,12 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
     if expires_at is None and days_left is not None:
         expires_at = (datetime.now(timezone.utc) + timedelta(days=days_left)).isoformat()
 
+    salary_basis = parse_salary_basis(salary_text) or basis_from_ad_text(job.get("ad_text"))
+    if salary_basis is None and salary_min is not None:
+        hint = missed_basis_hint(job.get("ad_text"))
+        if hint:
+            print(f"  ⚠ neto/bruto nije prepoznat, a oglas spominje: …{hint}… ({job.get('url')})")
+
     result = conn.execute(
         text("""
             INSERT INTO jobs
@@ -651,7 +672,7 @@ def save_job(conn: Connection, job: dict, source: str) -> bool:
             "salary_text": salary_text,
             "salary_shown": int(bool(job.get("salary_shown"))),
             "salary_currency": "EUR" if salary_min is not None else None,
-            "salary_basis": parse_salary_basis(salary_text) or basis_from_ad_text(job.get("ad_text")),
+            "salary_basis": salary_basis,
             "salary_type": parse_salary_type(salary_text, salary_min, salary_max),
             "salary_period": parse_salary_period(salary_text, salary_min, salary_max),
             "category": normalize_category(job.get("category_raw")),
