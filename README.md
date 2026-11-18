@@ -91,7 +91,7 @@ Scraper će:
 - Zadržati samo oglase s vidljivom plaćom (EUR)
 - Spremiti ih u `backend/jobs.db`
 
-Kategorije (grane) čitaju se s detalja oglasa i mapiraju na zajedničku listu u `shared/category_normalizer.py`. Rok prijave se čita s detalja oglasa; oglasi bez roka skrivaju se i brišu nakon 40 dana. Za oglase spremljene prije toga:
+Kategorije (grane) čitaju se s detalja oglasa i mapiraju na zajedničku listu u `shared/category_normalizer.py`. Rok prijave se čita s detalja oglasa; oglasi bez roka skrivaju se i brišu nakon 40 dana. Prije brisanja svaki se oglas (bez opisa i teksta oglasa) kopira u tablicu `job_archive`, pa povijest plaća ostaje i nakon što oglas nestane iz `jobs`. Za oglase spremljene prije toga:
 
 ```bash
 python -m scraper.backfill          # dopuni kategorije i rokove prijave, deaktiviraj uklonjene oglase

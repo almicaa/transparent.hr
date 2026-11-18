@@ -308,6 +308,37 @@ def init_db():
             )
         """))
         conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS job_archive (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                external_id     TEXT NOT NULL UNIQUE,
+                source          TEXT,
+                title           TEXT NOT NULL,
+                company         TEXT,
+                location        TEXT,
+                address_region  TEXT,
+                category        TEXT,
+                category_raw    TEXT,
+                job_type        TEXT,
+                contract_type   TEXT,
+                education       TEXT,
+                experience      TEXT,
+                openings        INTEGER,
+                salary_shown    INTEGER NOT NULL DEFAULT 0,
+                salary_min      REAL,
+                salary_max      REAL,
+                salary_text     TEXT,
+                salary_currency TEXT,
+                salary_basis    TEXT,
+                salary_type     TEXT,
+                salary_period   TEXT,
+                url             TEXT,
+                posted_at       TEXT,
+                scraped_at      TEXT,
+                expires_at      TEXT,
+                archived_at     TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        """))
+        conn.execute(text("""
             CREATE TABLE IF NOT EXISTS scrape_logs (
                 id            INTEGER PRIMARY KEY AUTOINCREMENT,
                 source        TEXT NOT NULL,
@@ -749,15 +780,35 @@ def deactivate_expired(conn: Connection) -> int:
     return result.rowcount
 
 
+# Columns copied from jobs into job_archive (everything but the long texts).
+# Same list as the add_job_archive migration.
+ARCHIVE_COLUMNS = (
+    "external_id", "source", "title", "company", "location", "address_region",
+    "category", "category_raw", "job_type", "contract_type", "education",
+    "experience", "openings", "salary_shown", "salary_min", "salary_max",
+    "salary_text", "salary_currency", "salary_basis", "salary_type",
+    "salary_period", "url", "posted_at", "scraped_at", "expires_at",
+)
+
+
 def purge_old_jobs(conn: Connection) -> int:
-    """Physically delete jobs that have been inactive for at least 30 days."""
+    """Delete jobs that have been inactive for at least 30 days, after copying
+    them into job_archive (their final state wins over an earlier copy)."""
     cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
-    result = conn.execute(
-        text("""
-            DELETE FROM jobs
-            WHERE is_active = :inactive AND scraped_at < :cutoff
+    params = {"inactive": False, "cutoff": cutoff}
+    where = "is_active = :inactive AND scraped_at < :cutoff"
+
+    cols = ", ".join(ARCHIVE_COLUMNS)
+    updates = ", ".join(f"{c}=excluded.{c}" for c in ARCHIVE_COLUMNS if c != "external_id")
+    conn.execute(
+        text(f"""
+            INSERT INTO job_archive ({cols}, archived_at)
+            SELECT {cols}, CURRENT_TIMESTAMP FROM jobs
+            WHERE {where} AND external_id IS NOT NULL
+            ON CONFLICT (external_id) DO UPDATE SET {updates}, archived_at=excluded.archived_at
         """),
-        {"inactive": False, "cutoff": cutoff},
+        params,
     )
+    result = conn.execute(text(f"DELETE FROM jobs WHERE {where}"), params)
     conn.commit()
     return result.rowcount
