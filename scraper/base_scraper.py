@@ -374,6 +374,37 @@ def finish_scrape_log(
     conn.commit()
 
 
+def fail_running_scrape_logs(conn: Connection, source: str, error_message: str) -> None:
+    """Mark a source's unfinished logs as failed. A scraper that raises never
+    reaches finish_scrape_log, so its row would otherwise stay 'running'."""
+    conn.execute(
+        text("""
+            UPDATE scrape_logs
+            SET finished_at=:finished_at, status='error', error_message=:error_message
+            WHERE source=:source AND status='running'
+        """),
+        {
+            "finished_at": datetime.now(timezone.utc).isoformat(),
+            "error_message": error_message[:2000],
+            "source": source,
+        },
+    )
+    conn.commit()
+
+
+def recent_scrape_logs(conn: Connection, source: str, limit: int) -> list[dict]:
+    """The source's last finished runs, newest first."""
+    rows = conn.execute(
+        text("""
+            SELECT status, jobs_found, jobs_saved, error_message FROM scrape_logs
+            WHERE source=:source AND status IN ('success', 'error')
+            ORDER BY id DESC LIMIT :limit
+        """),
+        {"source": source, "limit": limit},
+    ).mappings().all()
+    return [dict(r) for r in rows]
+
+
 async def get_listing_page_count(page) -> int | None:
     """Read the '(current/total)' page indicator from a listing page's <title>."""
     try:
