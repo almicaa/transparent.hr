@@ -4,13 +4,57 @@ import { useMemo, useRef, useState } from "react"
 import { trackEvent } from "../../lib/analytics"
 import { CITY_RATES, DEFAULT_RATES, grossToNet, ratesForLocation } from "../../lib/netSalary"
 import { Job } from "../../lib/types"
+import { euro as formatEuro, formatNumber } from "../../lib/format"
+import { Locale } from "../../lib/i18n"
+import { useLocale } from "../i18n/LocaleProvider"
 
-function euro(n: number): string {
-  return `${Math.round(n).toLocaleString("hr-HR")} €`
+function percent(rate: number, locale: Locale): string {
+  return `${formatNumber(rate * 100, locale)}%`
 }
 
-function percent(rate: number): string {
-  return `${(rate * 100).toLocaleString("hr-HR")}%`
+const COPY = {
+  hr: {
+    open: "Izračunaj neto",
+    title: "Bruto → neto",
+    close: "Zatvori",
+    estimate: "Procijenjena neto plaća",
+    grossFrom: "Bruto od",
+    gross: "Bruto",
+    grossTo: "Bruto do",
+    city: "Grad (porez)",
+    otherCity: "Ostalo",
+    children: "Djeca",
+    dependents: "Uzdržavani članovi",
+    breakdown: "Izračun",
+    breakdownFor: (amount: string) => `Izračun za ${amount} bruto`,
+    pillar1: "Mirovinsko I. stup (15%)",
+    pillar2: "Mirovinsko II. stup (5%)",
+    allowance: "Osobni odbitak",
+    tax: "Porez",
+    net: "Neto",
+    note: "Procjena prema propisima za 2026. Mladi do 25 godina dobivaju cijeli porez natrag, a od 26 do 30 godina polovicu, kroz godišnji povrat poreza.",
+  },
+  en: {
+    open: "Work out net pay",
+    title: "Gross → net",
+    close: "Close",
+    estimate: "Estimated net pay",
+    grossFrom: "Gross from",
+    gross: "Gross",
+    grossTo: "Gross to",
+    city: "City (tax rate)",
+    otherCity: "Other",
+    children: "Children",
+    dependents: "Dependants",
+    breakdown: "Breakdown",
+    breakdownFor: (amount: string) => `Breakdown for ${amount} gross`,
+    pillar1: "Pension, 1st pillar (15%)",
+    pillar2: "Pension, 2nd pillar (5%)",
+    allowance: "Personal allowance",
+    tax: "Income tax",
+    net: "Net",
+    note: "An estimate under the 2026 rules. People under 25 get all of their income tax back, and those aged 26 to 30 get half, through the yearly tax refund.",
+  },
 }
 
 const ALL_RATES = [...CITY_RATES, DEFAULT_RATES]
@@ -20,6 +64,9 @@ const ALL_RATES = [...CITY_RATES, DEFAULT_RATES]
  * prefilled with the ad's amount(s) and the city's tax rates.
  */
 export default function NetCalculator({ job }: { job: Job }) {
+  const locale = useLocale()
+  const t = COPY[locale]
+  const euro = (n: number) => formatEuro(n, locale)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const isRange = job.salary_max !== null && job.salary_max !== job.salary_min
   const [grossMin, setGrossMin] = useState(String(job.salary_min ?? ""))
@@ -54,7 +101,7 @@ export default function NetCalculator({ job }: { job: Job }) {
           trackEvent("net_calculator_open", { job_id: job.id })
         }}
       >
-        Izračunaj neto
+        {t.open}
       </button>
 
       <dialog
@@ -67,16 +114,16 @@ export default function NetCalculator({ job }: { job: Job }) {
         <div className="net-calc__content">
           <div className="net-calc__header">
             <div>
-              <h2 id={`net-calc-title-${job.id}`}>Bruto → neto</h2>
-              <p>{job.title}</p>
+              <h2 id={`net-calc-title-${job.id}`}>{t.title}</h2>
+              <p lang="hr">{job.title}</p>
             </div>
-            <button type="button" className="net-calc__close" aria-label="Zatvori" onClick={() => dialogRef.current?.close()}>
+            <button type="button" className="net-calc__close" aria-label={t.close} onClick={() => dialogRef.current?.close()}>
               ✕
             </button>
           </div>
 
           <div className="net-calc__result" aria-live="polite">
-            <span className="net-calc__result-label">Procijenjena neto plaća</span>
+            <span className="net-calc__result-label">{t.estimate}</span>
             <strong>
               {low
                 ? high && Math.round(high.net) !== Math.round(low.net)
@@ -88,27 +135,27 @@ export default function NetCalculator({ job }: { job: Job }) {
 
           <div className="net-calc__inputs">
             <label>
-              <span>{isRange ? "Bruto od" : "Bruto"}</span>
+              <span>{isRange ? t.grossFrom : t.gross}</span>
               <input type="number" inputMode="decimal" min={0} value={grossMin} onChange={(e) => setGrossMin(e.target.value)} />
             </label>
             {isRange ? (
               <label>
-                <span>Bruto do</span>
+                <span>{t.grossTo}</span>
                 <input type="number" inputMode="decimal" min={0} value={grossMax} onChange={(e) => setGrossMax(e.target.value)} />
               </label>
             ) : null}
             <label className="net-calc__wide">
-              <span>Grad (porez)</span>
+              <span>{t.city}</span>
               <select value={city} onChange={(e) => setCity(e.target.value)}>
                 {ALL_RATES.map((r) => (
                   <option key={r.city} value={r.city}>
-                    {r.city} — {percent(r.lower)} / {percent(r.higher)}
+                    {r === DEFAULT_RATES ? t.otherCity : r.city} — {percent(r.lower, locale)} / {percent(r.higher, locale)}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              <span>Djeca</span>
+              <span>{t.children}</span>
               <select value={children} onChange={(e) => setChildren(Number(e.target.value))}>
                 {[0, 1, 2, 3, 4, 5].map((n) => (
                   <option key={n} value={n}>
@@ -118,7 +165,7 @@ export default function NetCalculator({ job }: { job: Job }) {
               </select>
             </label>
             <label>
-              <span>Uzdržavani članovi</span>
+              <span>{t.dependents}</span>
               <select value={dependents} onChange={(e) => setDependents(Number(e.target.value))}>
                 {[0, 1, 2, 3].map((n) => (
                   <option key={n} value={n}>
@@ -131,33 +178,33 @@ export default function NetCalculator({ job }: { job: Job }) {
 
           {low ? (
             <table className="net-calc__breakdown">
-              <caption>Izračun{isRange ? ` za ${euro(low.gross)} bruto` : ""}</caption>
+              <caption>{isRange ? t.breakdownFor(euro(low.gross)) : t.breakdown}</caption>
               <tbody>
                 <tr>
-                  <th scope="row">Bruto</th>
+                  <th scope="row">{t.gross}</th>
                   <td>{euro(low.gross)}</td>
                 </tr>
                 <tr>
-                  <th scope="row">Mirovinsko I. stup (15%)</th>
+                  <th scope="row">{t.pillar1}</th>
                   <td>− {euro(low.pillar1)}</td>
                 </tr>
                 <tr>
-                  <th scope="row">Mirovinsko II. stup (5%)</th>
+                  <th scope="row">{t.pillar2}</th>
                   <td>− {euro(low.pillar2)}</td>
                 </tr>
                 <tr>
-                  <th scope="row">Osobni odbitak</th>
+                  <th scope="row">{t.allowance}</th>
                   <td>{euro(low.allowance)}</td>
                 </tr>
                 <tr>
                   <th scope="row">
-                    Porez ({percent(rates.lower)}
-                    {low.taxBase > 5000 ? ` / ${percent(rates.higher)}` : ""})
+                    {t.tax} ({percent(rates.lower, locale)}
+                    {low.taxBase > 5000 ? ` / ${percent(rates.higher, locale)}` : ""})
                   </th>
                   <td>− {euro(low.tax)}</td>
                 </tr>
                 <tr className="net-calc__total">
-                  <th scope="row">Neto</th>
+                  <th scope="row">{t.net}</th>
                   <td>{euro(low.net)}</td>
                 </tr>
               </tbody>
@@ -165,8 +212,7 @@ export default function NetCalculator({ job }: { job: Job }) {
           ) : null}
 
           <p className="net-calc__note">
-            Procjena prema propisima za 2026. Mladi do 25 godina dobivaju cijeli porez natrag, a od 26 do 30 godina
-            polovicu, kroz godišnji povrat poreza.
+            {t.note}
           </p>
         </div>
       </dialog>

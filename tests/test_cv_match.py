@@ -218,3 +218,23 @@ def test_missed_basis_hint():
     assert "neto" in base_scraper.missed_basis_hint(ad)
     assert base_scraper.missed_basis_hint("ASP.NET developer, 2.000 EUR") is None
     assert base_scraper.missed_basis_hint(None) is None
+
+
+def test_english_answer_and_errors(monkeypatch, repo):
+    fake = use_fake(monkeypatch, shortlist(1), _Answer(matches=[]))
+    match_cv(repo, "cv.docx", None, CV_DOCX, lang="en")
+    # The language request goes in the user turn, so the cached system prompt is shared.
+    assert "in English" in fake.calls[0]["messages"][0]["content"][-1]["text"]
+    assert "in English" in fake.calls[1]["messages"][0]["content"][-1]["text"]
+    assert "in English" not in fake.calls[0]["system"][0]["text"]
+
+    with pytest.raises(CvError) as e:
+        match_cv(repo, "cv.pdf", None, b"%PDF" + b"0" * cv_match.MAX_FILE_BYTES, lang="en")
+    assert e.value.message("en") == "The file is larger than 5 MB."
+    assert "5 MB" in str(e.value) and "veća" in str(e.value)
+
+
+def test_croatian_request_has_no_language_note(monkeypatch, repo):
+    fake = use_fake(monkeypatch, shortlist(1), _Answer(matches=[]))
+    match_cv(repo, "cv.docx", None, CV_DOCX)
+    assert "English" not in fake.calls[0]["messages"][0]["content"][-1]["text"]

@@ -3,6 +3,12 @@
 import { trackEvent } from "../../lib/analytics"
 import { isSaved, toggleSaved, useSavedJobs } from "../../lib/savedJobs"
 import { Job } from "../../lib/types"
+import { useLocale } from "../i18n/LocaleProvider"
+
+const COPY = {
+  hr: { save: "Spremi oglas", unsave: "Ukloni iz spremljenih", saved: "Spremljeno" },
+  en: { save: "Save job", unsave: "Remove from saved", saved: "Saved" },
+}
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -20,6 +26,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
 
 /** Heart toggle for saving a job in this browser; `withLabel` adds "Spremi oglas" text. */
 export default function SaveButton({ job, withLabel = false }: { job: Job; withLabel?: boolean }) {
+  const t = COPY[useLocale()]
   const saved = isSaved(useSavedJobs(), job.id)
 
   return (
@@ -27,8 +34,8 @@ export default function SaveButton({ job, withLabel = false }: { job: Job; withL
       type="button"
       className={`save-button${withLabel ? " save-button--label" : ""}${saved ? " is-saved" : ""}`}
       aria-pressed={saved}
-      aria-label={saved ? "Ukloni iz spremljenih" : "Spremi oglas"}
-      title={saved ? "Ukloni iz spremljenih" : "Spremi oglas"}
+      aria-label={saved ? t.unsave : t.save}
+      title={saved ? t.unsave : t.save}
       onClick={(e) => {
         // On a card the title link covers the whole card; don't navigate.
         e.preventDefault()
@@ -38,7 +45,7 @@ export default function SaveButton({ job, withLabel = false }: { job: Job; withL
       }}
     >
       <HeartIcon filled={saved} />
-      {withLabel ? <span>{saved ? "Spremljeno" : "Spremi oglas"}</span> : null}
+      {withLabel ? <span>{saved ? t.saved : t.save}</span> : null}
     </button>
   )
 }

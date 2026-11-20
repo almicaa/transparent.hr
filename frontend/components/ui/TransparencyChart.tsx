@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react"
 import { SalaryStatPoint } from "../../lib/api"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
+import { INTL_LOCALE, Locale } from "../../lib/i18n"
+import { useLocale } from "../i18n/LocaleProvider"
 
 // posao.hr was excluded after commit f41321e found its old page-count
 // estimate was counting the same ads up to 17x over. It now walks every
@@ -24,8 +26,10 @@ const PLOT_H = HEIGHT - PAD.top - PAD.bottom
 
 const MONTHS = ["sij", "velj", "ožu", "tra", "svi", "lip", "srp", "kol", "ruj", "lis", "stu", "pro"]
 
-function formatDate(iso: string): string {
+/** "7. lis" / "7 Oct" */
+function formatDate(iso: string, locale: Locale): string {
   const d = new Date(iso)
+  if (locale === "en") return d.toLocaleDateString(INTL_LOCALE.en, { day: "numeric", month: "short" })
   return `${d.getDate()}. ${MONTHS[d.getMonth()]}`
 }
 
@@ -35,6 +39,7 @@ interface Series {
 }
 
 export default function TransparencyChart({ data }: { data: SalaryStatPoint[] }) {
+  const locale = useLocale()
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
 
   const { series, allDates, xMin, xMax, yMax } = useMemo(() => {
@@ -102,7 +107,11 @@ export default function TransparencyChart({ data }: { data: SalaryStatPoint[] })
         width="100%"
         height="auto"
         role="img"
-        aria-label="Postotak oglasa s prikazanom plaćom kroz vrijeme, po izvoru"
+        aria-label={
+          locale === "en"
+            ? "Share of job ads showing the salary over time, by source"
+            : "Postotak oglasa s prikazanom plaćom kroz vrijeme, po izvoru"
+        }
         onPointerMove={handlePointerMove}
         onPointerLeave={() => setHoverIdx(null)}
       >
@@ -130,7 +139,7 @@ export default function TransparencyChart({ data }: { data: SalaryStatPoint[] })
             textAnchor={i === 0 ? "start" : i === xTickDates.length - 1 ? "end" : "middle"}
             className="transparency-chart__axis-label"
           >
-            {formatDate(d)}
+            {formatDate(d, locale)}
           </text>
         ))}
 
@@ -172,7 +181,7 @@ export default function TransparencyChart({ data }: { data: SalaryStatPoint[] })
             top: 8,
           }}
         >
-          <div className="transparency-chart__tooltip-date">{formatDate(hoverDate)}</div>
+          <div className="transparency-chart__tooltip-date">{formatDate(hoverDate, locale)}</div>
           {series.map((s) => {
             const point = s.points.find((p) => p.date === hoverDate)
             if (!point) return null

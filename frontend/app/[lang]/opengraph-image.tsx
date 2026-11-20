@@ -1,10 +1,24 @@
 import { ImageResponse } from "next/og"
 
+import { Locale } from "../../lib/i18n"
+
 export const alt = "Transparent.hr — Oglasi za posao s transparentnom plaćom"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
-export default function Image() {
+const COPY = {
+  hr: {
+    title: "Oglasi za posao s transparentnom plaćom",
+    subtitle: "Samo oglasi s vidljivom neto ili bruto plaćom u EUR",
+  },
+  en: {
+    title: "Jobs in Croatia with the salary up front",
+    subtitle: "Only ads that show their net or gross pay in euros",
+  },
+}
+
+export default function Image({ params }: { params: { lang: Locale } }) {
+  const t = COPY[params.lang] ?? COPY.hr
   return new ImageResponse(
     (
       <div
@@ -40,7 +54,7 @@ export default function Image() {
             maxWidth: 960,
           }}
         >
-          Oglasi za posao s transparentnom plaćom
+          {t.title}
         </div>
         <div
           style={{
@@ -50,7 +64,7 @@ export default function Image() {
             marginTop: 32,
           }}
         >
-          Samo oglasi s vidljivom neto ili bruto plaćom u EUR
+          {t.subtitle}
         </div>
       </div>
     ),

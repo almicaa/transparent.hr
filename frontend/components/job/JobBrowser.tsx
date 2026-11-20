@@ -8,6 +8,9 @@ import { getFilters, getJobs, GetJobsParams, JOBS_PER_PAGE as PER_PAGE } from ".
 import { trackEvent } from "../../lib/analytics"
 import { filtersFromUrl, filtersToQuery } from "../../lib/filterUrl"
 import { EMPTY_FILTERS, Filters as FilterData, Job, JobFilters, JobSort } from "../../lib/types"
+import { formatNumber } from "../../lib/format"
+import { Locale } from "../../lib/i18n"
+import { useLocale } from "../i18n/LocaleProvider"
 
 const SEARCH_DEBOUNCE_MS = 350
 
@@ -52,14 +55,42 @@ function useDebounced<T>(value: T, delay: number): [T, () => void] {
   return [debounced, () => setDebounced(value)]
 }
 
+const COPY = {
+  hr: {
+    heading: "Oglasi za posao s transparentnom plaćom",
+    loading: "Učitavanje…",
+    sortBy: "Poredaj po",
+    newest: "Najnovije",
+    highestPay: "Najviša plaća",
+    filters: "Filteri",
+    empty: "Nema oglasa za odabrane filtere.",
+    clearFilters: "Očisti filtere",
+    shown: (n: string, total: string) => `Prikazano ${n} od ${total}`,
+    more: "Prikaži još oglasa",
+  },
+  en: {
+    heading: "Jobs in Croatia with the salary listed",
+    loading: "Loading…",
+    sortBy: "Sort by",
+    newest: "Newest",
+    highestPay: "Highest pay",
+    filters: "Filters",
+    empty: "No jobs match these filters.",
+    clearFilters: "Clear filters",
+    shown: (n: string, total: string) => `Showing ${n} of ${total}`,
+    more: "Show more jobs",
+  },
+}
+
 // Lowest-first stays reachable by URL (?sort=salary_asc) but isn't worth a tab.
-const SORT_TABS: { value: JobSort; label: string }[] = [
-  { value: "newest", label: "Najnovije" },
-  { value: "salary_desc", label: "Najviša plaća" },
+const SORT_TABS: { value: JobSort; label: "newest" | "highestPay" }[] = [
+  { value: "newest", label: "newest" },
+  { value: "salary_desc", label: "highestPay" },
 ]
 
-/** "313 oglasa s plaćom" — the adjective phrase agrees with the count. */
-function resultsTitle(n: number): string {
+/** "313 oglasa s plaćom" — the adjective phrase agrees with the count. / "313 jobs with a salary" */
+function resultsTitle(n: number, locale: Locale): string {
+  if (locale === "en") return `${formatNumber(n, locale)} ${n === 1 ? "job" : "jobs"} with a salary`
   return `${n} ${n % 10 === 1 && n % 100 !== 11 ? "oglas" : "oglasa"} s plaćom`
 }
 
@@ -96,6 +127,8 @@ interface JobBrowserProps {
 }
 
 export default function JobBrowser({ initialJobs, initialTotal, initialFilterData }: JobBrowserProps = {}) {
+  const locale = useLocale()
+  const t = COPY[locale]
   // An empty server result usually means the backend was briefly unreachable
   // when the page was (re)generated, and ISR would keep serving that for the
   // whole revalidate window — so treat it as "no initial data" and fetch here.
@@ -204,7 +237,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
     <div className="job-browser">
       <section className="jobs-hero hero-surface">
         <HeroIllustration />
-        <h1 className="sr-only">Oglasi za posao s transparentnom plaćom</h1>
+        <h1 className="sr-only">{t.heading}</h1>
         <SearchBar
           filters={filters}
           onChange={updateFilters}
@@ -232,19 +265,19 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
 
         <div className="jobs-main">
           <div className="results-head" ref={resultsRef}>
-            <h2>{loading && jobs.length === 0 ? "Učitavanje…" : resultsTitle(total)}</h2>
+            <h2>{loading && jobs.length === 0 ? t.loading : resultsTitle(total, locale)}</h2>
             <div className="results-head__actions">
-              <div className="segmented segmented--compact" role="radiogroup" aria-label="Poredaj po">
-                {SORT_TABS.map((t) => (
+              <div className="segmented segmented--compact" role="radiogroup" aria-label={t.sortBy}>
+                {SORT_TABS.map((tab) => (
                   <button
-                    key={t.value}
+                    key={tab.value}
                     type="button"
                     role="radio"
-                    aria-checked={filters.sort === t.value}
-                    className={filters.sort === t.value ? "segmented__option is-selected" : "segmented__option"}
-                    onClick={() => updateFilters({ sort: t.value })}
+                    aria-checked={filters.sort === tab.value}
+                    className={filters.sort === tab.value ? "segmented__option is-selected" : "segmented__option"}
+                    onClick={() => updateFilters({ sort: tab.value })}
                   >
-                    {t.label}
+                    {t[tab.label]}
                   </button>
                 ))}
               </div>
@@ -255,7 +288,7 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
                   <circle cx="10" cy="12" r="2" stroke="currentColor" strokeWidth="2" />
                   <circle cx="18" cy="18" r="2" stroke="currentColor" strokeWidth="2" />
                 </svg>
-                Filteri
+                {t.filters}
                 {drawerCount ? <span className="filters-button__count">{drawerCount}</span> : null}
               </button>
             </div>
@@ -263,9 +296,9 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
 
           {!loading && jobs.length === 0 ? (
             <div className="job-browser__empty">
-              <p>Nema oglasa za odabrane filtere.</p>
+              <p>{t.empty}</p>
               <button type="button" className="active-filters__clear" onClick={() => updateFilters(EMPTY_FILTERS)}>
-                Očisti filtere
+                {t.clearFilters}
               </button>
             </div>
           ) : (
@@ -279,11 +312,11 @@ export default function JobBrowser({ initialJobs, initialTotal, initialFilterDat
           {jobs.length ? (
             <div className="load-more">
               <p className="meta">
-                Prikazano {jobs.length.toLocaleString("hr-HR")} od {total.toLocaleString("hr-HR")}
+                {t.shown(formatNumber(jobs.length, locale), formatNumber(total, locale))}
               </p>
               {jobs.length < total ? (
                 <button type="button" className="load-more__button" onClick={loadMore} disabled={loadingMore}>
-                  {loadingMore ? "Učitavanje…" : "Prikaži još oglasa"}
+                  {loadingMore ? t.loading : t.more}
                 </button>
               ) : null}
             </div>

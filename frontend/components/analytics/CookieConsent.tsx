@@ -1,10 +1,32 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
+import { useLocale } from "../i18n/LocaleProvider"
+import { localePath } from "../../lib/i18n"
+
+const COPY = {
+  hr: {
+    title: "Kolačići",
+    text: "Koristimo analitičke kolačiće (Google Analytics) kako bismo vidjeli kako se stranica koristi. Podaci su anonimni i ne dijelimo ih u marketinške svrhe.",
+    policy: "Pravila privatnosti",
+    decline: "Odbij",
+    accept: "Prihvati",
+  },
+  en: {
+    title: "Cookies",
+    text: "We use analytics cookies (Google Analytics) to see how the site is used. The data is anonymous and we don't share it for marketing.",
+    policy: "Privacy policy",
+    decline: "Decline",
+    accept: "Accept",
+  },
+}
 
 const STORAGE_KEY = "ga_consent"
 
 export default function CookieConsent() {
+  const locale = useLocale()
+  const t = COPY[locale]
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -40,21 +62,19 @@ export default function CookieConsent() {
   if (!visible) return null
 
   return (
-    <div className="cookie-banner" role="region" aria-label="Kolačići">
+    <div className="cookie-banner" role="region" aria-label={t.title}>
       <p className="cookie-banner__title">
-        <span aria-hidden="true">🍪</span> Kolačići
+        <span aria-hidden="true">🍪</span> {t.title}
       </p>
       <p className="cookie-banner__text">
-        Koristimo analitičke kolačiće (Google Analytics) kako bismo vidjeli kako se stranica koristi. Podaci su anonimni
-        i ne dijelimo ih u marketinške svrhe.{" "}
-        <a href="/privatnost">Pravila privatnosti</a>
+        {t.text} <Link href={localePath(locale, "/privatnost")}>{t.policy}</Link>
       </p>
       <div className="cookie-banner__actions">
         <button type="button" className="cookie-banner__decline" onClick={decline}>
-          Odbij
+          {t.decline}
         </button>
         <button type="button" className="cookie-banner__accept" onClick={accept}>
-          Prihvati
+          {t.accept}
         </button>
       </div>
     </div>

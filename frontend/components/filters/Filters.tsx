@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react"
 import { SIDEBAR_QUERY, useMediaQuery } from "../../lib/useMediaQuery"
 import { EMPTY_FILTERS, FilterOption, JobFilters, SalaryBucket } from "../../lib/types"
-import { jobCountLabel } from "../../lib/format"
+import { euro, jobCountLabel } from "../../lib/format"
+import { Locale } from "../../lib/i18n"
+import { categoryLabel } from "../../lib/labels"
+import { useLocale } from "../i18n/LocaleProvider"
 import { SOURCE_LABELS } from "../../lib/sourceLabels"
 import Finder from "./Finder"
 import { locationLabel } from "./LocationCombobox"
@@ -13,13 +16,51 @@ const SOURCES = ["posao", "mojposao", "hzz"]
 // Grane shown before "Prikaži još": the list runs past twenty.
 const VISIBLE_CATEGORIES = 8
 
-function euro(n: string): string {
-  return `${Number(n).toLocaleString("hr-HR")} €`
+const COPY = {
+  hr: {
+    from: "od",
+    upTo: "do",
+    newOnly: "Samo novi",
+    removeFilter: (label: string) => `Ukloni filter ${label}`,
+    clearAll: "Očisti sve",
+    filters: "Filteri",
+    reset: "Poništi",
+    close: "Zatvori",
+    lastDays: "Samo oglasi iz zadnja 3 dana",
+    salary: "Plaća",
+    category: "Grana",
+    allCategories: "Sve grane",
+    showLess: "Prikaži manje",
+    showMore: (n: number) => `Prikaži još ${n}`,
+    source: "Izvor",
+    allSources: "Svi",
+    show: (count: string) => `Prikaži ${count}`,
+  },
+  en: {
+    from: "from",
+    upTo: "up to",
+    newOnly: "New only",
+    removeFilter: (label: string) => `Remove filter ${label}`,
+    clearAll: "Clear all",
+    filters: "Filters",
+    reset: "Reset",
+    close: "Close",
+    lastDays: "Only jobs from the last 3 days",
+    salary: "Salary",
+    category: "Sector",
+    allCategories: "All sectors",
+    showLess: "Show less",
+    showMore: (n: number) => `Show ${n} more`,
+    source: "Source",
+    allSources: "All",
+    show: (count: string) => `Show ${count}`,
+  },
 }
 
-function salaryLabel(min: string, max: string): string {
-  if (min && max) return `${euro(min)} – ${euro(max)}`
-  return min ? `od ${euro(min)}` : `do ${euro(max)}`
+function salaryLabel(min: string, max: string, locale: Locale): string {
+  const money = (n: string) => euro(Number(n), locale)
+  if (min && max) return `${money(min)} – ${money(max)}`
+  return min ? `${COPY[locale].from} ${money(min)}` : `${COPY[locale].upTo} ${money(max)}`
 }
 
 /** How many of the panel's filters are set (the "Filteri" button badge). */
@@ -40,13 +81,15 @@ interface SearchBarProps {
 
 /** The finder plus removable pills for what's applied outside it. */
 export function SearchBar({ filters, onChange, onSubmit, ...options }: SearchBarProps) {
+  const locale = useLocale()
+  const t = COPY[locale]
   // Search text and the grana stay in the "Što" field, so they get no pill.
   const active: { key: string; label: string; clear: Partial<JobFilters> }[] = []
-  if (filters.location) active.push({ key: "location", label: locationLabel(filters.location), clear: { location: "" } })
+  if (filters.location) active.push({ key: "location", label: locationLabel(filters.location, locale), clear: { location: "" } })
   if (filters.salaryMin || filters.salaryMax)
-    active.push({ key: "salary", label: salaryLabel(filters.salaryMin, filters.salaryMax), clear: { salaryMin: "", salaryMax: "" } })
+    active.push({ key: "salary", label: salaryLabel(filters.salaryMin, filters.salaryMax, locale), clear: { salaryMin: "", salaryMax: "" } })
   if (filters.source) active.push({ key: "source", label: SOURCE_LABELS[filters.source] ?? filters.source, clear: { source: "" } })
-  if (filters.newOnly) active.push({ key: "new", label: "Samo novi", clear: { newOnly: false } })
+  if (filters.newOnly) active.push({ key: "new", label: t.newOnly, clear: { newOnly: false } })
 
   return (
     <div className="filters">
@@ -60,14 +103,14 @@ export function SearchBar({ filters, onChange, onSubmit, ...options }: SearchBar
               type="button"
               className="active-filter"
               onClick={() => onChange(a.clear)}
-              aria-label={`Ukloni filter ${a.label}`}
+              aria-label={t.removeFilter(a.label)}
             >
               {a.label}
               <span aria-hidden="true">✕</span>
             </button>
           ))}
           <button type="button" className="active-filters__clear" onClick={() => onChange(EMPTY_FILTERS)}>
-            Očisti sve
+            {t.clearAll}
           </button>
         </div>
       ) : null}
@@ -95,6 +138,8 @@ export function FilterPanel({
   categoryOptions,
   salaryHistogram,
 }: FilterPanelProps) {
+  const locale = useLocale()
+  const t = COPY[locale]
   const isSidebar = useMediaQuery(SIDEBAR_QUERY)
   const count = panelFilterCount(filters)
   const [allCategories, setAllCategories] = useState(false)
@@ -126,20 +171,20 @@ export function FilterPanel({
       <aside
         className={drawerOpen ? "drawer is-open" : "drawer"}
         aria-hidden={!isSidebar && !drawerOpen}
-        aria-label="Filteri"
+        aria-label={t.filters}
       >
         <div className="drawer__header">
-          <strong>Filteri</strong>
+          <strong>{t.filters}</strong>
           {count ? (
             <button
               type="button"
               className="drawer__reset drawer__reset--top"
               onClick={() => onChange({ newOnly: false, category: "", salaryMin: "", salaryMax: "", source: "" })}
             >
-              Poništi
+              {t.reset}
             </button>
           ) : null}
-          <button type="button" className="drawer__close" aria-label="Zatvori" onClick={onCloseDrawer}>
+          <button type="button" className="drawer__close" aria-label={t.close} onClick={onCloseDrawer}>
             ✕
           </button>
         </div>
@@ -149,12 +194,12 @@ export function FilterPanel({
             <label className="toggle">
               <input type="checkbox" checked={filters.newOnly} onChange={(e) => onChange({ newOnly: e.target.checked })} />
               <span className="toggle__track" aria-hidden="true" />
-              Samo oglasi iz zadnja 3 dana
+              {t.lastDays}
             </label>
           </section>
 
           <section className="drawer__section">
-            <h3>Plaća</h3>
+            <h3>{t.salary}</h3>
             <SalaryRange
               histogram={salaryHistogram}
               min={filters.salaryMin}
@@ -164,8 +209,8 @@ export function FilterPanel({
           </section>
 
           <section className="drawer__section">
-            <h3>Grana</h3>
-            <div className="option-list" role="radiogroup" aria-label="Grana">
+            <h3>{t.category}</h3>
+            <div className="option-list" role="radiogroup" aria-label={t.category}>
               {[{ value: "", count: undefined as number | undefined }, ...shownCategories].map((o) => (
                 <label key={o.value || "all"} className="option-list__item">
                   <input
@@ -174,22 +219,22 @@ export function FilterPanel({
                     checked={filters.category === o.value}
                     onChange={() => onChange({ category: o.value })}
                   />
-                  <span>{o.value || "Sve grane"}</span>
+                  <span>{o.value ? categoryLabel(o.value, locale) : t.allCategories}</span>
                   {o.count !== undefined ? <span className="option-list__count">{o.count}</span> : null}
                 </label>
               ))}
             </div>
             {hiddenCount > 0 || allCategories ? (
               <button type="button" className="option-list__more" onClick={() => setAllCategories(!allCategories)}>
-                {allCategories ? "Prikaži manje" : `Prikaži još ${hiddenCount}`}
+                {allCategories ? t.showLess : t.showMore(hiddenCount)}
               </button>
             ) : null}
           </section>
 
           <section className="drawer__section">
-            <h3>Izvor</h3>
+            <h3>{t.source}</h3>
             {/* Chips wrap onto a second row instead of scrolling sideways. */}
-            <div className="chip-group" role="radiogroup" aria-label="Izvor">
+            <div className="chip-group" role="radiogroup" aria-label={t.source}>
               {["", ...SOURCES].map((s) => (
                 <button
                   key={s || "all"}
@@ -199,7 +244,7 @@ export function FilterPanel({
                   className={filters.source === s ? "chip is-selected" : "chip"}
                   onClick={() => onChange({ source: s })}
                 >
-                  {s ? SOURCE_LABELS[s] : "Svi"}
+                  {s ? SOURCE_LABELS[s] : t.allSources}
                 </button>
               ))}
             </div>
@@ -213,10 +258,10 @@ export function FilterPanel({
             disabled={!count}
             onClick={() => onChange({ newOnly: false, category: "", salaryMin: "", salaryMax: "", source: "" })}
           >
-            Poništi
+            {t.reset}
           </button>
           <button type="button" className="drawer__apply" onClick={onCloseDrawer}>
-            Prikaži {jobCountLabel(total)}
+            {t.show(jobCountLabel(total, locale))}
           </button>
         </div>
       </aside>

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react"
 import { SalaryBucket } from "../../lib/types"
+import { euro } from "../../lib/format"
+import { Locale } from "../../lib/i18n"
+import { useLocale } from "../i18n/LocaleProvider"
 
 // Must match SALARY_HISTOGRAM_MIN / _MAX / SALARY_BUCKET_SIZE in backend job_service.py.
 const MIN = 500
@@ -8,15 +11,17 @@ const BUCKET = 250
 const STEP = 50
 const COMMIT_DELAY_MS = 300
 
-function euro(n: number): string {
-  return `${n.toLocaleString("hr-HR")} €`
+const COPY = {
+  hr: { any: "Bilo koja plaća", from: "od", upTo: "do", salary: "Plaća", min: "Minimalna plaća", max: "Maksimalna plaća", orMore: "i više" },
+  en: { any: "Any salary", from: "from", upTo: "up to", salary: "Salary", min: "Minimum salary", max: "Maximum salary", orMore: "or more" },
 }
 
-function rangeLabel(lo: number, hi: number): string {
-  if (lo <= MIN && hi >= MAX) return "Bilo koja plaća"
-  if (hi >= MAX) return `od ${euro(lo)}`
-  if (lo <= MIN) return `do ${euro(hi)}`
-  return `${euro(lo)} – ${euro(hi)}`
+function rangeLabel(lo: number, hi: number, locale: Locale): string {
+  const t = COPY[locale]
+  if (lo <= MIN && hi >= MAX) return t.any
+  if (hi >= MAX) return `${t.from} ${euro(lo, locale)}`
+  if (lo <= MIN) return `${t.upTo} ${euro(hi, locale)}`
+  return `${euro(lo, locale)} – ${euro(hi, locale)}`
 }
 
 interface SalaryRangeProps {
@@ -29,6 +34,9 @@ interface SalaryRangeProps {
 
 /** Dual-handle salary range over a histogram of what the listed jobs actually pay. */
 export default function SalaryRange({ histogram, min, max, onChange }: SalaryRangeProps) {
+  const locale = useLocale()
+  const t = COPY[locale]
+  const money = (n: number) => euro(n, locale)
   const [lo, setLo] = useState(min ? Number(min) : MIN)
   const [hi, setHi] = useState(max ? Number(max) : MAX)
 
@@ -52,8 +60,8 @@ export default function SalaryRange({ histogram, min, max, onChange }: SalaryRan
   return (
     <div className={active ? "salary-range is-active" : "salary-range"}>
       <div className="salary-range__label">
-        <span>Plaća</span>
-        <strong>{rangeLabel(lo, hi)}</strong>
+        <span>{t.salary}</span>
+        <strong>{rangeLabel(lo, hi, locale)}</strong>
       </div>
 
       <div className="salary-range__histogram" aria-hidden="true">
@@ -64,7 +72,7 @@ export default function SalaryRange({ histogram, min, max, onChange }: SalaryRan
               key={b.start}
               className={inRange ? "salary-range__bar is-in-range" : "salary-range__bar"}
               style={{ height: `${Math.max(4, (b.count / tallest) * 100)}%` }}
-              title={`${euro(b.start)}${b.start >= MAX ? "+" : ` – ${euro(b.start + BUCKET)}`}: ${b.count}`}
+              title={`${money(b.start)}${b.start >= MAX ? "+" : ` – ${money(b.start + BUCKET)}`}: ${b.count}`}
             />
           )
         })}
@@ -78,8 +86,8 @@ export default function SalaryRange({ histogram, min, max, onChange }: SalaryRan
           max={MAX}
           step={STEP}
           value={lo}
-          aria-label="Minimalna plaća"
-          aria-valuetext={euro(lo)}
+          aria-label={t.min}
+          aria-valuetext={money(lo)}
           onChange={(e) => setLo(Math.min(Number(e.target.value), hi - STEP))}
         />
         <input
@@ -88,8 +96,8 @@ export default function SalaryRange({ histogram, min, max, onChange }: SalaryRan
           max={MAX}
           step={STEP}
           value={hi}
-          aria-label="Maksimalna plaća"
-          aria-valuetext={hi >= MAX ? `${euro(MAX)} i više` : euro(hi)}
+          aria-label={t.max}
+          aria-valuetext={hi >= MAX ? `${money(MAX)} ${t.orMore}` : money(hi)}
           onChange={(e) => setHi(Math.max(Number(e.target.value), lo + STEP))}
         />
       </div>

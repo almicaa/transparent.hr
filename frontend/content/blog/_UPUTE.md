@@ -57,3 +57,23 @@ Naslov članka ne treba ponovno pisati u tekstu, on se prikazuje iz zaglavlja.
 ## 4. Objava
 
 Kad je `draft: false`, članak ide na stranicu sa sljedećim deployem. Link „Blog” u izborniku pojavljuje se automatski čim postoji barem jedan objavljeni članak.
+
+## 5. Engleski prijevod (nije obavezan)
+
+Engleska verzija članka ide u mapu `en/` (`frontend/content/blog/en/`), s engleskim imenom datoteke:
+
+- `en/gross-or-net.md` → `transparent.hr/en/blog/gross-or-net`
+
+Zaglavlje je isto, plus red `hr:` s imenom hrvatske datoteke (bez `.md`), da stranica zna da su to isti članak:
+
+```
+---
+title: Gross or net: how much actually lands in your account
+description: One or two sentences about the article.
+date: 2026-10-15
+draft: false
+hr: bruto-ili-neto
+---
+```
+
+Tada izbornik jezika s hrvatskog članka vodi ravno na engleski i obrnuto, a Google zna da je jedno prijevod drugog. Linkove unutar engleskog teksta piši s `/en` na početku (`/en/jobs`, `/en/blog/...`). Članak bez prijevoda vidi se samo na hrvatskom blogu.

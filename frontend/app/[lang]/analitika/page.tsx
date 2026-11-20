@@ -1,17 +1,44 @@
-import { pageMetadata } from "../../lib/seo"
-import { getJobs, getStats, getTransparencyStats } from "../../lib/api"
-import { SOURCE_LABELS } from "../../lib/sourceLabels"
-import TransparencyChart from "../../components/ui/TransparencyChart"
+import { pageMetadata } from "../../../lib/seo"
+import { getJobs, getStats, getTransparencyStats } from "../../../lib/api"
+import { formatNumber } from "../../../lib/format"
+import { LangProps } from "../../../lib/i18n"
+import { SOURCE_LABELS } from "../../../lib/sourceLabels"
+import TransparencyChart from "../../../components/ui/TransparencyChart"
 
 // Stats only change once per scraper run (every few hours).
 export const revalidate = 600
 
-export const metadata = pageMetadata({
-  title: "Udio oglasa s plaćom po portalima",
-  description:
-    "Dnevno mjerenje udjela oglasa s navedenom plaćom na hrvatskim portalima za posao, uz broj oglasa s plaćom na Transparent.hr.",
-  path: "/analitika",
-})
+const COPY = {
+  hr: {
+    title: "Udio oglasa s plaćom po portalima",
+    description:
+      "Dnevno mjerenje udjela oglasa s navedenom plaćom na hrvatskim portalima za posao, uz broj oglasa s plaćom na Transparent.hr.",
+    heading: "Analitika",
+    withSalary: "Oglasa s plaćom",
+    portals: "Broj portala",
+    historyTitle: "Postotak oglasa s plaćom — kroz vrijeme",
+    historyLead: "Udio oglasa na svakom portalu koji prikazuju plaću, mjereno dnevno.",
+    showTable: "Prikaži tablicu s točnim brojevima",
+    date: "Datum",
+  },
+  en: {
+    title: "Share of job ads with a salary, by job site",
+    description:
+      "A daily count of how many job ads on Croatian job sites list the salary, plus the number of jobs with a salary on Transparent.hr.",
+    heading: "Analytics",
+    withSalary: "Jobs with a salary",
+    portals: "Job sites",
+    historyTitle: "Share of ads with a salary — over time",
+    historyLead: "The share of ads on each job site that show the salary, measured daily.",
+    showTable: "Show the table with exact numbers",
+    date: "Date",
+  },
+}
+
+export function generateMetadata({ params }: LangProps) {
+  const t = COPY[params.lang]
+  return pageMetadata({ locale: params.lang, title: t.title, description: t.description, path: "/analitika" })
+}
 
 const SOURCE_ORDER = ["posao", "mojposao"]
 
@@ -22,7 +49,9 @@ const SOURCE_ORDER = ["posao", "mojposao"]
 // overnight cliff, in both the chart and the table below.
 const POSAO_VALID_FROM = "2026-09-24"
 
-export default async function AnalyticsPage() {
+export default async function AnalyticsPage({ params }: LangProps) {
+  const locale = params.lang
+  const t = COPY[locale]
   const [stats, rawTransparency, listed] = await Promise.all([
     getStats({ revalidate: 600 }),
     getTransparencyStats({ revalidate: 600 }),
@@ -40,33 +69,33 @@ export default async function AnalyticsPage() {
 
   return (
     <main className="hero">
-      <h1>Analitika</h1>
+      <h1>{t.heading}</h1>
 
       <div className="stats">
         <div className="stat">
-          <div className="stat__value">{listed ? listed.total.toLocaleString("hr-HR") : "-"}</div>
-          <div className="meta">Oglasa s plaćom</div>
+          <div className="stat__value">{listed ? formatNumber(listed.total, locale) : "-"}</div>
+          <div className="meta">{t.withSalary}</div>
         </div>
         <div className="stat">
           <div className="stat__value">{stats?.sources?.length || 3}</div>
-          <div className="meta">Broj portala</div>
+          <div className="meta">{t.portals}</div>
         </div>
       </div>
 
       {dates.length > 0 && (
         <div className="transparency-history">
-          <h2>Postotak oglasa s plaćom — kroz vrijeme</h2>
-          <p className="meta">Udio oglasa na svakom portalu koji prikazuju plaću, mjereno dnevno.</p>
+          <h2>{t.historyTitle}</h2>
+          <p className="meta">{t.historyLead}</p>
           <TransparencyChart data={transparency} />
 
           <details style={{ marginTop: 20 }}>
             <summary className="meta" style={{ cursor: "pointer" }}>
-              Prikaži tablicu s točnim brojevima
+              {t.showTable}
             </summary>
             <table className="transparency-table">
               <thead>
                 <tr>
-                  <th>Datum</th>
+                  <th>{t.date}</th>
                   {SOURCE_ORDER.map((s) => (
                     <th key={s}>{SOURCE_LABELS[s] || s}</th>
                   ))}
@@ -83,7 +112,7 @@ export default async function AnalyticsPage() {
                           {row ? (
                             <>
                               <strong>{row.pct}%</strong>
-                              <span className="meta"> ({row.jobs_with_salary.toLocaleString()} / {row.total_jobs.toLocaleString()})</span>
+                              <span className="meta"> ({formatNumber(row.jobs_with_salary, locale)} / {formatNumber(row.total_jobs, locale)})</span>
                             </>
                           ) : "—"}
                         </td>

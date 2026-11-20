@@ -1,5 +1,29 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { FilterOption } from "../../lib/types"
+import { DEFAULT_LOCALE, Locale } from "../../lib/i18n"
+import { countryLabel } from "../../lib/labels"
+import { useLocale } from "../i18n/LocaleProvider"
+
+const COPY = {
+  hr: {
+    allCroatia: "Cijela Hrvatska",
+    abroad: "Inozemstvo",
+    area: "Područje",
+    cities: "Gradovi",
+    location: "Lokacija",
+    anywhere: "Sve lokacije",
+    noMatch: "Nema takve lokacije",
+  },
+  en: {
+    allCroatia: "All of Croatia",
+    abroad: "Abroad",
+    area: "Area",
+    cities: "Cities",
+    location: "Location",
+    anywhere: "All locations",
+    noMatch: "No such location",
+  },
+}
 
 interface Suggestion {
   value: string
@@ -15,11 +39,11 @@ function fold(text: string): string {
 }
 
 /** Human label for a location filter value ("", "hr", "foreign", "city:X", "country:X"). */
-export function locationLabel(value: string): string {
-  if (value === "hr") return "Cijela Hrvatska"
-  if (value === "foreign") return "Inozemstvo"
+export function locationLabel(value: string, locale: Locale = DEFAULT_LOCALE): string {
+  if (value === "hr") return COPY[locale].allCroatia
+  if (value === "foreign") return COPY[locale].abroad
   if (value.startsWith("city:")) return value.slice(5)
-  if (value.startsWith("country:")) return value.slice(8)
+  if (value.startsWith("country:")) return countryLabel(value.slice(8), locale)
   return ""
 }
 
@@ -43,36 +67,44 @@ export default function LocationCombobox({
   cityOptions,
   countryOptions,
 }: LocationComboboxProps) {
-  const [query, setQuery] = useState(locationLabel(value))
+  const locale = useLocale()
+  const t = COPY[locale]
+  const label = (v: string) => locationLabel(v, locale)
+  const [query, setQuery] = useState(label(value))
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
   const listId = useId()
 
-  useEffect(() => setQuery(locationLabel(value)), [value])
+  useEffect(() => setQuery(locationLabel(value, locale)), [value, locale])
 
   useEffect(() => {
     if (!open) return
     const onPointerDown = (e: PointerEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) {
         setOpen(false)
-        setQuery(locationLabel(value))
+        setQuery(locationLabel(value, locale))
       }
     }
     document.addEventListener("pointerdown", onPointerDown)
     return () => document.removeEventListener("pointerdown", onPointerDown)
-  }, [open, value])
+  }, [open, value, locale])
 
   const suggestions = useMemo(() => {
     const regionCount = (r: string) => regionOptions.find((o) => o.value === r)?.count
     const all: Suggestion[] = [
-      { value: "hr", label: "Cijela Hrvatska", count: regionCount("hr"), group: "Područje" },
-      { value: "foreign", label: "Inozemstvo", count: regionCount("foreign"), group: "Područje" },
-      ...cityOptions.map((o) => ({ value: `city:${o.value}`, label: o.value, count: o.count, group: "Gradovi" })),
-      ...countryOptions.map((o) => ({ value: `country:${o.value}`, label: o.value, count: o.count, group: "Inozemstvo" })),
+      { value: "hr", label: t.allCroatia, count: regionCount("hr"), group: t.area },
+      { value: "foreign", label: t.abroad, count: regionCount("foreign"), group: t.area },
+      ...cityOptions.map((o) => ({ value: `city:${o.value}`, label: o.value, count: o.count, group: t.cities })),
+      ...countryOptions.map((o) => ({
+        value: `country:${o.value}`,
+        label: countryLabel(o.value, locale),
+        count: o.count,
+        group: t.abroad,
+      })),
     ]
     // Showing the current selection's label means "no new query yet" — list everything.
-    const q = query === locationLabel(value) ? "" : fold(query.trim())
+    const q = query === locationLabel(value, locale) ? "" : fold(query.trim())
     const matches = q ? all.filter((s) => fold(s.label).includes(q)) : all
     if (q) return matches
     // Unfiltered, show just the top few per group (they're sorted by job count).
@@ -81,13 +113,13 @@ export default function LocationCombobox({
       shown[s.group] = (shown[s.group] ?? 0) + 1
       return shown[s.group] <= MAX_PER_GROUP
     })
-  }, [query, value, regionOptions, cityOptions, countryOptions])
+  }, [query, value, regionOptions, cityOptions, countryOptions, locale, t])
 
   useEffect(() => setHighlight(0), [query])
 
   function choose(next: string) {
     onChange(next)
-    setQuery(locationLabel(next))
+    setQuery(label(next))
     setOpen(false)
   }
 
@@ -104,7 +136,7 @@ export default function LocationCombobox({
       choose(suggestions[highlight].value)
     } else if (e.key === "Escape") {
       setOpen(false)
-      setQuery(locationLabel(value))
+      setQuery(label(value))
     }
   }
 
@@ -113,12 +145,12 @@ export default function LocationCombobox({
       <input
         type="text"
         role="combobox"
-        aria-label="Lokacija"
+        aria-label={t.location}
         aria-expanded={open}
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={open && suggestions[highlight] ? `${listId}-${highlight}` : undefined}
-        placeholder="Sve lokacije"
+        placeholder={t.anywhere}
         value={query}
         onFocus={(e) => {
           setOpen(true)
@@ -138,14 +170,14 @@ export default function LocationCombobox({
         onKeyDown={onKeyDown}
       />
       {value ? (
-        <button type="button" className="location-combobox__clear" aria-label="Sve lokacije" onClick={() => choose("")}>
+        <button type="button" className="location-combobox__clear" aria-label={t.anywhere} onClick={() => choose("")}>
           ✕
         </button>
       ) : null}
 
       {open ? (
         <ul className="location-combobox__list" id={listId} role="listbox">
-          {suggestions.length === 0 ? <li className="location-combobox__empty">Nema takve lokacije</li> : null}
+          {suggestions.length === 0 ? <li className="location-combobox__empty">{t.noMatch}</li> : null}
           {suggestions.map((s, i) => (
             <li key={s.value} role="presentation">
               {i === 0 || suggestions[i - 1].group !== s.group ? (

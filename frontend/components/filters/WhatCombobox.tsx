@@ -1,5 +1,24 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { FilterOption } from "../../lib/types"
+import { categoryLabel } from "../../lib/labels"
+import { useLocale } from "../i18n/LocaleProvider"
+
+const COPY = {
+  hr: {
+    remove: (c: string) => `Ukloni granu ${c}`,
+    placeholder: "Pozicija, tvrtka ili grana",
+    placeholderWithCategory: "Pozicija ili tvrtka",
+    browse: "Pretraži po grani",
+    categories: "Grane",
+  },
+  en: {
+    remove: (c: string) => `Remove sector ${c}`,
+    placeholder: "Job title, company or sector",
+    placeholderWithCategory: "Job title or company",
+    browse: "Browse by sector",
+    categories: "Sectors",
+  },
+}
 
 function fold(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d")
@@ -24,6 +43,8 @@ export default function WhatCombobox({
   onChange,
   categoryOptions,
 }: WhatComboboxProps) {
+  const locale = useLocale()
+  const t = COPY[locale]
   const [open, setOpen] = useState(false)
   // -1: nothing highlighted, so Enter submits the text search instead of picking a grana.
   const [highlight, setHighlight] = useState(-1)
@@ -41,9 +62,13 @@ export default function WhatCombobox({
   }, [open])
 
   const q = fold(search.trim())
+  // Typing matches a sector by its name in either language.
   const options = useMemo(
-    () => (q ? categoryOptions.filter((o) => fold(o.value).includes(q)) : categoryOptions),
-    [q, categoryOptions],
+    () =>
+      q
+        ? categoryOptions.filter((o) => fold(o.value).includes(q) || fold(categoryLabel(o.value, locale)).includes(q))
+        : categoryOptions,
+    [q, categoryOptions, locale],
   )
   const isMega = !q
 
@@ -84,13 +109,13 @@ export default function WhatCombobox({
           <button
             type="button"
             className="what-combobox__chip"
-            aria-label={`Ukloni granu ${category}`}
+            aria-label={t.remove(categoryLabel(category, locale))}
             onClick={() => {
               onChange({ category: "" })
               inputRef.current?.focus()
             }}
           >
-            {category}
+            {categoryLabel(category, locale)}
             <span aria-hidden="true">✕</span>
           </button>
         ) : null}
@@ -98,12 +123,12 @@ export default function WhatCombobox({
           ref={inputRef}
           type="search"
           role="combobox"
-          aria-label="Pozicija, tvrtka ili grana"
+          aria-label={t.placeholder}
           aria-expanded={open && options.length > 0}
           aria-controls={listId}
           aria-autocomplete="list"
           aria-activedescendant={open && options[highlight] ? `${listId}-${highlight}` : undefined}
-          placeholder={category ? "Pozicija ili tvrtka" : "Pozicija, tvrtka ili grana"}
+          placeholder={category ? t.placeholderWithCategory : t.placeholder}
           value={search}
           onFocus={() => setOpen(true)}
           // Clicking an already-focused field (e.g. right after picking) must reopen it too.
@@ -118,8 +143,8 @@ export default function WhatCombobox({
 
       {open && options.length ? (
         <div className={isMega ? "what-combobox__panel is-mega" : "what-combobox__panel"}>
-          <div className="what-combobox__heading">{isMega ? "Pretraži po grani" : "Grane"}</div>
-          <ul className="what-combobox__list" id={listId} role="listbox" aria-label="Grane">
+          <div className="what-combobox__heading">{isMega ? t.browse : t.categories}</div>
+          <ul className="what-combobox__list" id={listId} role="listbox" aria-label={t.categories}>
             {options.map((o, i) => (
               <li
                 key={o.value}
@@ -133,7 +158,7 @@ export default function WhatCombobox({
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => choose(o.value)}
               >
-                <span>{o.value}</span>
+                <span>{categoryLabel(o.value, locale)}</span>
                 <span className="what-combobox__count">{o.count}</span>
               </li>
             ))}

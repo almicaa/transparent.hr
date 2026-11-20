@@ -6,9 +6,32 @@ import JobCard from "./JobCard"
 import { getJob } from "../../lib/api"
 import { removeSaved, updateSaved, useSavedJobs } from "../../lib/savedJobs"
 import { jobCountLabel } from "../../lib/format"
+import { localePath } from "../../lib/i18n"
+import { useLocale } from "../i18n/LocaleProvider"
+
+const COPY = {
+  hr: {
+    emptyStart: "Još nemaš spremljenih oglasa. Klikni na",
+    emptyEnd: "na oglasu koji ti se sviđa i naći ćeš ga ovdje.",
+    browse: "Pregledaj oglase →",
+    expired: "Istekli oglasi",
+    removeExpired: "Ukloni sve istekle",
+    remove: "Ukloni",
+  },
+  en: {
+    emptyStart: "You haven't saved any jobs yet. Tap the",
+    emptyEnd: "on a job you like and you'll find it here.",
+    browse: "Browse jobs →",
+    expired: "Expired jobs",
+    removeExpired: "Remove all expired",
+    remove: "Remove",
+  },
+}
 
 /** The saved list: still-open jobs as cards, expired ones in a short list below. */
 export default function SavedJobs() {
+  const locale = useLocale()
+  const t = COPY[locale]
   const saved = useSavedJobs()
   // Ids the API no longer serves (expired or removed); null until checked.
   const [expired, setExpired] = useState<Set<number> | null>(null)
@@ -47,11 +70,10 @@ export default function SavedJobs() {
     return (
       <div className="saved-empty">
         <p>
-          Još nemaš spremljenih oglasa. Klikni na <span aria-hidden="true">♡</span> na oglasu koji ti se sviđa i naći
-          ćeš ga ovdje.
+          {t.emptyStart} <span aria-hidden="true">♡</span> {t.emptyEnd}
         </p>
-        <Link href="/jobs" className="why-tile__button">
-          Pregledaj oglase →
+        <Link href={localePath(locale, "/jobs")} className="why-tile__button">
+          {t.browse}
         </Link>
       </div>
     )
@@ -63,7 +85,7 @@ export default function SavedJobs() {
   return (
     <div className="saved">
       <div className="results-head">
-        <h2>{jobCountLabel(open.length)}</h2>
+        <h2>{jobCountLabel(open.length, locale)}</h2>
       </div>
       {open.length ? (
         <div className="grid grid--list">
@@ -76,9 +98,9 @@ export default function SavedJobs() {
       {gone.length ? (
         <section className="saved-expired">
           <div className="saved-expired__head">
-            <h3>Istekli oglasi</h3>
+            <h3>{t.expired}</h3>
             <button type="button" className="active-filters__clear" onClick={() => gone.forEach((j) => removeSaved(j.id))}>
-              Ukloni sve istekle
+              {t.removeExpired}
             </button>
           </div>
           <ul>
@@ -90,7 +112,7 @@ export default function SavedJobs() {
                   {job.salary_text ? ` · ${job.salary_text}` : ""}
                 </span>
                 <button type="button" className="active-filters__clear" onClick={() => removeSaved(job.id)}>
-                  Ukloni
+                  {t.remove}
                 </button>
               </li>
             ))}

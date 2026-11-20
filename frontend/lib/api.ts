@@ -1,3 +1,4 @@
+import { Locale } from "./i18n"
 import { CvMatchResult, Filters, Job, JobList, JobSort, Stats } from "./types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
@@ -91,23 +92,36 @@ export async function getFilters(opts: FetchOptions = {}): Promise<Filters> {
   return res.json()
 }
 
-/** Upload a CV (PDF or .docx) and get AI-picked matching jobs. Throws with a
- * user-facing Croatian message on failure. Nothing is stored on the server. */
-export async function matchCv(file: File): Promise<CvMatchResult> {
+const CV_ERRORS: Record<Locale, { offline: string; failed: string }> = {
+  hr: {
+    offline: "Nema veze sa serverom. Provjeri internet i pokušaj ponovno.",
+    failed: "Nešto je pošlo po zlu. Pokušaj ponovno.",
+  },
+  en: {
+    offline: "Can't reach the server. Check your connection and try again.",
+    failed: "Something went wrong. Please try again.",
+  },
+}
+
+/** Upload a CV (PDF or .docx) and get AI-picked matching jobs, with the AI's
+ * notes in `locale`. Throws with a user-facing message in that language on
+ * failure. Nothing is stored on the server. */
+export async function matchCv(file: File, locale: Locale): Promise<CvMatchResult> {
   const body = new FormData()
   body.append("file", file)
+  body.append("lang", locale)
   let res: Response
   try {
     res = await fetch(`${API_URL}/api/cv-match`, { method: "POST", body })
   } catch {
-    throw new Error("Nema veze sa serverom. Provjeri internet i pokušaj ponovno.")
+    throw new Error(CV_ERRORS[locale].offline)
   }
   if (!res.ok) {
     const detail = await res
       .json()
       .then((d) => (typeof d?.detail === "string" ? d.detail : null))
       .catch(() => null)
-    throw new Error(detail || "Nešto je pošlo po zlu. Pokušaj ponovno.")
+    throw new Error(detail || CV_ERRORS[locale].failed)
   }
   return res.json()
 }

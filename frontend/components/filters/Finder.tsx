@@ -3,13 +3,17 @@ import { FilterOption, JobFilters } from "../../lib/types"
 import { locationLabel } from "./LocationCombobox"
 import LocationCombobox from "./LocationCombobox"
 import WhatCombobox from "./WhatCombobox"
+import { euro } from "../../lib/format"
+import { useLocale } from "../i18n/LocaleProvider"
+
+// Non-breaking spaces keep the short labels on one line.
+const COPY = {
+  hr: { what: "Što", where: "Gdje", payFrom: "Plaća\u00a0od", any: "Bilo koja", search: "Traži" },
+  en: { what: "What", where: "Where", payFrom: "Pay\u00a0from", any: "Any", search: "Search" },
+}
 
 // Quick picks for the "Plaća od" field; the drawer's slider is finer.
 const SALARY_STEPS = ["1000", "1500", "2000", "2500", "3000"]
-
-function euro(n: string): string {
-  return `${Number(n).toLocaleString("hr-HR")} €`
-}
 
 interface FinderProps {
   filters: JobFilters
@@ -34,6 +38,8 @@ export default function Finder({
   countryOptions,
   placement,
 }: FinderProps) {
+  const locale = useLocale()
+  const t = COPY[locale]
   // A slider-picked minimum (e.g. 1.750 €) still needs to show in the quick-pick select.
   const salarySteps =
     filters.salaryMin && !SALARY_STEPS.includes(filters.salaryMin)
@@ -52,13 +58,14 @@ export default function Finder({
           location: locationLabel(filters.location),
           salary_min: filters.salaryMin ? Number(filters.salaryMin) : undefined,
           placement,
+          language: locale,
         })
         onSubmit()
       }}
     >
       <div className="finder__field finder__field--what">
         <span className="finder__label" aria-hidden="true">
-          Što
+          {t.what}
         </span>
         <WhatCombobox
           search={filters.search}
@@ -70,7 +77,7 @@ export default function Finder({
 
       <div className="finder__field finder__field--where">
         <span className="finder__label" aria-hidden="true">
-          Gdje
+          {t.where}
         </span>
         <LocationCombobox
           value={filters.location}
@@ -82,27 +89,27 @@ export default function Finder({
       </div>
 
       <label className="finder__field finder__field--pay">
-        <span className="finder__label">Plaća od</span>
+        <span className="finder__label">{t.payFrom}</span>
         <select
           value={filters.salaryMin}
           onChange={(e) => onChange({ salaryMin: e.target.value })}
           className={filters.salaryMin ? "is-set" : undefined}
         >
-          <option value="">Bilo koja</option>
+          <option value="">{t.any}</option>
           {salarySteps.map((amount) => (
             <option key={amount} value={amount}>
-              {euro(amount)}
+              {euro(Number(amount), locale)}
             </option>
           ))}
         </select>
       </label>
 
-      <button type="submit" className="finder__submit" aria-label="Traži">
+      <button type="submit" className="finder__submit" aria-label={t.search}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="2.2" />
           <path d="M16 16l4.5 4.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
         </svg>
-        <span>Traži</span>
+        <span>{t.search}</span>
       </button>
     </form>
   )
