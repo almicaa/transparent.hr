@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { DEFAULT_LOCALE, internalPath, LOCALE_COOKIE, localePath } from "./lib/i18n"
 
+/** Marks a request this middleware already rewrote onto an app/[lang]/ folder. */
+const REWRITTEN_HEADER = "x-locale-rewritten"
+
 // Public URLs → app/[lang]/ folders:
 //   /jobs        → /hr/jobs         (Croatian has no prefix)
 //   /en/about    → /en/o-nama       (English slugs map onto the Croatian folders)
@@ -10,6 +13,10 @@ import { DEFAULT_LOCALE, internalPath, LOCALE_COOKIE, localePath } from "./lib/i
 // the English ones. Nobody is redirected on Accept-Language alone: search
 // engines crawl without it and would only ever see one language.
 export function middleware(req: NextRequest) {
+  // `next start` runs middleware again on the rewritten path; without this,
+  // /o-nama → /hr/o-nama would hit the /hr redirect below and loop forever.
+  if (req.headers.has(REWRITTEN_HEADER)) return NextResponse.next()
+
   const { pathname } = req.nextUrl
 
   // Share images: Next links them by the internal path (/hr/jobs/1/opengraph-image).
@@ -43,7 +50,9 @@ function redirect(req: NextRequest, pathname: string, status = 308) {
 function rewrite(req: NextRequest, pathname: string) {
   const url = req.nextUrl.clone()
   url.pathname = pathname
-  return NextResponse.rewrite(url)
+  const headers = new Headers(req.headers)
+  headers.set(REWRITTEN_HEADER, "1")
+  return NextResponse.rewrite(url, { request: { headers } })
 }
 
 export const config = {
