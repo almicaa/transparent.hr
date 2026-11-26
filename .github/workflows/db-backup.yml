@@ -30,9 +30,9 @@ jobs:
           set -euo pipefail
           # SQLAlchemy URLs ("postgresql+psycopg://") → plain libpq URL.
           URL="$(printf '%s' "$DATABASE_URL" | sed -E 's#^postgres(ql)?(\+[a-z0-9]+)?://#postgresql://#')"
-          # pg_dump from the postgres:17 image: it can dump any older server too,
-          # unlike the runner's own client, which must match the server version.
-          docker run --rm -e URL="$URL" postgres:17 \
+          # pg_dump from the postgres:18 image (Neon runs Postgres 18). pg_dump can dump
+          # older servers but never newer ones, so bump this with the Neon version.
+          docker run --rm -e URL="$URL" postgres:18 \
             sh -c 'pg_dump "$URL" --format=custom --no-owner --no-privileges' > db.dump
           ls -lh db.dump
           test -s db.dump

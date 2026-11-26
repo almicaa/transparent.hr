@@ -39,7 +39,7 @@ Backup budi bazu na par minuta dnevno, što je zanemariv trošak CU-sati. Može�
 3. Dešifriraj i vrati:
    ```bash
    gpg --decrypt -o db.dump db.dump.gpg            # pita BACKUP_PASSPHRASE
-   docker run --rm -v "$PWD:/b" postgres:17 \
+   docker run --rm -v "$PWD:/b" postgres:18 \
      pg_restore --no-owner --no-privileges -d "postgresql://…novi connection string…" /b/db.dump
    ```
 4. Postavi novi `DATABASE_URL` na Renderu (backend), u okruženju scrapera i u GitHub secretu, pa restartaj backend.
