@@ -17,7 +17,7 @@ Na Renderu (backend) postavi:
 
 - `run_all_scrapers.py` pokreće svaki izvor zasebno: ako jedan padne, ostali se i dalje izvrše. Kad izvor dva runa zaredom padne ili ne pronađe nijedan oglas (najčešće promijenjeni selektori), šalje se mail „problem sa scraperom” preko istih `SMTP_*` varijabli, a skripta završava s izlaznim kodom 1. Jedan neuspješan run samo se ispiše u log.
 - Za nadzor izvana postavi `HEARTBEAT_URL` (npr. ping URL s healthchecks.io, period 6 h, grace ~18 h) u okruženju scrapera. Nakon svakog uspješnog runa `run_all_scrapers.py` pingne taj URL, a servis šalje mail kad pingovi prestanu. Ništa ne mora izvana ispitivati bazu, pa se Neon može ugasiti kad miruje.
-- `GET /health/scraper` na backendu vraća 503 kad neki izvor nije imao uspješan run s oglasima u zadnjih `SCRAPER_STALE_HOURS` sati (zadano 24). Čita bazu, pa ga **ne** stavljaj u uptime monitor koji ga zove svakih nekoliko minuta: baza bi bila stalno budna i potrošila Neonovu besplatnu kvotu CU-sati. Služi za ručnu provjeru. Nije ni Render health check, za to služi `/health`.
+- Backend nema endpoint koji provjerava scraper preko baze. Uptime monitor stavljaj samo na `/health`, koji ne dira bazu, pa Neon može zaspati kad miruje.
 
 ## Stranica „uskoro se vraćamo”
 

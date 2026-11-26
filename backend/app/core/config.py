@@ -21,9 +21,6 @@ class Settings(BaseSettings):
     cv_match_per_day: int = 20
     """Uploads allowed site-wide per UTC day, as a cost ceiling."""
 
-    scraper_stale_hours: int = 24
-    """/health/scraper answers 503 when a source has had no successful run with ads for this long."""
-
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
