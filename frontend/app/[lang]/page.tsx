@@ -9,7 +9,7 @@ import { formatNumber } from "../../lib/format"
 import { LangProps, localePath } from "../../lib/i18n"
 import { HOME_DESCRIPTION, HOME_TITLE, pageMetadata } from "../../lib/seo"
 
-export const revalidate = 300
+export const revalidate = 3600
 
 // Colour of each home-page blog card, in order.
 const BLOG_TONES = ["dark", "orange", "mint"]
@@ -109,10 +109,10 @@ const TILE_TONES = ["teal", "mint", "orange"]
 
 async function getHomeData() {
   const [stats, filterData, listed] = await Promise.all([
-    getStats({ revalidate: 300 }).catch(() => null),
-    getFilters({ revalidate: 300 }).catch(() => undefined),
+    getStats({ revalidate: 3600 }).catch(() => null),
+    getFilters({ revalidate: 3600 }).catch(() => undefined),
     // Same count the job list shows: ads posted once per location count once.
-    getJobs({ page: 1, per_page: 1, salary_shown: "yes" }, { revalidate: 300 }).catch(() => null),
+    getJobs({ page: 1, per_page: 1, salary_shown: "yes" }, { revalidate: 3600 }).catch(() => null),
   ])
   return { stats, filterData, listedTotal: listed?.total ?? null }
 }

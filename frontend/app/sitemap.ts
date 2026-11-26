@@ -52,18 +52,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const perPage = 100
-    const first = await getJobs({ page: 1, per_page: perPage, sort: "newest", salary_shown: "yes" })
+    const first = await getJobs({ page: 1, per_page: perPage, sort: "newest", salary_shown: "yes" }, { revalidate: 86400 })
     const pageCount = Math.min(Math.ceil(first.total / perPage), MAX_PAGES)
 
     const rest = await Promise.all(
       Array.from({ length: Math.max(0, pageCount - 1) }, (_, i) =>
-        getJobs({ page: i + 2, per_page: perPage, sort: "newest", salary_shown: "yes" })
+        getJobs({ page: i + 2, per_page: perPage, sort: "newest", salary_shown: "yes" }, { revalidate: 86400 })
       )
     )
 
     const allJobs = [first, ...rest].flatMap((res) => res.jobs)
+    // Croatian only: the English job pages repeat the same ad and are noindex.
     const jobRoutes = allJobs.flatMap((job) =>
-      page(`/jobs/${job.id}`, { lastModified: job.scraped_at || undefined, changeFrequency: "daily", priority: 0.7 }),
+      localized(
+        { hr: `/jobs/${job.id}` },
+        { lastModified: job.scraped_at || undefined, changeFrequency: "daily", priority: 0.7 },
+      ),
     )
     return [...staticRoutes, ...jobRoutes]
   } catch {

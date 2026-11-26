@@ -6,7 +6,7 @@ import { SOURCE_LABELS } from "../../../lib/sourceLabels"
 import TransparencyChart from "../../../components/ui/TransparencyChart"
 
 // Stats only change once per scraper run (every few hours).
-export const revalidate = 600
+export const revalidate = 3600
 
 const COPY = {
   hr: {
@@ -53,11 +53,11 @@ export default async function AnalyticsPage({ params }: LangProps) {
   const locale = params.lang
   const t = COPY[locale]
   const [stats, rawTransparency, listed] = await Promise.all([
-    getStats({ revalidate: 600 }),
-    getTransparencyStats({ revalidate: 600 }),
+    getStats({ revalidate: 3600 }),
+    getTransparencyStats({ revalidate: 3600 }),
     // The job list's own count (an ad posted per location counts once), so
     // this matches /jobs and the home page; stats.salary_shown counts every row.
-    getJobs({ page: 1, per_page: 1, salary_shown: "yes" }, { revalidate: 600 }).catch(() => null),
+    getJobs({ page: 1, per_page: 1, salary_shown: "yes" }, { revalidate: 3600 }).catch(() => null),
   ])
   const transparency = rawTransparency.filter((r) => r.source !== "posao" || r.date >= POSAO_VALID_FROM)
 

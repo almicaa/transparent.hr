@@ -3,7 +3,7 @@ import { getFilters, getJobs, JOBS_PER_PAGE } from "../../../lib/api"
 import { LangProps } from "../../../lib/i18n"
 import { pageMetadata } from "../../../lib/seo"
 
-export const revalidate = 300
+export const revalidate = 3600
 
 const META = {
   hr: {
@@ -24,13 +24,13 @@ export function generateMetadata({ params }: LangProps) {
 
 async function getJobsPageData() {
   const [jobsRes, filtersRes] = await Promise.all([
-    getJobs({ page: 1, per_page: JOBS_PER_PAGE, salary_shown: "yes", sort: "newest" }, { revalidate: 300 }).catch(() => ({
+    getJobs({ page: 1, per_page: JOBS_PER_PAGE, salary_shown: "yes", sort: "newest" }, { revalidate: 3600 }).catch(() => ({
       jobs: [],
       total: 0,
       page: 1,
       per_page: JOBS_PER_PAGE,
     })),
-    getFilters({ revalidate: 300 }).catch(() => undefined),
+    getFilters({ revalidate: 3600 }).catch(() => undefined),
   ])
   return { jobsRes, filtersRes }
 }

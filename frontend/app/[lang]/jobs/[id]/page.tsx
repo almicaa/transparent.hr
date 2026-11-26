@@ -65,6 +65,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: jobMetaTitle(job, params.lang),
     description: jobMetaDescription(job, params.lang),
     path: `/jobs/${job.id}`,
+    // The English page shows the same Croatian ad, so only the Croatian one is
+    // indexed. No hreflang either: it must not point at a noindex page.
+    paths: { [params.lang]: localePath(params.lang, `/jobs/${job.id}`) },
+    index: params.lang === "hr",
     ownImage: true,
   })
 }
@@ -75,8 +79,7 @@ export default async function JobDetailPage({ params }: Props) {
   const job = await loadJob(params.id)
   if (!job) notFound()
 
-  // Google for Jobs gets each posting once, from the Croatian page (the ad's
-  // own language); the English page points to it with hreflang.
+  // Google for Jobs gets each posting once, from the Croatian page (the ad's own language).
   const jsonLd = locale === "hr" ? buildJobPostingJsonLd(job) : null
   const salary = jobSalaryText(job, locale)
   // In Croatian the ad's own text often says neto/bruto already; the English text always does when it's known.

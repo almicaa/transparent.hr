@@ -171,12 +171,80 @@ export function jobMetaDescription(job: Job, locale: Locale = DEFAULT_LOCALE): s
   return text.length <= 160 ? text : `${text.slice(0, 157).replace(/\s+\S*$/, "")}…`
 }
 
-export function jobOrganizationName(job: Job): string {
-  return job.company || SOURCE_LABELS[job.source || ""] || job.source || SITE_NAME
+// Keep in sync with COUNTRY_KEYWORDS in shared/location_normalizer.py.
+const COUNTRIES: { code: string; names: string[]; cities?: string[] }[] = [
+  { code: "AT", names: ["austrija", "austria"] },
+  { code: "DE", names: ["njemačka", "germany", "deutschland"], cities: ["berlin", "münchen"] },
+  { code: "CH", names: ["švicarska", "switzerland"] },
+  { code: "IT", names: ["italija", "italy"] },
+  { code: "FR", names: ["francuska", "france"] },
+  { code: "NL", names: ["nizozemska", "netherlands", "holland"] },
+  { code: "BE", names: ["belgija", "belgium"] },
+  { code: "HU", names: ["mađarska", "hungary"] },
+  { code: "IE", names: ["irska", "ireland"] },
+  { code: "SE", names: ["švedska", "sweden"] },
+  { code: "NO", names: ["norveška", "norway"] },
+  { code: "DK", names: ["danska", "denmark"] },
+  { code: "GB", names: ["velika britanija", "united kingdom", "england"] },
+  { code: "PL", names: ["poljska", "poland"] },
+  { code: "CZ", names: ["češka", "czech"] },
+  { code: "GR", names: ["grčka", "greece"] },
+  { code: "ES", names: ["španjolska", "spain"] },
+  { code: "MT", names: ["malta"] },
+  { code: "CY", names: ["cipar", "cyprus"] },
+  { code: "CA", names: ["kanada", "canada"] },
+  { code: "AU", names: ["australija", "australia"] },
+  { code: "SI", names: ["slovenija", "slovenia"] },
+]
+
+function place(addressCountry: string, addressLocality?: string) {
+  return {
+    "@type": "Place",
+    address: { "@type": "PostalAddress", ...(addressLocality ? { addressLocality } : {}), addressCountry },
+  }
 }
 
+/** Places for a free-text location: "Landsberg, Njemačka" is Landsberg in DE,
+ * a bare "Austrija" just AT, and several countries one place each. */
+export function jobPlaces(location: string) {
+  const lower = location.toLowerCase()
+  const found = COUNTRIES.filter((c) => [...c.names, ...(c.cities ?? [])].some((k) => lower.includes(k)))
+  if (found.length === 0) return [place("HR", location)]
+  if (found.length > 1) return found.map((c) => place(c.code))
+  const locality = location
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part && !found[0].names.includes(part.toLowerCase()))
+    .join(", ")
+  return [place(found[0].code, locality)]
+}
+
+/** schema.org employmentType from the ad's "Puno radno vrijeme" or "20 sati tjedno". */
+export function jobEmploymentType(jobType: string | null): "FULL_TIME" | "PART_TIME" | null {
+  if (!jobType) return null
+  if (/puno radno vrijeme/i.test(jobType)) return "FULL_TIME"
+  const hours = jobType.match(/^(\d+)\s+sat/i)
+  if (!hours) return null
+  return Number(hours[1]) >= 40 ? "FULL_TIME" : "PART_TIME"
+}
+
+/** The ad's employer, or null when we only know the portal it came from. */
+function jobEmployer(job: Job): string | null {
+  const company = job.company?.trim()
+  if (!company) return null
+  const portals = Object.values(SOURCE_LABELS).map((name) => name.toLowerCase())
+  return portals.includes(company.toLowerCase()) ? null : company
+}
+
+/** JobPosting markup, or null when the ad lacks a real employer or a location:
+ * Google requires both, and a portal named as the employer breaks its guidelines. */
 export function buildJobPostingJsonLd(job: Job) {
+  const employer = jobEmployer(job)
+  if (!employer || !job.location) return null
+
   const datePosted = job.posted_at || job.scraped_at || new Date().toISOString()
+  const places = jobPlaces(job.location)
+  const employmentType = jobEmploymentType(job.job_type)
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org/",
     "@type": "JobPosting",
@@ -185,21 +253,15 @@ export function buildJobPostingJsonLd(job: Job) {
     datePosted,
     hiringOrganization: {
       "@type": "Organization",
-      name: jobOrganizationName(job),
+      name: employer,
     },
+    jobLocation: places.length === 1 ? places[0] : places,
     directApply: false,
     url: `${SITE_URL}/jobs/${job.id}`,
   }
 
-  if (job.location) {
-    jsonLd.jobLocation = {
-      "@type": "Place",
-      address: {
-        "@type": "PostalAddress",
-        addressLocality: job.location,
-        addressCountry: "HR",
-      },
-    }
+  if (employmentType) {
+    jsonLd.employmentType = employmentType
   }
 
   if (job.expires_at) {
