@@ -1,0 +1,55 @@
+name: DB backup
+
+# Daily pg_dump of the Neon database, kept as an encrypted workflow artifact.
+# If Neon becomes unreachable (e.g. the free CU-hour quota runs out, when
+# nothing can be read or exported), restore the latest dump into a new
+# database. Steps in infra/README.md, "Kopija baze".
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   DATABASE_URL       — the Neon connection string (same as on Render)
+#   BACKUP_PASSPHRASE  — any long random string; keep a copy outside GitHub.
+#                        The repo is public, so the dump is encrypted with it.
+
+on:
+  schedule:
+    - cron: "30 3 * * *"   # 03:30 UTC, after the night scraper run
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          # SQLAlchemy URLs ("postgresql+psycopg://") → plain libpq URL.
+          URL="$(printf '%s' "$DATABASE_URL" | sed -E 's#^postgres(ql)?(\+[a-z0-9]+)?://#postgresql://#')"
+          # pg_dump from the postgres:17 image: it can dump any older server too,
+          # unlike the runner's own client, which must match the server version.
+          docker run --rm -e URL="$URL" postgres:17 \
+            sh -c 'pg_dump "$URL" --format=custom --no-owner --no-privileges' > db.dump
+          ls -lh db.dump
+          test -s db.dump
+
+      - name: Encrypt
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          test -n "$BACKUP_PASSPHRASE"
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 -o db.dump.gpg db.dump <<< "$BACKUP_PASSPHRASE"
+          rm db.dump
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: db.dump.gpg
+          retention-days: 14
+          if-no-files-found: error

@@ -10,8 +10,10 @@ Usage:
 
 import asyncio
 import argparse
+import os
 import sys
 import traceback
+import urllib.request
 
 try:
     from scraper import base_scraper as base
@@ -21,6 +23,19 @@ except Exception:
     import posao_hr, mojposao_hr, hzz_hr
 
 from shared.email_notify import send_notification
+
+
+def _heartbeat() -> None:
+    """Ping HEARTBEAT_URL (e.g. healthchecks.io) after a good run. The monitor
+    alerts when pings stop, so nothing outside has to poll the database and
+    keep Neon from scaling to zero."""
+    url = os.environ.get("HEARTBEAT_URL")
+    if not url:
+        return
+    try:
+        urllib.request.urlopen(url, timeout=10).close()
+    except Exception as e:
+        print(f"[heartbeat] Ping nije uspio: {e}")
 
 
 def _format_summary(new_jobs: list[dict]) -> str:
@@ -119,4 +134,6 @@ if __name__ == "__main__":
     parser.add_argument("--dry-run", dest="dry_run", action="store_true")
     args = parser.parse_args()
     ok = asyncio.run(run_all(max_jobs=args.max_jobs, dry_run=args.dry_run))
+    if ok and not args.dry_run:
+        _heartbeat()
     sys.exit(0 if ok else 1)

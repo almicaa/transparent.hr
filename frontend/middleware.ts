@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
-import { DEFAULT_LOCALE, internalPath, LOCALE_COOKIE, localePath } from "./lib/i18n"
+          import { NextRequest, NextResponse } from "next/server"
+import { DEFAULT_LOCALE, internalPath, LOCALE_COOKIE, localeFromPathname, localePath } from "./lib/i18n"
+import { maintenanceEnabled, maintenanceResponse } from "./lib/maintenance"
 
 /** Marks a request this middleware already rewrote onto an app/[lang]/ folder. */
 const REWRITTEN_HEADER = "x-locale-rewritten"
@@ -18,6 +19,8 @@ export function middleware(req: NextRequest) {
   if (req.headers.has(REWRITTEN_HEADER)) return NextResponse.next()
 
   const { pathname } = req.nextUrl
+
+  if (maintenanceEnabled()) return maintenanceResponse(localeFromPathname(pathname))
 
   // Share images: Next links them by the internal path (/hr/jobs/1/opengraph-image).
   if (pathname.endsWith("/opengraph-image") && (pathname.startsWith("/hr/") || pathname.startsWith("/en/"))) {
